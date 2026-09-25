@@ -1,0 +1,67 @@
+# Builds and publishes a Foundry release whenever a version tag is pushed.
+#
+#   git tag v1.1.2
+#   git push origin v1.1.2
+#
+# The version is taken from the tag, so module.json does not need to be
+# edited by hand. The release gets two files:
+#   module.json  – the manifest Foundry checks for updates
+#   module.zip   – the package Foundry downloads
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from tag
+        id: version
+        run: echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # Stamp the version and the install/update URLs into the manifest that
+      # ships with this release. Foundry follows "manifest" to find updates
+      # and downloads from "download".
+      - name: Stamp module.json
+        env:
+          VERSION: ${{ steps.version.outputs.number }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          jq --arg v "$VERSION" \
+             --arg manifest "https://github.com/$REPO/releases/latest/download/module.json" \
+             --arg download "https://github.com/$REPO/releases/download/$TAG/module.zip" \
+             --arg url "https://github.com/$REPO" \
+             '.version = $v | .manifest = $manifest | .download = $download | .url = $url' \
+             module.json > module.tmp.json
+          mv module.tmp.json module.json
+          echo "Releasing version $VERSION"
+
+      # Files go at the root of the zip, which is what Foundry expects.
+      # Anything machine-specific or secret is left out.
+      - name: Build module.zip
+        run: |
+          zip -r module.zip . \
+            -x ".git/*" ".github/*" "dist/*" \
+               "*node_modules*" "*package-lock.json" \
+               "*.env" \
+               "*/LOG" "*/LOG.old" \
+               ".gitignore" ".DS_Store" "*/.DS_Store"
+          echo "--- package contents (without packs) ---"
+          unzip -l module.zip | grep -v "/packs/"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            module.json
+            module.zip
+          generate_release_notes: true

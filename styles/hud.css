@@ -1,0 +1,400 @@
+/* Core chrome the HUD replaces (both optional in settings) */
+body.pkh-hide-hotbar #hotbar { display: none !important; }
+body.pkh-hide-effects #effects-panel { display: none !important; }
+
+/*
+ * Sizes: --pkh-slot comes from the canvas width (JS), --pkh-scale from the
+ * "HUD 크기" setting. Text is in rem, so it follows Foundry's font-size option.
+ */
+#pkh-hud, #pkh-inspect {
+  position: fixed;
+  left: var(--pkh-center, 50%);
+  z-index: 70;
+  transform: translateX(-50%) scale(var(--pkh-scale, 1));
+  transform-origin: bottom center;
+  color: var(--pkh-hud-text);
+  font-size: 0.85rem;
+  line-height: 1.25;
+}
+#pkh-hud { bottom: 8px; }
+#pkh-hud.hidden, #pkh-inspect.hidden { display: none; }
+#pkh-hud button, #pkh-inspect button, #pkh-effect-card button {
+  font-family: inherit; line-height: 1; cursor: pointer;
+  min-height: 0; min-width: 0; margin: 0; flex: none; box-sizing: border-box;
+}
+.pkh-inner { position: relative; display: flex; flex-direction: column; gap: 6px; width: max-content; }
+
+/* ---- effects row ---- */
+.pkh-effects { display: flex; flex-wrap: wrap; gap: 7px; padding-left: 2px; }
+.pkh-effects.empty { display: none; }
+.pkh-effect {
+  position: relative; width: var(--pkh-effect-size, 42px); height: var(--pkh-effect-size, 42px); border-radius: 50%;
+  border: 2px solid #6b5a2f; background: #14100b; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 100ms ease;
+}
+.pkh-effect:hover { transform: scale(1.1); }
+.pkh-effect.debuff { border-color: #c4524a; }
+.pkh-effect.buff { border-color: #d6ac3a; }
+.pkh-effect img { width: 100%; height: 100%; border-radius: 50%; border: none; object-fit: cover; }
+.pkh-effect .val {
+  position: absolute; right: -5px; bottom: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  border-radius: 9px; background: #0f0c09; border: 1px solid #6b5a2f;
+  font-size: 0.75rem; font-weight: 700; line-height: 16px; text-align: center; color: var(--pkh-gold-soft);
+}
+
+/* effect hover card */
+#pkh-effect-card {
+  position: fixed; z-index: 90; width: 300px; max-width: 90vw;
+  padding: 0.6rem 0.75rem 0.7rem; border-radius: 10px;
+  border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.97); color: var(--pkh-hud-text);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); font-size: 0.74rem; line-height: 1.45;
+}
+#pkh-effect-card.hidden { display: none; }
+#pkh-effect-card header { display: flex; align-items: center; gap: 8px; margin-bottom: 0.35rem; }
+#pkh-effect-card header img { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #6b5a2f; }
+#pkh-effect-card header strong { flex: 1; font-size: 0.85rem; color: var(--pkh-gold-soft); }
+#pkh-effect-card header button {
+  flex: none; width: 26px; height: 26px; padding: 0; border-radius: 6px;
+  border: 1px solid #4a3f2a; background: #1a140d; color: var(--pkh-muted);
+}
+#pkh-effect-card header button:hover { color: var(--pkh-gold); border-color: var(--pkh-gold); }
+#pkh-effect-card .dur { font-size: 0.75rem; color: var(--pkh-muted); margin-bottom: 0.3rem; }
+#pkh-effect-card p { margin: 0; }
+#pkh-effect-card footer { margin-top: 0.4rem; font-size: 0.72rem; color: #8a7e64; }
+
+/* ---- HP + action pips ---- */
+.pkh-hp-row { display: flex; align-items: flex-end; gap: 14px; }
+.pkh-hp { flex: 1; min-width: 0; }
+.pkh-hp-label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; color: var(--pkh-muted); margin-bottom: 3px; }
+.pkh-hp-label .num { color: var(--pkh-hud-text); font-weight: 700; }
+.pkh-hp-label .name { color: var(--pkh-hud-text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pkh-hp-label em { font-style: normal; font-weight: 400; color: var(--pkh-muted); margin-left: 4px; }
+.pkh-hp-label b { color: #8fb8e8; }
+.pkh-hp-bar {
+  position: relative; height: 16px; border-radius: 5px; overflow: hidden;
+  background: #1a140d; border: 1px solid var(--pkh-line); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.pkh-hp-bar .fill { height: 100%; transition: width 300ms ease; }
+.pkh-hp-bar .temp { position: absolute; inset: 0 auto 0 0; background: rgba(120, 170, 230, 0.5); }
+
+.pkh-ap { display: flex; align-items: center; gap: 5px; padding-bottom: 1px; }
+.pkh-ap.over .pkh-pip.used { box-shadow: 0 0 0 2px rgba(196, 82, 74, 0.6); }
+.pkh-pip {
+  width: 15px; height: 15px; aspect-ratio: 1; padding: 0; border-radius: 50%; border: 2px solid #e9d27a;
+  background: radial-gradient(circle at 35% 30%, #f3e6b8, #c9a227); box-shadow: 0 0 6px rgba(201, 162, 39, 0.5);
+  transition: transform 100ms ease, background 150ms ease;
+}
+.pkh-pip:hover { transform: scale(1.12); }
+.pkh-pip.used { background: #16130d; border-color: #3a3226; box-shadow: none; }
+.pkh-pip.lost { background: repeating-linear-gradient(45deg, #2a2215 0 3px, #16130d 3px 6px); border-color: #6b5a2f; box-shadow: none; }
+.pkh-pip.bonus { border-color: #d9665e; background: radial-gradient(circle at 35% 30%, #e07b72, #7a1f2b); box-shadow: 0 0 6px rgba(201, 82, 74, 0.55); }
+.pkh-pip.bonus.idle { background: transparent; border-color: #5a2a2a; border-style: dashed; box-shadow: none; }
+.pkh-pip.bonus.used { background: #241010; border-color: #5a2a2a; box-shadow: none; }
+.pkh-rollback {
+  width: 20px; height: 20px; padding: 0; margin-left: 2px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid #4a3f2a; background: #14100b; color: var(--pkh-gold); font-size: 0.75rem;
+}
+.pkh-rollback:disabled { color: #3a3226; cursor: default; }
+
+/* ---- quickslots ---- */
+.pkh-slots {
+  display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+  border-radius: 10px; border: 1px solid #4a3f2a;
+  background: linear-gradient(180deg, rgba(28, 23, 16, 0.92), rgba(12, 10, 7, 0.94));
+  box-shadow: inset 0 1px 0 rgba(233, 210, 122, 0.08), 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+#pkh-hud.unlocked .pkh-slots { border-color: var(--pkh-gold); box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.35), 0 8px 22px rgba(0, 0, 0, 0.5); }
+
+/* Side controls: a 2×2 block for one row, a column when the bar is taller. */
+.pkh-slots-side { display: grid; gap: 3px; grid-template-columns: 1fr; }
+.pkh-slots.rows-1 .pkh-slots-side { grid-template-columns: repeat(2, auto); }
+.pkh-icon {
+  width: 21px; height: 21px; padding: 0; border-radius: 5px; border: 1px solid #3a3226;
+  background: #14100b; color: var(--pkh-muted); font-size: 0.7rem; display: grid; place-items: center;
+}
+.pkh-icon.lock.open { color: #1a140d; background: var(--pkh-gold); border-color: var(--pkh-gold-soft); }
+.pkh-icon:disabled { opacity: 0.4; cursor: default; }
+.rows-glyph { display: block; width: 10px; height: 10px; }
+.rows-glyph.r1 { background: linear-gradient(currentColor, currentColor) center/10px 3px no-repeat; }
+.rows-glyph.r2 { background: linear-gradient(currentColor, currentColor) 0 2px/10px 2px no-repeat, linear-gradient(currentColor, currentColor) 0 6px/10px 2px no-repeat; }
+.rows-glyph.r3 { background: linear-gradient(currentColor, currentColor) 0 0/10px 2px no-repeat, linear-gradient(currentColor, currentColor) 0 4px/10px 2px no-repeat, linear-gradient(currentColor, currentColor) 0 8px/10px 2px no-repeat; }
+
+.pkh-grid { display: flex; flex-direction: column; gap: 5px; }
+.pkh-row { display: grid; grid-template-columns: repeat(10, var(--pkh-slot, 52px)); gap: 5px; }
+.pkh-slot {
+  position: relative; width: var(--pkh-slot, 52px); height: var(--pkh-slot, 52px); border-radius: 7px;
+  display: grid; place-items: center; overflow: hidden; cursor: pointer;
+  background: linear-gradient(180deg, #241d14, #14100b);
+  border: 1px solid #6b5a2f; box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.12);
+  transition: transform 80ms ease, border-color 120ms ease;
+}
+.pkh-slot:hover { border-color: var(--pkh-gold); }
+.pkh-slot.pressed, .pkh-slot:active { transform: scale(0.92); }
+.pkh-slot.empty { background: rgba(16, 13, 9, 0.8); border: 1px dashed #2c2519; box-shadow: none; cursor: default; }
+#pkh-hud.unlocked .pkh-slot.empty { cursor: copy; border-color: #6b5a2f; }
+.pkh-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: none; }
+.pkh-slot > i { font-size: 1.15rem; color: var(--pkh-hud-text); margin-top: -0.6rem; }
+.pkh-slot .label {
+  position: absolute; left: 2px; right: 2px; bottom: 3px; font-size: 0.66rem; line-height: 1.1;
+  text-align: center; color: #d8ccaf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pkh-slot .key {
+  position: absolute; top: 2px; left: 4px; z-index: 1; font-size: 0.68rem; color: #cfc3a4;
+  text-shadow: 0 0 3px #000, 0 0 2px #000;
+}
+.pkh-slot .badge {
+  position: absolute; right: 3px; bottom: 2px; z-index: 1; font-size: 0.78rem; font-weight: 700; color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.pkh-slot.t-strike.map-1 .badge { color: #f0c060; }
+.pkh-slot.t-strike.map-2 .badge { color: #f08a7a; }
+.pkh-slot.pkh-off img, .pkh-slot.pkh-off > i { filter: grayscale(1) brightness(0.45); }
+.pkh-slot.pkh-off { border-color: #3a3226; }
+.pkh-slot.broken { border-color: #7a1f2b; }
+.pkh-slot .broken-mark { position: absolute; z-index: 1; font-size: 1.2rem; color: #c9524a; }
+.pkh-slot.auto { box-shadow: inset 0 0 0 1px rgba(120, 190, 140, 0.6); }
+#pkh-hud.unlocked .pkh-slot:not(.empty) { cursor: grab; }
+
+.pkh-pages { display: flex; flex-direction: column; justify-content: center; gap: 5px; padding: 0 1px; }
+.pkh-dot { width: 7px; height: 7px; aspect-ratio: 1; padding: 0; border: none; border-radius: 50%; background: #3a3226; }
+.pkh-dot.active { background: var(--pkh-gold); box-shadow: 0 0 5px rgba(201, 162, 39, 0.6); }
+
+/* ---- bottom bar ---- */
+.pkh-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pkh-bar-right { display: flex; gap: 5px; }
+.pkh-mini {
+  width: 30px; height: 26px; padding: 0; border-radius: 6px; border: 1px solid #3a3226;
+  background: rgba(15, 12, 9, 0.85); color: var(--pkh-muted); font-size: 0.8rem;
+}
+.pkh-mini:hover, .pkh-mini.active { color: var(--pkh-gold); border-color: #6b5a2f; }
+.pkh-saves {
+  display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px;
+  border: 1px solid #6b5a2f; background: linear-gradient(180deg, #2a2215, #1a140d);
+}
+.pkh-chip {
+  padding: 0.3rem 0.8rem; border: none; border-radius: 999px; background: transparent;
+  color: var(--pkh-hud-text); font-size: 0.85rem; font-weight: 700; white-space: nowrap;
+}
+.pkh-chip:hover { background: rgba(201, 162, 39, 0.16); }
+.pkh-chip em { font-style: normal; font-weight: 400; color: var(--pkh-muted); margin-right: 5px; }
+.pkh-chip.dc { color: var(--pkh-gold); }
+.pkh-chip.static { cursor: default; display: inline-flex; align-items: center; }
+.pkh-chip.static:hover { background: transparent; }
+.pkh-chip.dc em { color: #b39a52; }
+
+/* ---- popovers (occasional look-ups) ---- */
+.pkh-pop {
+  position: absolute; bottom: calc(100% + 6px); max-height: 46vh; overflow: auto;
+  padding: 0.6rem 0.7rem; border-radius: 9px; border: 1px solid var(--pkh-line);
+  background: rgba(12, 10, 7, 0.96); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+.pkh-pop.inventory { left: 0; width: 320px; }
+.pkh-pop.grimoire { right: 0; width: 480px; }
+.pkh-pop header { font-weight: 700; color: var(--pkh-gold); margin-bottom: 0.45rem; }
+.pkh-pop header small { display: block; font-weight: 400; color: var(--pkh-muted); font-size: 0.72rem; margin-top: 2px; }
+.pkh-inv-grid { display: grid; grid-template-columns: repeat(auto-fill, 36px); gap: 4px; }
+.pkh-inv-cell { position: relative; width: 36px; height: 36px; border-radius: 5px; border: 1px solid #4a3f2a; background: #14100b; overflow: hidden; cursor: pointer; }
+.pkh-inv-cell:hover { border-color: var(--pkh-gold); }
+.pkh-inv-cell img { width: 100%; height: 100%; object-fit: cover; border: none; }
+.pkh-inv-cell .badge { position: absolute; right: 2px; bottom: 0; font-size: 0.68rem; font-weight: 700; color: #fff; text-shadow: 0 0 3px #000; }
+.pkh-grim-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pkh-pop h4 { margin: 0.45rem 0 0.2rem; font-size: 0.72rem; letter-spacing: 0.04em; color: var(--pkh-muted); border: none; }
+.pkh-list-row { display: flex; align-items: center; gap: 6px; padding: 2px 3px; border-radius: 4px; cursor: pointer; }
+.pkh-list-row:hover { background: rgba(201, 162, 39, 0.1); }
+.pkh-list-row img { width: 22px; height: 22px; border-radius: 3px; border: none; flex: none; }
+.pkh-list-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- observer card (HP + effects only) ---- */
+#pkh-inspect {
+  bottom: calc(var(--pkh-hud-h, 0px) + 16px);
+  width: max-content; min-width: 280px; padding: 0.5rem 0.7rem 0.6rem; border-radius: 9px;
+  border: 1px solid var(--pkh-line); background: rgba(12, 10, 7, 0.9);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+#pkh-inspect header { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--pkh-muted); margin-bottom: 5px; }
+#pkh-inspect header button { width: 20px; height: 20px; padding: 0; border: none; background: none; color: var(--pkh-muted); }
+#pkh-inspect .pkh-effects { margin-bottom: 6px; }
+
+/* ---- save request chat card ---- */
+.pkh-save-request header { font-size: 1rem; margin-bottom: 0.2rem; }
+.pkh-save-request p { margin: 0 0 0.35rem; opacity: 0.75; font-size: 0.85rem; }
+.pkh-save-request .checks { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ---- picker window ---- */
+.pkh-picker .pkh-pick-filter { width: 100%; margin-bottom: 6px; }
+.pkh-pick-title { font-size: 0.9rem; margin: 10px 0 5px; border-bottom: 1px solid var(--color-border-light-2, #ccc); }
+.pkh-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px; }
+.pkh-pick { display: flex; align-items: center; gap: 6px; text-align: left; padding: 4px 6px; }
+.pkh-pick span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pkh-pick em { font-style: normal; opacity: 0.7; }
+.pkh-pick.common { font-weight: 700; }
+.pkh-pick[hidden] { display: none; }
+
+/* one-row bar: keep the side block within a single slot height */
+.pkh-slots.rows-1 .pkh-icon { width: 19px; height: 19px; }
+.pkh-slots.rows-1 .pkh-pages { gap: 4px; }
+
+/* ---- connected-players box folded into an icon ---- */
+body.pkh-players-icon:not(.pkh-players-peek) #players { display: none !important; }
+#pkh-players-toggle {
+  position: fixed; left: 8px; bottom: 8px; z-index: 65;
+  display: flex; align-items: center; gap: 5px; height: 26px; min-height: 0; padding: 0 9px; margin: 0;
+  border-radius: 13px; border: 1px solid #4a3f2a; background: rgba(15, 12, 9, 0.85);
+  color: var(--pkh-muted); font-size: 0.75rem; line-height: 1; width: auto; cursor: pointer;
+}
+#pkh-players-toggle:hover, body.pkh-players-peek #pkh-players-toggle { color: var(--pkh-gold); border-color: #6b5a2f; }
+/* while the real list is showing, the icon steps aside; it comes back when the list folds */
+body.pkh-players-peek #pkh-players-toggle { opacity: 0; pointer-events: none; }
+body.pkh-players-icon #players { transition: opacity 180ms ease; }
+
+/* ---- toolkit windows ---- */
+.pkh-manager h3 { margin: 12px 0 4px; font-size: 0.95rem; border-bottom: 1px solid var(--color-border-light-2, #ccc); }
+.pkh-check { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.pkh-seat-row button { flex: 0 0 30px; }
+.pkh-seat-buttons button.primary { font-weight: 700; }
+.pkh-face-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.pkh-face-row .preview { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #888; flex: none; }
+.pkh-face-row input[name=key] { flex: 0 0 120px; }
+.pkh-face-row input[name=img] { flex: 1; }
+.pkh-face-row button { flex: 0 0 32px; }
+
+/* The toolkit tab's resting tool exists only so no button fires on its own. */
+#scene-controls [data-tool="pkhHome"], #scene-controls li:has(> [data-tool="pkhHome"]) { display: none !important; }
+
+/* ---- strike: choose 1st / 2nd / 3rd attack ---- */
+#pkh-map-pop {
+  position: fixed; z-index: 95; padding: 0.6rem 0.7rem 0.55rem; border-radius: 12px;
+  border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.97); color: var(--pkh-hud-text);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); font-size: 0.85rem; line-height: 1.2;
+}
+#pkh-map-pop.hidden { display: none; }
+#pkh-map-pop header {
+  font-weight: 700; color: var(--pkh-gold-soft); margin: 0 0.15rem 0.55rem;
+  white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis;
+}
+#pkh-map-pop .choices { display: flex; gap: 8px; }
+#pkh-map-pop button {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
+  width: 74px; height: auto; min-height: 0; margin: 0; padding: 0.5rem 0.4rem 0.55rem;
+  border-radius: 9px; border: 1px solid #4a3f2a; background: #1a140d;
+  color: var(--pkh-hud-text); cursor: pointer; line-height: 1;
+}
+#pkh-map-pop button em { font-style: normal; font-size: 0.72rem; color: var(--pkh-muted); letter-spacing: 0.05em; }
+#pkh-map-pop button b { font-size: 1.25rem; font-weight: 700; }
+#pkh-map-pop button:hover, #pkh-map-pop button:focus-visible { border-color: var(--pkh-gold); background: #241c12; outline: none; }
+#pkh-map-pop button.next { border-color: var(--pkh-gold); box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.45); }
+#pkh-map-pop button[data-map="1"] b { color: #f0c060; }
+#pkh-map-pop button[data-map="2"] b { color: #f08a7a; }
+#pkh-map-pop footer {
+  margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid #2c2519;
+  font-size: 0.68rem; color: #8a7e64; text-align: center;
+}
+
+/* ---- icon buttons: glyphs centred the same way whatever font the page forces ---- */
+#pkh-hud .pkh-icon, #pkh-hud .pkh-mini, #pkh-hud .pkh-rollback { line-height: 0; text-shadow: none; }
+#pkh-hud .pkh-icon > i, #pkh-hud .pkh-mini > i, #pkh-hud .pkh-rollback > i {
+  display: block; width: 1.25em; line-height: 1; text-align: center; margin: 0;
+}
+#pkh-hud .pkh-icon > i { font-size: 0.72rem; }
+#pkh-hud .pkh-mini > i { font-size: 0.85rem; }
+
+/* speed chip: small type labels ("비행 30") */
+.pkh-chip small { font-size: 0.68rem; font-weight: 400; color: var(--pkh-muted); margin-right: 2px; }
+
+/* effect toggles on the bar light up while the HUD actor has them */
+.pkh-slot.active { border-color: #7fb069; box-shadow: inset 0 0 0 1px rgba(127, 176, 105, 0.7), 0 0 6px rgba(127, 176, 105, 0.45); }
+
+/* observer card: the owner's bar, read-only and compact */
+#pkh-inspect .pkh-readonly { margin-top: 6px; --pkh-slot: 30px; pointer-events: none; }
+#pkh-inspect .pkh-readonly .pkh-slots { padding: 3px 4px; gap: 4px; }
+#pkh-inspect .pkh-readonly .pkh-slots-side, #pkh-inspect .pkh-readonly .pkh-pages,
+#pkh-inspect .pkh-readonly .key, #pkh-inspect .pkh-readonly .label { display: none; }
+#pkh-inspect .pkh-readonly .badge { font-size: 0.6rem; }
+#pkh-inspect .pkh-readonly .pkh-row { gap: 3px; }
+
+/* edit-mode slot menu */
+#pkh-slot-menu {
+  position: fixed; z-index: 96; display: flex; flex-direction: column; gap: 2px; padding: 5px;
+  border-radius: 8px; border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.97);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+#pkh-slot-menu.hidden { display: none; }
+#pkh-slot-menu button {
+  display: flex; align-items: center; gap: 8px; min-height: 0; margin: 0; padding: 0.35rem 0.6rem;
+  border: none; border-radius: 5px; background: transparent; color: var(--pkh-hud-text);
+  font-size: 0.8rem; text-align: left; white-space: nowrap; cursor: pointer; line-height: 1.2;
+}
+#pkh-slot-menu button:hover { background: rgba(201, 162, 39, 0.16); color: var(--pkh-gold-soft); }
+
+/* token HUD: image presets */
+#token-hud .pkh-token-palette {
+  position: absolute; left: calc(100% + 8px); top: 0; z-index: 5;
+  display: flex; flex-direction: column; gap: 6px; padding: 6px;
+  border-radius: 8px; border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.95);
+}
+#token-hud .pkh-token-palette.hidden { display: none; }
+#token-hud .pkh-token-palette button {
+  width: 54px; height: 54px; min-height: 0; padding: 2px; margin: 0; border-radius: 6px;
+  border: 1px solid #4a3f2a; background: #14100b; cursor: pointer;
+}
+#token-hud .pkh-token-palette button.current { border-color: var(--pkh-gold); }
+#token-hud .pkh-token-palette img { width: 100%; height: 100%; object-fit: contain; border: none; }
+.pkh-faces h3.pkh-sub { margin: 12px 0 2px; font-size: 0.95rem; border-bottom: 1px solid var(--color-border-light-2, #ccc); }
+
+/* ---- v0.6: fixed-width quickbar; only the bottom row may grow ---- */
+/* The bar row never widens the HUD: its content is centred and may extend past the slots. */
+#pkh-hud .pkh-bar { contain: inline-size; justify-content: center; gap: 6px; }
+#pkh-hud .pkh-bar-right { gap: 5px; }
+#pkh-hud .pkh-chip { padding: 0.3rem 0.65rem; }
+
+/* land speed next to the name */
+.pkh-hp-label .speed { margin-left: 0.6rem; font-weight: 400; color: var(--pkh-muted); font-size: 0.85em; white-space: nowrap; }
+.pkh-hp-label .speed i { font-size: 0.8em; margin-right: 2px; opacity: 0.85; }
+
+/* pin toggle */
+.pkh-icon.pin.open { color: #1a140d; background: #8fb8e8; border-color: #bcd6f3; }
+
+/* one-row bar with up to 5 side buttons: 3 columns × 2 rows fits a slot height */
+.pkh-slots.rows-1 .pkh-slots-side { grid-template-columns: repeat(3, auto); }
+
+/* greyed weapons: draw/interact picker reuses the attack popup */
+#pkh-map-pop .choices.aux button { width: auto; min-width: 84px; padding: 0.55rem 0.8rem; }
+#pkh-map-pop .choices.aux button b { font-size: 0.9rem; color: var(--pkh-hud-text); }
+
+/* ---- v0.6.1 ---- */
+/* greyed slots still take clicks (the popup explains / offers draw etc.) */
+#pkh-hud .pkh-slot.pkh-off { pointer-events: auto; cursor: pointer; }
+
+/* attack popup: weapon actions (draw, release, reload …) replace the footer */
+#pkh-map-pop header small { font-weight: 400; color: var(--pkh-muted); font-size: 0.72rem; }
+#pkh-map-pop button[disabled] { opacity: 0.35; cursor: not-allowed; border-color: #2c2519; }
+#pkh-map-pop .aux-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 0.5rem; padding-top: 0.45rem; border-top: 1px solid #2c2519; }
+#pkh-map-pop .choices:empty + .aux-row { margin-top: 0; padding-top: 0; border-top: none; }
+#pkh-map-pop .aux-row button {
+  flex-direction: row; width: auto; min-width: 0; gap: 0.35rem; padding: 0.4rem 0.7rem;
+  font-size: 0.8rem; color: var(--pkh-hud-text);
+}
+#pkh-map-pop .aux-row button b { font-size: 0.85rem; color: var(--pkh-gold-soft); }
+#pkh-map-pop .aux-row .glyph { font-family: "Pathfinder2eActions", var(--font-body, sans-serif); font-size: 1rem; line-height: 1; color: var(--pkh-gold); }
+
+/* token HUD palette: Foundry's HUD layer ignores the mouse by default */
+#token-hud .pkh-token-palette, #token-hud .pkh-token-palette * { pointer-events: all; }
+#token-hud .pkh-token-palette .imgs { display: grid; grid-template-columns: repeat(3, 54px); gap: 5px; }
+#token-hud .pkh-token-palette .sizes { display: flex; align-items: center; gap: 4px; }
+#token-hud .pkh-token-palette .sizes button {
+  width: 30px; height: 26px; min-height: 0; padding: 0; margin: 0; border-radius: 5px;
+  border: 1px solid #4a3f2a; background: #14100b; color: var(--pkh-hud-text); font-size: 0.8rem; cursor: pointer;
+}
+#token-hud .pkh-token-palette .sizes button.current { border-color: var(--pkh-gold); color: var(--pkh-gold-soft); }
+#token-hud .pkh-token-palette .sizes span { font-size: 0.75rem; color: var(--pkh-muted); margin-left: 2px; }
+
+/* name + speed readable on any background */
+.pkh-hp-label .name {
+  color: #fff; padding: 1px 10px 1px 6px; border-radius: 4px;
+  background: linear-gradient(90deg, rgba(8, 6, 4, 0.6), rgba(8, 6, 4, 0.35) 70%, transparent);
+  text-shadow: 0 1px 2px #000;
+}
+.pkh-hp-label .speed { color: #fff; opacity: 0.9; }
+.pkh-hp-label .num { text-shadow: 0 1px 2px #000; }
+.pkh-face-row select { flex: 0 0 92px; }
