@@ -421,8 +421,11 @@ class PkhWhisperPanel extends PkhPanel {
 
       await ChatMessage.implementation.create({
         content,
-        // Authors always see their own whispers; listing yourself only repeated your name.
-        whisper: [this.activeTarget]
+        // The sender must be a recipient too: leaving them out meant the
+        // message never reached their own client, so they could not see
+        // what they had sent. Their name is hidden from the "To:" line
+        // instead (see renderChatMessageHTML in chat-enhancements.js).
+        whisper: [...new Set([game.user.id, this.activeTarget])]
       });
 
       input.value = "";
