@@ -1,8 +1,8 @@
 {
   "id": "pf2e-kr-hud",
-  "title": "PF2e-KR 파티 HUD",
+  "title": "Rutz's PF2e-KR HUD",
   "description": "PF2e용 파티 초상화(최대 6인, 디스코드 음성 연동)와 캐릭터별 퀵슬롯 HUD. 퀵슬롯·액션 포인트(참조용)·효과 표시·내성/주문 DC 요약을 제공합니다.",
-  "version": "0.6.3",
+  "version": "1.1.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
