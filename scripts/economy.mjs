@@ -271,31 +271,7 @@ export function registerUseMarking() {
 
   // The sheet's 캐스트 button goes through SpellcastingEntry#cast.
   const proto = CONFIG.PF2E?.Item?.documentClasses?.spellcastingEntry?.prototype;
-  if (!proto || typeof proto.cast !== "function") return;
-
-  // With libWrapper installed, wrap through it so other modules that also
-  // wrap cast (PF2e Automations, …) chain cleanly instead of overwriting
-  // each other — and libWrapper stops warning about a conflict.
-  if (globalThis.libWrapper) {
-    if (registerUseMarking.wrapped) return;
-    try {
-      libWrapper.register(
-        MODULE_ID,
-        "CONFIG.PF2E.Item.documentClasses.spellcastingEntry.prototype.cast",
-        function pkhMarkedCast(wrapped, spell, ...args) {
-          try { markNextUse(this.actor, itemActionCost(spell)); } catch (_) { /* never block a cast */ }
-          return wrapped(spell, ...args);
-        },
-        "WRAPPER"
-      );
-      registerUseMarking.wrapped = true;
-      return;
-    } catch (error) {
-      console.warn(`${MODULE_ID} | libWrapper registration failed, falling back`, error);
-    }
-  }
-
-  if (!proto.cast.pkhWrapped) {
+  if (proto && typeof proto.cast === "function" && !proto.cast.pkhWrapped) {
     const original = proto.cast;
     proto.cast = function pkhMarkedCast(spell, ...args) {
       try { markNextUse(this.actor, itemActionCost(spell)); } catch (_) { /* never block a cast */ }

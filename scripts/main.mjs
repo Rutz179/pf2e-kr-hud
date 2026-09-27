@@ -1,6 +1,8 @@
 import { MAX_ROWS, MODULE_ID, SLOTS_PER_ROW } from "./shared.mjs";
 import { initPortraits, registerPortraitSettings } from "./portraits.mjs";
 import { initToolkit, registerToolkitSettings } from "./toolkit.mjs";
+import { initGmTools, registerGmToolSettings } from "./gm-tools.mjs";
+import { initReactions, registerReactionSettings } from "./reactions.mjs";
 import { initHud, registerHudSettings } from "./hud.mjs";
 import { registerInfusedHelper } from "./slots.mjs";
 
@@ -85,6 +87,8 @@ Hooks.once("init", () => {
   registerHudSettings();
   registerKeybindings();
   registerToolkitSettings();
+  registerGmToolSettings();
+  registerReactionSettings();
 });
 
 Hooks.once("ready", () => {
@@ -96,6 +100,8 @@ Hooks.once("ready", () => {
   initPortraits();
   initHud();
   initToolkit();
+  initGmTools();
+  initReactions();
   registerInfusedHelper();
   console.log(`${MODULE_ID} | ready`);
 });

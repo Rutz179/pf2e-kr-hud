@@ -248,31 +248,8 @@ function previousMessage(message) {
   return i > 0 ? list[i - 1] : null;
 }
 
-/**
- * The whisper panel lists the sender as a recipient so the message reaches
- * their own client. That would print their own name in the "To:" line, so
- * it is dropped there — only the real recipients are shown.
- * A whisper to oneself only (a self roll) is left as Foundry draws it.
- */
-function tidyWhisperTo(element, message) {
-  const authorId = (message.author ?? message.user)?.id;
-  const whisper = [...(message.whisper ?? [])];
-  if (!authorId || !whisper.includes(authorId)) return;
-
-  const others = whisper
-    .filter(id => id !== authorId)
-    .map(id => game.users.get(id)?.name)
-    .filter(Boolean);
-  if (!others.length) return;
-
-  const target = element.querySelector(".whisper-to");
-  if (!target) return;
-  target.textContent = `${game.i18n.localize("CHAT.To")}: ${others.join(", ")}`;
-}
-
 function decorateMessage(element, message) {
   if (!element || !message) return;
-  try { tidyWhisperTo(element, message); } catch (_) { /* cosmetic only */ }
   if (message.getFlag?.(MODULE_ID, "note")) element.classList.add("pkh-note-message");
 
   const author = message.author ?? message.user;

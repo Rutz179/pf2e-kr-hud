@@ -483,7 +483,7 @@ export class PartyHud {
       <div class="pkh-bar">
         <button type="button" class="pkh-mini ${this.popover === "inventory" ? "active" : ""}" data-act="pop" data-pop="inventory" data-tooltip="인벤토리 훑어보기">
           <i class="fa-solid fa-sack"></i></button>
-        <div class="pkh-saves">${ac}${save("fortitude")}${save("reflex")}${save("will")}${perception}${dc}</div>
+        <div class="pkh-saves">${ac}${save("fortitude")}${save("reflex")}${save("will")}${perception}</div>
         <div class="pkh-bar-right">
           ${actor.type === "character" ? `<button type="button" class="pkh-mini" data-act="faces" data-tooltip="초상화 표정 (@키워드로 바꾸기)">
             <i class="fa-solid fa-masks-theater"></i></button>` : ""}
@@ -569,11 +569,12 @@ export class PartyHud {
       <header>
         <img src="${esc(item.img)}" alt="">
         <strong>${esc(item.name)}${value ? ` ${esc(value)}` : ""}</strong>
+        ${actor.isOwner && actor.items.get(item.id) ? `<button type="button" data-act="card-edit" data-tooltip="효과 편집" aria-label="효과 편집"><i class="fa-solid fa-pen"></i></button>` : ""}
         <button type="button" data-act="card-chat" data-tooltip="채팅에 보내기" aria-label="채팅에 보내기"><i class="fa-solid fa-comment"></i></button>
       </header>
       ${remaining ? `<div class="dur"><i class="fa-regular fa-hourglass-half"></i> ${esc(remaining)}</div>` : ""}
       <p>${esc(summary)}</p>
-      ${actor.isOwner ? `<footer>좌클릭 +1 · 우클릭 −1 · Shift+클릭 모두 제거</footer>` : ""}`;
+      ${actor.isOwner ? `<footer>${item.type === "condition" || item.badge?.type === "counter" ? "좌클릭 +1 · 우클릭 −1" : "우클릭 제거"} · Shift+클릭 모두 제거</footer>` : ""}`;
     this.cardEl.classList.remove("hidden");
     const box = node.getBoundingClientRect();
     const card = this.cardEl.getBoundingClientRect();
@@ -583,6 +584,12 @@ export class PartyHud {
   }
 
   async _onCardClick(ev) {
+    if (ev.target.closest("[data-act=card-edit]")) {
+      const owner = fromUuidSync(this.cardEl.dataset.actorUuid);
+      owner?.items.get(this.cardEl.dataset.itemId)?.sheet?.render(true);
+      this.cardEl.classList.add("hidden");
+      return;
+    }
     if (!ev.target.closest("[data-act=card-chat]")) return;
     const actor = fromUuidSync(this.cardEl.dataset.actorUuid);
     await actor?.items.get(this.cardEl.dataset.itemId)?.toMessage?.();
@@ -621,7 +628,10 @@ export class PartyHud {
     const effect = ev.target.closest(".pkh-effect");
     if (effect) {
       if (ev.shiftKey) return this._removeEffect(actor, effect);
-      if (effect.dataset.kind === "condition") await actor.increaseCondition?.(effect.dataset.slug);
+      if (effect.dataset.kind === "condition") return actor.increaseCondition?.(effect.dataset.slug);
+      // Effects with a counter badge (e.g. stacking spell effects) go up like conditions.
+      const item = actor.items.get(effect.dataset.id);
+      if (item?.badge?.type === "counter" && typeof item.increase === "function") return item.increase();
       return;
     }
 
@@ -692,10 +702,13 @@ export class PartyHud {
 
     const effect = ev.target.closest(".pkh-effect");
     if (effect) {
-      if (ev.shiftKey || effect.dataset.kind !== "condition") return this._removeEffect(actor, effect);
-      await actor.decreaseCondition?.(effect.dataset.slug);
+      if (ev.shiftKey) return this._removeEffect(actor, effect);
       this.cardEl.classList.add("hidden");
-      return;
+      if (effect.dataset.kind === "condition") return actor.decreaseCondition?.(effect.dataset.slug);
+      const item = actor.items.get(effect.dataset.id);
+      // Counter effects count down (PF2e removes them at the bottom); plain effects are removed.
+      if (item?.badge?.type === "counter" && typeof item.decrease === "function") return item.decrease();
+      return this._removeEffect(actor, effect);
     }
 
     if (ev.target.closest(".pkh-rollback")) return setUsed(actor, 0);

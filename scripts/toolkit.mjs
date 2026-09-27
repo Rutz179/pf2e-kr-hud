@@ -23,6 +23,9 @@ function registerToolkitTab() {
     tools.pkhHome = { name: "pkhHome", title: "러츠 툴킷", icon: "fa-solid fa-toolbox", order: order++, onChange: () => {} };
     add("pkhPortraits", "초상화 관리", "fa-solid fa-users-rectangle", () => openPortraitManager(), game.user.isGM);
     add("pkhFaces", "내 초상화 표정", "fa-solid fa-masks-theater", () => openFaces(), !game.user.isGM);
+    add("pkhRequest", "굴림 요청 · 매크로 만들기", "fa-solid fa-bullhorn", () => game.pf2eKrHud?.openRollRequest?.(), game.user.isGM);
+    add("pkhPalette", "GM 팔레트 켜기/끄기", "fa-solid fa-table-cells", () => game.pkhPalette?.toggle?.(), game.user.isGM);
+    add("pkhReactions", "반응(리액션) 설정 — 선택한 캐릭터", "fa-solid fa-bolt", () => game.pf2eKrHud?.openReactionConfig?.());
     add("pkhWhisper", "귓속말 창", "fa-solid fa-user-secret", () => game.pkhPanels?.whisper?.());
     add("pkhNotes", "공유 노트 창", "fa-solid fa-book", () => game.pkhPanels?.notes?.());
     // Brand icons (fa-brands) can't render in scene controls — Foundry forces the solid face there.

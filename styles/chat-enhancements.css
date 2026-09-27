@@ -28,8 +28,9 @@
 .chat-message.pkh-grouped { padding-top: 0.1rem !important; }
 
 /* Chat font / size (settings) — typed and card text inside the log only. */
-body.pkh-chat-font :is(#chat, .chat-log, .chat-popout) .chat-message .message-content,
-body.pkh-chat-font :is(#chat, .chat-log, .chat-popout) .chat-message .message-content :is(p, span, div, li, em, strong, b) {
+/* Glyph/icon fonts are excluded: PF2e draws ◆◆ with its own action font. */
+body.pkh-chat-font .chat-message .message-content,
+body.pkh-chat-font .chat-message .message-content :where(p, span, div, li, em, strong, b, h1, h2, h3, h4):not(.action-glyph, .pf2-icon, [class*="fa-"], .fa, .fas, .far) {
   font-family: var(--pkh-chat-font) !important;
 }
 body.pkh-chat-size :is(#chat, .chat-log, .chat-popout) .chat-message .message-content { font-size: var(--pkh-chat-font-size) !important; }
