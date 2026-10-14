@@ -1,0 +1,86 @@
+/* ======================================================================== *
+ * Turn tracker — BG3-style strip at the top of the screen
+ * ======================================================================== */
+
+#pkh-turns {
+  --pkh-turn-size: 64px;
+  --pkh-turn-top: 10px;
+  --pkh-turn-gold: #c9a227;
+  --pkh-turn-friendly: #3f8fd6;
+  --pkh-turn-hostile: #c4442f;
+  --pkh-turn-neutral: #c9a227;
+  --pkh-turn-secret: #8a5bc4;
+
+  position: fixed; z-index: 35; top: var(--pkh-turn-top); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; max-width: min(92vw, 1400px);
+  padding: 6px 10px; border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 12, 9, 0.82), rgba(15, 12, 9, 0.62));
+  border: 1px solid rgba(201, 162, 39, 0.28);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  color: #e9dfc9; pointer-events: auto;
+}
+#pkh-turns.hidden { display: none; }
+
+#pkh-turns .round { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none;
+  min-width: 44px; padding: 0 4px; line-height: 1; }
+#pkh-turns .round em { font-style: normal; font-size: 0.62rem; letter-spacing: 0.08em; color: #a89b7c; }
+#pkh-turns .round b { font-size: 1.35rem; color: var(--pkh-turn-gold); }
+#pkh-turns .round b.small { font-size: 0.85rem; margin-top: 3px; }
+
+#pkh-turns .queue { display: flex; align-items: flex-start; gap: 6px; margin: 0; padding: 0; list-style: none;
+  min-width: 0; overflow-x: auto; overflow-y: visible; scrollbar-width: none; }
+#pkh-turns .queue::-webkit-scrollbar { display: none; }
+
+/* one portrait */
+#pkh-turns li.turn { position: relative; flex: none; display: flex; flex-direction: column; align-items: center;
+  width: calc(var(--pkh-turn-size) * 0.8); cursor: pointer;
+  transition: width 220ms ease, opacity 200ms ease, filter 200ms ease; }
+#pkh-turns li.turn .frame { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+  background: #120f0b; border: 2px solid #3a3226; border-bottom-width: 4px; transition: border-color 200ms ease, box-shadow 200ms ease; }
+#pkh-turns li.turn img { width: 100%; height: 100%; object-fit: cover; object-position: top; border: none; display: block; }
+#pkh-turns li.turn.friendly .frame { border-bottom-color: var(--pkh-turn-friendly); }
+#pkh-turns li.turn.hostile  .frame { border-bottom-color: var(--pkh-turn-hostile); }
+#pkh-turns li.turn.neutral  .frame { border-bottom-color: var(--pkh-turn-neutral); }
+#pkh-turns li.turn.secret   .frame { border-bottom-color: var(--pkh-turn-secret); }
+#pkh-turns li.turn:hover .frame { border-color: #6b5a2f; }
+
+/* the one acting now: larger, gold frame, name underneath */
+#pkh-turns li.turn.active { width: var(--pkh-turn-size); }
+#pkh-turns li.turn.active .frame { border-color: var(--pkh-turn-gold);
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.5), 0 0 16px rgba(201, 162, 39, 0.45); }
+#pkh-turns li.turn.next .frame { border-top-color: #8a7638; }
+
+#pkh-turns li.turn .init { position: relative; z-index: 1; margin-top: -0.75rem;
+  min-width: 1.6rem; padding: 0 5px; border-radius: 999px; text-align: center;
+  background: rgba(10, 8, 6, 0.92); border: 1px solid #4a3f2a; color: #e9dfc9;
+  font-size: 0.72rem; font-weight: 700; line-height: 1.45; }
+#pkh-turns li.turn.active .init { border-color: var(--pkh-turn-gold); color: #fff; }
+#pkh-turns li.turn.no-init .init { color: #a89b7c; }
+#pkh-turns li.turn .init i[data-act] { color: var(--pkh-turn-gold); cursor: pointer; }
+#pkh-turns li.turn .name { margin-top: 2px; max-width: calc(var(--pkh-turn-size) * 1.6); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; font-weight: 700; color: var(--pkh-turn-gold);
+  text-shadow: 0 1px 2px #000; }
+#pkh-turns li.turn .name:empty { display: none; }
+
+/* defeated: grey (or hidden by the setting); hidden from players: faded for the GM */
+#pkh-turns li.turn.defeated { filter: grayscale(1) brightness(0.6); opacity: 0.7; }
+#pkh-turns li.turn.defeated .frame::after { content: "\f54c"; font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif; font-weight: 900;
+  position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(var(--pkh-turn-size) * 0.32); color: rgba(255, 255, 255, 0.75); }
+#pkh-turns li.turn.hidden-combatant { opacity: 0.45; }
+
+/* where the next round starts */
+#pkh-turns li.divider { flex: none; align-self: stretch; display: flex; align-items: center; padding: 0 2px; }
+#pkh-turns li.divider span { writing-mode: vertical-rl; font-size: 0.62rem; letter-spacing: 0.08em; color: #a89b7c;
+  border-left: 1px dashed #4a3f2a; padding-left: 4px; }
+
+/* GM / player controls at the ends */
+#pkh-turns .side { display: flex; gap: 4px; flex: none; }
+#pkh-turns .side:empty { display: none; }
+#pkh-turns .side button { width: 28px; height: 28px; min-height: 0; margin: 0; padding: 0; border-radius: 7px;
+  border: 1px solid #3a3226; background: #1a140d; color: #cfc3a4; cursor: pointer; line-height: 1; }
+#pkh-turns .side button.wide { width: auto; padding: 0 10px; font-size: 0.78rem; font-weight: 700; }
+#pkh-turns .side button:hover { border-color: var(--pkh-turn-gold); color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  #pkh-turns li.turn, #pkh-turns li.turn .frame { transition: none; }
+}

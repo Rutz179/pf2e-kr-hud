@@ -72,37 +72,111 @@ function phaseEmoji(h, m) {
   return "🌙";
 }
 
-/** Date in PF2e's own calendar (Golarion or the world's setting), plus time. */
-function calendarText() {
-  const { h, m } = timeOfDay();
+/* ------------------------------------------------------------------------ *
+ * Calendar
+ *
+ * The date used to fall back to the plain Luxon date of PF2e's world clock —
+ * i.e. the real-world calendar ("2026년 5월 11일"), because the clock exposes
+ * no ready-made `date` string. The game date is built here instead, the same
+ * way PF2e's own world clock does: its era, its year (with the era's year
+ * offset, 2700 for Absalom Reckoning), the day, and the Golarion weekday.
+ * ------------------------------------------------------------------------ */
+
+const GOLARION_WEEKDAYS = ["문데이", "토일데이", "윌데이", "오스데이", "파이어데이", "스타데이", "선데이"];
+const GOLARION_MONTHS = ["아바디우스", "칼리스트릴", "파라스트", "고즈란", "데스누스", "사레니스",
+  "에라스투스", "아로두스", "로바", "라마샨", "네스", "쿠토나"];
+const EARTH_WEEKDAYS = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+
+const ERAS = {
+  AR: { label: "골라리온력", offset: 2700, golarion: true },
+  IC: { label: "제국력", offset: 5200, golarion: true },
+  AD: { label: "서기", offset: 0, golarion: false },
+  CE: { label: "서기", offset: 0, golarion: false }
+};
+
+function dateTheme() {
   const wc = game.pf2e?.worldClock;
-  let date = "";
-  try { date = wc?.date ?? ""; } catch (_) { date = ""; }
-  if (!date) {
-    const dt = wc?.worldTime;
-    date = dt?.setLocale ? dt.setLocale(game.i18n.lang || "ko").toFormat("yyyy년 M월 d일 cccc") : "";
-  }
-  return { date, time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`, emoji: phaseEmoji(h, m), phase: phaseOf(h, m).name };
+  let theme = wc?.dateTheme;
+  if (!theme) { try { theme = game.settings.get("pf2e", "worldClock.dateTheme"); } catch { theme = "AR"; } }
+  return ERAS[theme] ? theme : "AR";
 }
+
+/** The game's current moment as plain numbers (weekday 1 = Monday … 7 = Sunday). */
+function gameMoment() {
+  const dt = game.pf2e?.worldClock?.worldTime;
+  if (dt?.isValid !== false && Number.isFinite(dt?.year)) {
+    return { year: dt.year, month: dt.month, day: dt.day, weekday: dt.weekday, hour: dt.hour, minute: dt.minute };
+  }
+  // No PF2e clock: the same arithmetic on the raw setting, in UTC like PF2e.
+  let base = 0;
+  try { base = Date.parse(game.settings.get("pf2e", "worldClock.worldCreatedOn")) || 0; } catch { base = 0; }
+  const d = new Date(base + Number(game.time.worldTime || 0) * 1000);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(),
+    weekday: ((d.getUTCDay() + 6) % 7) + 1, hour: d.getUTCHours(), minute: d.getUTCMinutes() };
+}
+
+/** "골라리온력 4726년 5월 11일 문데이" */
+export function formatGameDate(m, theme = dateTheme(), systemYear = null) {
+  const era = ERAS[theme] ?? ERAS.AR;
+  const year = Number.isFinite(systemYear) ? systemYear : m.year + era.offset;
+  const weekday = (era.golarion ? GOLARION_WEEKDAYS : EARTH_WEEKDAYS)[(m.weekday - 1 + 7) % 7];
+  return `${era.label} ${year}년 ${m.month}월 ${m.day}일 ${weekday}`;
+}
+
+/** "오후 3:05" — or "15:05" when the 24-hour clock is chosen. */
+export function formatGameTime(h, min, twelveHour = true) {
+  const mm = String(min).padStart(2, "0");
+  if (!twelveHour) return `${String(h).padStart(2, "0")}:${mm}`;
+  return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${mm}`;
+}
+
+function calendarText() {
+  const m = gameMoment();
+  const theme = dateTheme();
+  const wcYear = Number(game.pf2e?.worldClock?.year);
+  const era = ERAS[theme];
+  return {
+    date: formatGameDate(m, theme, Number.isFinite(wcYear) ? wcYear : null),
+    month: era.golarion ? GOLARION_MONTHS[m.month - 1] : `${m.month}월`,
+    time: formatGameTime(m.hour, m.minute, setting("clock12h", true) !== false),
+    emoji: phaseEmoji(m.hour, m.minute),
+    phase: phaseOf(m.hour, m.minute).name
+  };
+}
+
+const TIME_STEPS = [
+  [-86400, "−1일"], [-3600, "−1시간"], [-600, "−10분"],
+  [600, "+10분"], [3600, "+1시간"], [86400, "+1일"]
+];
 
 function clockHtml() {
   const c = calendarText();
-  return `<span class="emoji">${c.emoji}</span><span class="date">${esc(c.date)}</span><b class="time">${c.time}</b>`;
+  const steps = game.user.isGM
+    ? `<div class="steps">${TIME_STEPS.map(([s, l]) =>
+        `<button type="button" data-adv="${s}" class="${s < 0 ? "back" : "fwd"}" data-tooltip="${s < 0 ? "되돌리기" : "앞으로"} ${l.slice(1)}">${l}</button>`).join("")}</div>`
+    : "";
+  return `<div class="main" data-tooltip="${esc(c.month)} · ${esc(c.phase)}${game.user.isGM ? "<br><small>눌러서 시각 지정 · 조명 설정</small>" : ""}">
+      <span class="emoji">${c.emoji}</span><span class="date">${esc(c.date)}</span><b class="time">${esc(c.time)}</b>
+    </div>${steps}`;
 }
 
 function mountClock() {
   const root = ui.chat?.element?.[0] ?? ui.chat?.element;
   if (!setting("chatDock", true) || !root?.prepend) return;
   let clock = document.getElementById("pkh-clock");
+  if (clock && clock.tagName !== "DIV") { clock.remove(); clock = null; }   // older builds used a <button>
   if (!clock) {
-    clock = document.createElement("button");
-    clock.type = "button";
+    clock = document.createElement("div");
     clock.id = "pkh-clock";
-    clock.addEventListener("click", () => { if (game.user.isGM) openClock(clock); });
+    clock.addEventListener("click", async ev => {
+      if (!game.user.isGM) return;
+      const step = ev.target.closest("[data-adv]");
+      if (step) return game.time.advance(Number(step.dataset.adv));
+      if (ev.target.closest(".main")) openClock(clock);
+    });
   }
   if (clock.parentElement !== root) root.prepend(clock);
   clock.innerHTML = clockHtml();
-  clock.dataset.tooltip = `${calendarText().phase}${game.user.isGM ? " · 눌러서 시간 조절" : ""}`;
 }
 
 function mountDice() {
@@ -170,8 +244,6 @@ function openClock(anchor) {
   const { h, m } = timeOfDay();
   const noSync = !!canvas?.scene?.getFlag(MODULE_ID, "noTimeSync");
   pop.innerHTML = `
-    <div class="row">${[["-3600", "−1시간"], ["-600", "−10분"], ["600", "+10분"], ["3600", "+1시간"], ["28800", "+8시간"]]
-      .map(([s, l]) => `<button type="button" data-adv="${s}">${l}</button>`).join("")}</div>
     <div class="row">${[["6:00", "아침"], ["12:00", "정오"], ["18:00", "저녁"], ["0:00", "자정"]]
       .map(([t, l]) => `<button type="button" data-set="${t}">${l}</button>`).join("")}
       <input type="time" value="${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}"><button type="button" data-act="go">이동</button></div>
@@ -463,10 +535,49 @@ export function healthEstimate(actor) {
   const hp = actor?.system?.attributes?.hp;
   if (!hp || !Number(hp.max)) return null;
   const pct = Math.max(0, Number(hp.value)) / Number(hp.max) * 100;
-  if (pct <= 0) return { label: setting("healthZero", "쓰러짐") || "쓰러짐", pct };
-  if (pct >= 100) return { label: setting("healthFull", "멀쩡함") || "멀쩡함", pct };
-  const hit = healthLevels().find(l => pct >= l.pct);
-  return { label: hit?.label ?? healthLevels().at(-1)?.label ?? "", pct };
+  const levels = healthLevels();
+  if (pct <= 0) return { label: setting("healthZero", "쓰러짐") || "쓰러짐", pct, depth: 1, top: 0, floor: 0, rank: levels.length + 1 };
+  if (pct >= 100) return { label: setting("healthFull", "멀쩡함") || "멀쩡함", pct, depth: 0, top: 100, floor: 100, rank: 0 };
+  let index = levels.findIndex(l => pct >= l.pct);
+  if (index < 0) index = levels.length - 1;
+  const hit = levels[index];
+  // The band this HP falls in, and how far down it sits: 0 at its top, 1 at its floor.
+  const top = index > 0 ? levels[index - 1].pct : 100;
+  const floor = hit?.pct ?? 0;
+  const depth = top > floor ? Math.clamp((top - pct) / (top - floor), 0, 1) : 0;
+  return { label: hit?.label ?? "", pct, depth, top, floor, rank: index + 1 };
+}
+
+/*
+ * Colour of the label.
+ *
+ * Each label keeps its own hue (taken from the middle of its band: green for
+ * a scratch, yellow, orange, red near death), so labels never blur into one
+ * another. Within a label the colour deepens — darker and more saturated —
+ * as HP falls toward the bottom of that band. Two "심한 부상" therefore read
+ * differently: one just inside the band, one about to drop out of it.
+ */
+export function healthColour(est) {
+  const mid = (Number(est.top) + Number(est.floor)) / 2;
+  const hue = Math.round(Math.clamp(mid, 0, 100) * 1.2);
+  const depth = Math.clamp(Number(est.depth) || 0, 0, 1);
+  const sat = Math.round(55 + depth * 25);
+  const light = Math.round(Math.max(12, 38 - (Number(est.rank) || 0) * 2 - depth * 16));
+  return { hue, sat, light };
+}
+
+/** Bottom edge of a token's nameplate in canvas coordinates, or null. */
+function nameplateBottom(token) {
+  const np = token?.nameplate;
+  const NONE = CONST.TOKEN_DISPLAY_MODES?.NONE ?? 0;
+  if (!np?.parent || token.document?.displayName === NONE || !np.text) return null;
+  try {
+    const local = np.getLocalBounds();
+    const global = np.toGlobal(new PIXI.Point(0, local.y + local.height));
+    return canvas.stage.toLocal(global).y;
+  } catch (_) {
+    return null;
+  }
 }
 
 let hoverEl = null;
@@ -477,14 +588,23 @@ function showHealth(token, hovered) {
   const allowed = hovered && actor && setting("healthOnHover", true) && (!visibleHp || (game.user.isGM && setting("healthShowGM", false)));
   const est = allowed ? healthEstimate(actor) : null;
   if (!est) { hoverEl.classList.add("hidden"); return; }
+
+  /*
+   * Below the token, not above it: above, the label covered the space between
+   * tokens that players read distances from. It goes under the nameplate when
+   * the token shows one, so the name stays readable, with a small gap.
+   */
   const b = token.bounds ?? { x: token.x, y: token.y, width: token.w, height: token.h };
-  const point = { x: b.x + b.width / 2, y: b.y };
+  const gap = Math.max(4, (canvas.dimensions?.size ?? 100) * 0.04);
+  const below = Math.max(b.y + b.height, nameplateBottom(token) ?? (b.y + b.height + (canvas.dimensions?.size ?? 100) * 0.2));
+  const point = { x: b.x + b.width / 2, y: below + gap };
   const screen = canvas.clientCoordinatesFromCanvas?.(point) ?? canvas.stage.worldTransform.apply(point);
-  const hue = Math.round(Math.min(100, est.pct) * 1.2);
-  hoverEl.innerHTML = `<span style="--h:${hue}">${esc(est.label)}</span>`;
+
+  const c = healthColour(est);
+  hoverEl.innerHTML = `<span style="--h:${c.hue};--s:${c.sat}%;--l:${c.light}%">${esc(est.label)}</span>`;
   hoverEl.classList.remove("hidden");
   hoverEl.style.left = `${Math.round(screen.x)}px`;
-  hoverEl.style.top = `${Math.round(screen.y - 8)}px`;
+  hoverEl.style.top = `${Math.round(screen.y)}px`;
 }
 
 /* ======================================================================== */
@@ -493,6 +613,7 @@ export function registerGmToolSettings() {
   const redock = () => { document.getElementById("pkh-clock")?.remove(); mountClock(); mountDice(); };
   const s = (key, data) => game.settings.register(MODULE_ID, key, data);
   s("chatDock", { name: "채팅창 시계와 주사위", hint: "채팅창 맨 위에 날짜·시간, 입력칸 위에 주사위와 플랫 체크(5·11) 버튼을 띄웁니다.", scope: "client", config: true, type: Boolean, default: true, onChange: redock });
+  s("clock12h", { name: "채팅창 시계: 오전/오후 12시간제", hint: "끄면 24시간제(15:05)로 표시합니다.", scope: "client", config: true, type: Boolean, default: true, onChange: () => mountClock() });
   s("timeDarknessSync", { name: "시간에 맞춰 장면 조명 조절", hint: "게임 시간이 바뀌면 현재 장면의 어둠을 낮·새벽·황혼·밤에 맞춥니다 (장면별로 끌 수 있음). PF2e 월드 시계의 동기화가 켜져 있으면 그쪽이 우선합니다.", scope: "world", config: true, type: Boolean, default: true });
   s("timeDarknessMax", { name: "한밤중 어둠 정도", scope: "world", config: true, type: Number, default: 0.85, range: { min: 0.3, max: 1, step: 0.05 } });
   s("paletteSize", { name: "GM 팔레트 크기", scope: "client", config: true, type: String, default: "3x2", choices: Object.fromEntries(Object.keys(SIZES).map(k => [k, `${k.replace("x", " × ")}칸`])), onChange: () => game.pkhPalette?.render() });

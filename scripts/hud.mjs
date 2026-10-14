@@ -3,6 +3,7 @@ import {
   autoFillSlots, canEditSlots, entryFromDrop, executeSlot, findItem, isLocked, openEditorsDialog, openSlotPicker,
   readSlots, resolveSlot, setSlot, storageActor, strikeForEntry, strikeUnavailable, swapSlots, withIconOverride
 } from "./slots.mjs";
+import { SlotCard, registerSlotCardSettings } from "./slot-card.mjs";
 import { activeConditions, debugEconomy, economyOf, itemActionCost, markNextUse, registerEconomyHooks, registerUseMarking, rollbackOne, setUsed, toggleBonus } from "./economy.mjs";
 
 const BUFF_CONDITIONS = new Set(["quickened", "hidden", "invisible", "concealed", "undetected"]);
@@ -122,6 +123,71 @@ async function useLikeSheet(actor, item, event) {
   await item.toMessage?.(event);
 }
 
+/*
+ * Ways to cast a spell right now, the way the sheet would.
+ * Each option: { label, rank, slotId?, ok, reason? }.
+ *  - cantrips: always
+ *  - focus spells: one focus point
+ *  - innate: its daily uses
+ *  - prepared: every rank it is prepared at; off once all are expended
+ *  - spontaneous / flexible: its rank, plus higher ranks for a signature spell
+ * Rituals are never cast from a quickslot.
+ */
+function spellCastOptions(actor, spell) {
+  const entry = spell?.spellcasting;
+  if (!entry || typeof entry.cast !== "function" || spell.isRitual) return [];
+  const base = Number(spell.rank ?? spell.baseRank ?? spell.system?.level?.value ?? 1) || 1;
+  const slots = entry.system?.slots ?? {};
+  const slotOf = r => slots[`slot${r}`] ?? {};
+
+  if (spell.isCantrip) return [{ label: "소마법", rank: base, ok: true }];
+
+  if (spell.isFocusSpell) {
+    const fp = Number(actor.system?.resources?.focus?.value ?? 0);
+    return [{ label: `집중 1점 (남은 ${fp})`, rank: base, ok: fp > 0, reason: fp > 0 ? "" : "집중 점수가 없습니다" }];
+  }
+
+  if (entry.isInnate) {
+    const uses = spell.system?.location?.uses;
+    const left = uses && Number(uses.max) ? Number(uses.value) : null;
+    return [{ label: left === null ? "선천 주문" : `선천 (남은 ${left})`, rank: base, ok: left === null || left > 0, reason: "오늘 쓸 횟수를 다 썼습니다" }];
+  }
+
+  if (entry.isPrepared && !entry.isFlexible) {
+    const options = [];
+    for (let r = base; r <= 10; r++) {
+      const prepared = slotOf(r).prepared;
+      const list = Array.isArray(prepared) ? prepared : Object.values(prepared ?? {});
+      const mine = list.map((p, slotId) => ({ ...p, slotId })).filter(p => p?.id === spell.id);
+      if (!mine.length) continue;
+      const free = mine.find(p => !p.expended);
+      options.push({ label: `${r}랭크 슬롯`, rank: r, slotId: free?.slotId ?? mine[0].slotId, ok: !!free, reason: "이 랭크에 준비한 것을 이미 썼습니다" });
+    }
+    return options.length ? options : [{ label: "준비 안 됨", rank: base, ok: false, reason: "오늘 준비하지 않은 주문입니다" }];
+  }
+
+  // Spontaneous or flexible: spend a slot of the chosen rank.
+  const signature = !!spell.system?.location?.signature;
+  const options = [];
+  for (let r = base; r <= 10; r++) {
+    if (r > base && !signature) break;
+    const slot = slotOf(r);
+    const max = Number(slot.max) || 0;
+    if (!max) continue;
+    const value = Number(slot.value) || 0;
+    options.push({ label: `${r}랭크 (${value}/${max})`, rank: r, ok: value > 0, reason: "이 랭크의 슬롯이 없습니다" });
+  }
+  return options.length ? options : [{ label: `${base}랭크`, rank: base, ok: false, reason: "쓸 수 있는 슬롯이 없습니다" }];
+}
+
+/** Cast through the spellcasting entry, so slots and focus points are spent like on the sheet. */
+async function castSpell(actor, spell, option) {
+  const entry = spell.spellcasting;
+  if (!entry?.cast) return spell.toMessage?.();
+  // The cast is counted toward the action pips by the wrapper in economy.mjs.
+  return entry.cast(spell, { rank: option.rank, level: option.rank, slotId: option.slotId, consume: true, message: true });
+}
+
 /** Spell DC → a card with all three saves at that DC, for the GM to roll targets. */
 async function postSpellDcRequest(actor, dc) {
   const checks = Object.keys(SAVE_LABELS).map(k => `@Check[${k}|dc:${dc}]`).join(" ");
@@ -205,6 +271,8 @@ export class PartyHud {
     this.cardEl.addEventListener("pointerenter", () => clearTimeout(this._cardHide));
     this.cardEl.addEventListener("pointerleave", () => this._hideCard(150));
     this.cardEl.addEventListener("click", ev => this._onCardClick(ev));
+
+    this.slotCard = new SlotCard(this);
 
     window.addEventListener("resize", () => this.position());
     this.scheduleRender();
@@ -322,6 +390,7 @@ export class PartyHud {
 
     this._renderInspect();
     this.position();
+    this.slotCard?.afterRender();
   }
 
   _renderInspect() {
@@ -436,7 +505,8 @@ export class PartyHud {
           `t-${entry.type}`, entry.type === "strike" ? `map-${v.mapIndex ?? 0}` : ""].join(" ");
         const visual = v.img ? `<img src="${esc(v.img)}" alt="" draggable="false">` : `<i class="${esc(v.icon)}"></i>`;
         const label = !v.img ? `<span class="label">${esc(v.label)}</span>` : "";
-        return `<div class="${cls}" data-row="${r}" data-col="${c}" draggable="${dragOk}" data-tooltip="${tip}">
+        const tipAttr = SlotCard.enabled() ? "data-pkh-tip" : "data-tooltip";
+        return `<div class="${cls}" data-row="${r}" data-col="${c}" draggable="${dragOk}" ${tipAttr}="${tip}">
           <span class="key">${esc(key)}</span>${visual}${label}
           ${v.broken ? `<i class="fa-solid fa-xmark broken-mark"></i>` : ""}
           ${v.badge !== null && v.badge !== undefined && v.badge !== "" ? `<span class="badge">${esc(v.badge)}</span>` : ""}
@@ -843,6 +913,8 @@ export class PartyHud {
     }
     const item = entry.type === "item" ? findItem(actor, entry) : null;
     if (item && ["action", "feat"].includes(item.type) && node) return this._openUse(actor, item, node);
+    // Before the "unusable" check: a spell with no slots left can still be posted.
+    if (item?.type === "spell" && node) return this._openSpell(actor, item, node);
     const view = resolveSlot(actor, entry, {});
     if (view?.disabled || view?.broken) {
       ui.notifications.warn(`PF2e-KR HUD | ${view.label}: 지금은 사용할 수 없습니다.`);
@@ -871,6 +943,7 @@ export class PartyHud {
     this._mapTarget = { actor, entry };
     this._auxTarget = aux.list;
     this._useTarget = null;
+    this._spellTarget = null;
     this.mapEl.innerHTML = `
       <header>${esc(v?.label ?? strike.label)}${off ? ` <small>— 지금은 공격 불가</small>` : ""}</header>
       <div class="choices">${(v?.map ?? []).map((m, i) => `
@@ -886,6 +959,7 @@ export class PartyHud {
     this._mapTarget = null;
     this._auxTarget = null;
     this._useTarget = { actor, item };
+    this._spellTarget = null;
     const cost = item.system?.actionType?.value;
     this.mapEl.innerHTML = `
       <header>${esc(item.name)}</header>
@@ -898,7 +972,32 @@ export class PartyHud {
     this._placePopup(slotNode);
   }
 
+  /** Spells: [시전] spends a slot or focus point; [채팅으로 보내기] only posts the card. */
+  _openSpell(actor, spell, slotNode) {
+    this._mapTarget = null;
+    this._auxTarget = null;
+    this._useTarget = null;
+    const options = spellCastOptions(actor, spell);
+    this._spellTarget = { actor, spell, options };
+    const firstOk = options.findIndex(o => o.ok);
+    const cast = options.map((o, i) => `
+      <button type="button" data-cast="${i}" class="${i === firstOk ? "next" : ""}" ${o.ok ? "" : "disabled"}
+              data-tooltip="${esc(o.ok ? "시전 — 슬롯·집중 점수를 씁니다" : o.reason ?? "")}">
+        <em>시전</em><b class="small">${esc(o.label)}</b></button>`).join("");
+    const entryName = spell.spellcasting?.name ?? "";
+    this.mapEl.innerHTML = `
+      <header>${esc(spell.name)}${entryName ? ` <small>— ${esc(entryName)}</small>` : ""}</header>
+      ${cast ? `<div class="choices spell">${cast}</div>` : ""}
+      <div class="aux-row">
+        <button type="button" data-spell="chat" class="${firstOk < 0 ? "next" : ""}" data-tooltip="슬롯이나 집중 점수를 쓰지 않고 주문 카드만 올립니다">채팅으로 보내기</button>
+        <button type="button" data-spell="sheet">시트</button>
+      </div>
+      ${spell.isRitual ? `<footer>의식 주문은 시트에서 진행하세요</footer>` : ""}`;
+    this._placePopup(slotNode);
+  }
+
   _placePopup(node) {
+    this.slotCard?.hide();
     this.mapEl.classList.remove("hidden");
     const box = node.getBoundingClientRect();
     const pop = this.mapEl.getBoundingClientRect();
@@ -916,9 +1015,20 @@ export class PartyHud {
   _closeMap() {
     this.mapEl?.classList.add("hidden");
     this._mapTarget = null;
+    this._spellTarget = null;
   }
 
   async _onMapChoice(ev) {
+    const spellBtn = ev.target.closest("button[data-cast]:not([disabled]), button[data-spell]");
+    if (spellBtn && this._spellTarget) {
+      const { actor, spell, options } = this._spellTarget;
+      this._closeMap();
+      if (spellBtn.dataset.spell === "sheet") return spell.sheet?.render(true);
+      if (spellBtn.dataset.spell === "chat") return spell.toMessage?.(ev);
+      const option = options[Number(spellBtn.dataset.cast)];
+      if (option?.ok) return castSpell(actor, spell, option);
+      return;
+    }
     const use = ev.target.closest("button[data-use]");
     if (use && this._useTarget) {
       const { actor, item } = this._useTarget;
@@ -985,6 +1095,7 @@ export class PartyHud {
 
 export function registerHudSettings() {
   const rerender = () => game.pf2eKrHud?.hud?.scheduleRender();
+  registerSlotCardSettings();
   game.settings.register(MODULE_ID, "hudEnabled", {
     name: "캐릭터 HUD 표시", hint: "마지막으로 선택한 내 토큰의 퀵슬롯 HUD를 화면 아래에 계속 띄웁니다.",
     scope: "client", config: true, type: Boolean, default: true, onChange: rerender

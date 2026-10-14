@@ -5,6 +5,7 @@ import { initGmTools, registerGmToolSettings } from "./gm-tools.mjs";
 import { initReactions, registerReactionSettings } from "./reactions.mjs";
 import { initHud, registerHudSettings } from "./hud.mjs";
 import { registerInfusedHelper } from "./slots.mjs";
+import { initTurnTracker, registerTurnTrackerSettings } from "./turn-tracker.mjs";
 
 /*
  * Hotkeys
@@ -89,6 +90,7 @@ Hooks.once("init", () => {
   registerToolkitSettings();
   registerGmToolSettings();
   registerReactionSettings();
+  registerTurnTrackerSettings();
 });
 
 Hooks.once("ready", () => {
@@ -102,6 +104,7 @@ Hooks.once("ready", () => {
   initToolkit();
   initGmTools();
   initReactions();
+  initTurnTracker();
   registerInfusedHelper();
   console.log(`${MODULE_ID} | ready`);
 });
