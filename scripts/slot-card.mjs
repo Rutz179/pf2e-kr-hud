@@ -11,7 +11,25 @@ import { findItem, resolveSlot, strikeForEntry } from "./slots.mjs";
  * The card never takes the pointer (it sits above the slot and ignores mouse
  * events), so it can't flicker or swallow the next click. It closes on leave,
  * on any press, on scroll and whenever the HUD redraws.
+ *
+ * Long descriptions: press the pin key (T by default, rebindable in Configure
+ * Controls) while the card is up — or while it is about to appear — and it
+ * stays put, takes the mouse, and scrolls. Links and inline rolls in it work.
+ * It closes with the key again, Esc, its × button, or a click elsewhere.
+ * The mouse wheel and middle click are already taken on the bar (page switch,
+ * third attack), which is why pinning uses a key.
  * ======================================================================== */
+
+export const PIN_ACTION = "pin-slot-card";
+
+/** "KeyT" → "T", for the hint line. */
+function pinKeyLabel() {
+  const binding = game.keybindings?.get?.(MODULE_ID, PIN_ACTION)?.[0];
+  if (!binding?.key) return "";
+  const key = String(binding.key).replace(/^Key/, "").replace(/^Digit/, "");
+  const mods = (binding.modifiers ?? []).map(m => String(m).replace("Control", "Ctrl"));
+  return [...mods, key].join("+");
+}
 
 const TRAIT_DICTIONARIES = [
   "actionTraits", "spellTraits", "featTraits", "weaponTraits", "consumableTraits",
@@ -52,8 +70,8 @@ export function costHtml(item) {
 function rankText(item) {
   if (!item) return "";
   if (item.type === "spell") {
-    if (item.isCantrip) return `소마법 ${item.rank ?? ""}`.trim();
-    if (item.isFocusSpell) return `집중 ${item.rank ?? ""}`.trim();
+    if (item.isCantrip) return `캔트립 ${item.rank ?? ""}`.trim();
+    if (item.isFocusSpell) return `포커스 ${item.rank ?? ""}`.trim();
     if (item.isRitual) return `의식 ${item.rank ?? ""}`.trim();
     return `주문 ${item.rank ?? ""}랭크`;
   }
@@ -120,13 +138,65 @@ export class SlotCard {
     this.anchor = null;
     this.timer = null;
     this.token = 0;
+    this.pinned = false;
 
     const root = hud.root;
     root.addEventListener("pointerover", ev => this._over(ev));
     root.addEventListener("pointerout", ev => this._out(ev));
     for (const type of ["pointerdown", "wheel", "dragstart"]) {
-      document.addEventListener(type, () => this.hide(), { capture: true, passive: true });
+      document.addEventListener(type, ev => this._onOutside(ev), { capture: true, passive: true });
     }
+    // Esc closes a pinned card first, before Foundry's own Esc handling sees it.
+    document.addEventListener("keydown", ev => {
+      if (ev.key !== "Escape" || !this.pinned) return;
+      ev.stopPropagation();
+      ev.preventDefault();
+      this.hide();
+    }, { capture: true });
+    this.el.addEventListener("click", ev => {
+      if (ev.target.closest("[data-act=unpin]")) this.hide();
+    });
+  }
+
+  get visible() {
+    return !this.el.classList.contains("hidden");
+  }
+
+  /** A press, a wheel turn or a drag: closes a passing card; a pinned one only for presses elsewhere. */
+  _onOutside(ev) {
+    if (!this.pinned) return this.hide();
+    if (this.el.contains(ev.target)) return;
+    if (ev.type === "pointerdown") this.hide();
+  }
+
+  /** The pin key. True when it did something, so the key is free otherwise. */
+  togglePin() {
+    if (this.pinned) { this.hide(); return true; }
+    if (this.visible) { this._pin(); return true; }
+    if (this.timer && this.anchor?.isConnected) {
+      const slot = this.anchor;
+      clearTimeout(this.timer);
+      this.show(slot).then(() => { if (this.visible) this._pin(); });
+      return true;
+    }
+    return false;
+  }
+
+  _pin() {
+    this.pinned = true;
+    this.el.classList.add("pinned");
+    this.el.removeAttribute("aria-hidden");
+    this.el.setAttribute("role", "dialog");
+    if (!this.el.querySelector("[data-act=unpin]")) {
+      this.el.querySelector("header")?.insertAdjacentHTML("beforeend",
+        `<button type="button" class="unpin" data-act="unpin" data-tooltip="닫기 (Esc)" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>`);
+    }
+    const hint = this.el.querySelector(".hint-pin");
+    if (hint) hint.innerHTML = `<i class="fa-solid fa-thumbtack"></i> 고정됨 · 휠로 스크롤 · Esc로 닫기`;
+    // Taller now that the description scrolls: keep it on screen.
+    const card = this.el.getBoundingClientRect();
+    if (card.bottom > window.innerHeight - 8) this.el.style.top = `${Math.max(8, Math.round(window.innerHeight - card.height - 8))}px`;
+    if (card.top < 8) this.el.style.top = "8px";
   }
 
   static enabled() {
@@ -139,7 +209,7 @@ export class SlotCard {
   }
 
   _over(ev) {
-    if (!SlotCard.enabled()) return;
+    if (!SlotCard.enabled() || this.pinned) return;
     const slot = ev.target.closest(".pkh-slot:not(.empty)");
     if (!slot || slot === this.anchor) return;
     this.hide();
@@ -148,6 +218,7 @@ export class SlotCard {
   }
 
   _out(ev) {
+    if (this.pinned) return;
     const slot = ev.target.closest(".pkh-slot");
     if (!slot || slot.contains(ev.relatedTarget)) return;
     this.hide();
@@ -155,6 +226,7 @@ export class SlotCard {
 
   /** The HUD redrew: follow the card (or its pending timer) to the new node, or close it. */
   afterRender() {
+    if (this.pinned) return;
     const pending = !!this.timer;
     const showing = !this.el.classList.contains("hidden");
     if (!pending && !showing) return;
@@ -174,7 +246,11 @@ export class SlotCard {
     this.timer = null;
     this.anchor = null;
     this.token++;
+    this.pinned = false;
     this.el.classList.add("hidden");
+    this.el.classList.remove("pinned");
+    this.el.setAttribute("aria-hidden", "true");
+    this.el.removeAttribute("role");
   }
 
   async show(slot) {
@@ -191,7 +267,8 @@ export class SlotCard {
     // Something else happened while the description was being prepared.
     if (mine !== this.token || !slot.isConnected || !html) return;
 
-    this.el.innerHTML = html;
+    const key = pinKeyLabel();
+    this.el.innerHTML = html.replace(/<\/footer>\s*$/, key ? ` · <span class="hint-pin"><kbd>${esc(key)}</kbd> 고정</span></footer>` : "</footer>");
     this.el.classList.remove("hidden");
     const box = slot.getBoundingClientRect();
     const card = this.el.getBoundingClientRect();

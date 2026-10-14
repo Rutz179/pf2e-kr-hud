@@ -125,7 +125,8 @@ async function useLikeSheet(actor, item, event) {
 
 /*
  * Ways to cast a spell right now, the way the sheet would.
- * Each option: { label, rank, slotId?, ok, reason? }.
+ * Each option: { label, rank, kind, slotId?, ok, reason? }; kind is cantrip,
+ * focus-cantrip, focus, innate or slot (focus ones get their own colour).
  *  - cantrips: always
  *  - focus spells: one focus point
  *  - innate: its daily uses
@@ -140,17 +141,20 @@ function spellCastOptions(actor, spell) {
   const slots = entry.system?.slots ?? {};
   const slotOf = r => slots[`slot${r}`] ?? {};
 
-  if (spell.isCantrip) return [{ label: "소마법", rank: base, ok: true }];
+  // Focus cantrips (hexes, compositions …) are free, like any cantrip, but still focus magic.
+  if (spell.isCantrip) return [{ label: "캔트립", rank: base, kind: spell.isFocusSpell ? "focus-cantrip" : "cantrip", ok: true }];
 
   if (spell.isFocusSpell) {
-    const fp = Number(actor.system?.resources?.focus?.value ?? 0);
-    return [{ label: `집중 1점 (남은 ${fp})`, rank: base, ok: fp > 0, reason: fp > 0 ? "" : "집중 점수가 없습니다" }];
+    const focus = actor.system?.resources?.focus ?? {};
+    const fp = Number(focus.value ?? 0);
+    const max = Number(focus.max ?? 0);
+    return [{ label: max ? `(${fp}/${max})` : `(${fp})`, rank: base, kind: "focus", ok: fp > 0, reason: fp > 0 ? "" : "포커스 점수가 없습니다" }];
   }
 
   if (entry.isInnate) {
     const uses = spell.system?.location?.uses;
     const left = uses && Number(uses.max) ? Number(uses.value) : null;
-    return [{ label: left === null ? "선천 주문" : `선천 (남은 ${left})`, rank: base, ok: left === null || left > 0, reason: "오늘 쓸 횟수를 다 썼습니다" }];
+    return [{ label: left === null ? "선천" : `선천 (${left}/${Number(uses.max)})`, rank: base, kind: "innate", ok: left === null || left > 0, reason: "오늘 쓸 횟수를 다 썼습니다" }];
   }
 
   if (entry.isPrepared && !entry.isFlexible) {
@@ -161,9 +165,9 @@ function spellCastOptions(actor, spell) {
       const mine = list.map((p, slotId) => ({ ...p, slotId })).filter(p => p?.id === spell.id);
       if (!mine.length) continue;
       const free = mine.find(p => !p.expended);
-      options.push({ label: `${r}랭크 슬롯`, rank: r, slotId: free?.slotId ?? mine[0].slotId, ok: !!free, reason: "이 랭크에 준비한 것을 이미 썼습니다" });
+      options.push({ label: `${r}랭크`, rank: r, kind: "slot", slotId: free?.slotId ?? mine[0].slotId, ok: !!free, reason: "이 랭크에 준비한 것을 이미 썼습니다" });
     }
-    return options.length ? options : [{ label: "준비 안 됨", rank: base, ok: false, reason: "오늘 준비하지 않은 주문입니다" }];
+    return options.length ? options : [{ label: "준비 안 됨", rank: base, kind: "slot", ok: false, reason: "오늘 준비하지 않은 주문입니다" }];
   }
 
   // Spontaneous or flexible: spend a slot of the chosen rank.
@@ -175,9 +179,9 @@ function spellCastOptions(actor, spell) {
     const max = Number(slot.max) || 0;
     if (!max) continue;
     const value = Number(slot.value) || 0;
-    options.push({ label: `${r}랭크 (${value}/${max})`, rank: r, ok: value > 0, reason: "이 랭크의 슬롯이 없습니다" });
+    options.push({ label: `${r}랭크 (${value}/${max})`, rank: r, kind: "slot", ok: value > 0, reason: "이 랭크의 슬롯이 없습니다" });
   }
-  return options.length ? options : [{ label: `${base}랭크`, rank: base, ok: false, reason: "쓸 수 있는 슬롯이 없습니다" }];
+  return options.length ? options : [{ label: `${base}랭크`, rank: base, kind: "slot", ok: false, reason: "쓸 수 있는 슬롯이 없습니다" }];
 }
 
 /** Cast through the spellcasting entry, so slots and focus points are spent like on the sheet. */
@@ -568,11 +572,11 @@ export class PartyHud {
   _popoverHtml(actor) {
     const itemCell = item => {
       const qty = Number(item.quantity ?? 1);
-      return `<div class="pkh-inv-cell" draggable="true" data-item-id="${item.id}" data-tooltip="${esc(item.name)}<br><small>클릭: 채팅에 올리기 · 우클릭: 시트</small>">
+      return `<div class="pkh-inv-cell" draggable="true" data-item-id="${item.id}" data-tooltip="${esc(item.name)}<br><small>클릭: 채팅에 올리기 · 우클릭: 자세히 보기</small>">
         <img src="${esc(item.img)}" alt="">${qty > 1 ? `<span class="badge">${qty}</span>` : ""}</div>`;
     };
     const listRow = item => `
-      <div class="pkh-list-row" draggable="true" data-item-id="${item.id}" data-tooltip="클릭: 채팅에 올리기 · 우클릭: 시트">
+      <div class="pkh-list-row" draggable="true" data-item-id="${item.id}" data-tooltip="클릭: 채팅에 올리기 · 우클릭: 자세히 보기">
         <img src="${esc(item.img)}" alt=""><span>${esc(item.name)}</span></div>`;
 
     if (this.popover === "inventory") {
@@ -588,7 +592,7 @@ export class PartyHud {
       (a.isCantrip ? 0 : a.rank ?? 0) - (b.isCantrip ? 0 : b.rank ?? 0) || a.name.localeCompare(b.name, "ko"));
     const groups = new Map();
     for (const sp of spells) {
-      const key = sp.isCantrip ? "소마법" : sp.isFocusSpell ? "집중 주문" : `${sp.rank ?? "?"}랭크`;
+      const key = sp.isCantrip ? "캔트립" : sp.isFocusSpell ? "집중 주문" : `${sp.rank ?? "?"}랭크`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(sp);
     }
@@ -871,7 +875,7 @@ export class PartyHud {
     menu.innerHTML = `
       <button type="button" data-m="icon"><i class="fa-solid fa-image"></i> 아이콘 바꾸기 (이 슬롯만)</button>
       ${entry.icon ? `<button type="button" data-m="reset"><i class="fa-solid fa-rotate-left"></i> 원래 아이콘</button>` : ""}
-      ${entry.type === "item" && findItem(actor, entry) ? `<button type="button" data-m="sheet"><i class="fa-solid fa-file-lines"></i> 시트 열기</button>` : ""}
+      ${entry.type === "item" && findItem(actor, entry) ? `<button type="button" data-m="sheet"><i class="fa-solid fa-file-lines"></i> 자세히 보기</button>` : ""}
       <button type="button" data-m="clear"><i class="fa-solid fa-trash"></i> 슬롯 비우기</button>`;
     menu.style.left = `${Math.min(window.innerWidth - 200, ev.clientX)}px`;
     menu.style.top = `${Math.max(8, ev.clientY - 110)}px`;
@@ -966,7 +970,7 @@ export class PartyHud {
       <div class="aux-row">
         <button type="button" data-use="use" class="next"><b>사용</b></button>
         <button type="button" data-use="chat">채팅에 올리기</button>
-        <button type="button" data-use="sheet">시트</button>
+        <button type="button" data-use="sheet" data-tooltip="이 항목의 창을 열어 전체 설명을 봅니다">자세히…</button>
       </div>
       ${cost === "passive" ? `<footer>지속 효과 — 사용할 행동이 없습니다</footer>` : ""}`;
     this._placePopup(slotNode);
@@ -980,19 +984,29 @@ export class PartyHud {
     const options = spellCastOptions(actor, spell);
     this._spellTarget = { actor, spell, options };
     const firstOk = options.findIndex(o => o.ok);
+    const head = { "focus": "포커스 시전", "focus-cantrip": "포커스 시전", "cantrip": "시전", "innate": "시전", "slot": "시전" };
+    const tip = {
+      "focus": "포커스 점수 1점을 씁니다",
+      "focus-cantrip": "포커스 캔트립 — 점수를 쓰지 않습니다",
+      "cantrip": "캔트립 — 아무것도 쓰지 않습니다",
+      "innate": "선천 주문 — 하루 횟수를 씁니다",
+      "slot": "이 랭크의 주문 슬롯을 씁니다"
+    };
     const cast = options.map((o, i) => `
-      <button type="button" data-cast="${i}" class="${i === firstOk ? "next" : ""}" ${o.ok ? "" : "disabled"}
-              data-tooltip="${esc(o.ok ? "시전 — 슬롯·집중 점수를 씁니다" : o.reason ?? "")}">
-        <em>시전</em><b class="small">${esc(o.label)}</b></button>`).join("");
+      <button type="button" data-cast="${i}" class="cast-${o.kind ?? "slot"} ${i === firstOk ? "next" : ""}" ${o.ok ? "" : "disabled"}
+              data-tooltip="${esc(o.ok ? tip[o.kind] ?? "" : o.reason ?? "")}">
+        <em>${head[o.kind] ?? "시전"}</em><b class="small">${esc(o.label)}</b></button>`).join("");
+    // Up to five ranks a row: a signature spell's 6th–10th ranks go on a second line.
+    const cols = Math.min(5, Math.max(1, options.length));
     const entryName = spell.spellcasting?.name ?? "";
     this.mapEl.innerHTML = `
       <header>${esc(spell.name)}${entryName ? ` <small>— ${esc(entryName)}</small>` : ""}</header>
-      ${cast ? `<div class="choices spell">${cast}</div>` : ""}
+      ${cast ? `<div class="choices spell" style="--cols:${cols}">${cast}</div>` : ""}
       <div class="aux-row">
         <button type="button" data-spell="chat" class="${firstOk < 0 ? "next" : ""}" data-tooltip="슬롯이나 집중 점수를 쓰지 않고 주문 카드만 올립니다">채팅으로 보내기</button>
-        <button type="button" data-spell="sheet">시트</button>
+        <button type="button" data-spell="sheet" data-tooltip="이 주문의 창을 열어 전체 설명을 봅니다">자세히…</button>
       </div>
-      ${spell.isRitual ? `<footer>의식 주문은 시트에서 진행하세요</footer>` : ""}`;
+      ${spell.isRitual ? `<footer>의식 주문은 캐릭터 시트의 주문 탭에서 진행하세요</footer>` : ""}`;
     this._placePopup(slotNode);
   }
 

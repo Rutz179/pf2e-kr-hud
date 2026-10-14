@@ -6,6 +6,8 @@ import { initReactions, registerReactionSettings } from "./reactions.mjs";
 import { initHud, registerHudSettings } from "./hud.mjs";
 import { registerInfusedHelper } from "./slots.mjs";
 import { initTurnTracker, registerTurnTrackerSettings } from "./turn-tracker.mjs";
+import { PIN_ACTION } from "./slot-card.mjs";
+import { openSettings, registerSettingsWindows } from "./settings-window.mjs";
 
 /*
  * Hotkeys
@@ -54,6 +56,13 @@ function registerKeybindings() {
       return true;
     }
   });
+  // Only takes the key while a quickslot card is up (or about to be), so T stays free otherwise.
+  game.keybindings.register(MODULE_ID, PIN_ACTION, {
+    name: "퀵슬롯 설명 카드 고정 / 닫기",
+    hint: "설명 카드가 떠 있을 때 누르면 카드가 고정되어 마우스로 스크롤하거나 링크를 누를 수 있습니다. 다시 누르거나 Esc로 닫습니다.",
+    editable: [{ key: "KeyT" }],
+    onDown: () => game.pf2eKrHud?.hud?.slotCard?.togglePin() ?? false
+  });
   game.keybindings.register(MODULE_ID, "toggle-portraits", {
     name: "내 화면에서 파티 초상화 숨기기/보이기",
     editable: [],
@@ -93,6 +102,11 @@ Hooks.once("init", () => {
   registerTurnTrackerSettings();
 });
 
+// Every module file has registered its settings by now; group them into windows.
+Hooks.once("setup", () => {
+  registerSettingsWindows();
+});
+
 Hooks.once("ready", () => {
   if (game.system.id !== "pf2e") {
     console.warn(`${MODULE_ID} | PF2e 시스템이 아니므로 비활성화합니다.`);
@@ -106,5 +120,6 @@ Hooks.once("ready", () => {
   initReactions();
   initTurnTracker();
   registerInfusedHelper();
+  game.pf2eKrHud = { ...(game.pf2eKrHud ?? {}), settings: openSettings };
   console.log(`${MODULE_ID} | ready`);
 });

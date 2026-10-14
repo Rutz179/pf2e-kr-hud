@@ -757,22 +757,51 @@ function typingLines() {
 }
 
 function renderTyping() {
-  const names = [...typingUsers.keys()]
+  // Your own name first, then the others in the order they started.
+  const ids = [...typingUsers.keys()].sort((a, b) => (a === game.user.id ? -1 : b === game.user.id ? 1 : 0));
+  const names = ids
     .map(id => (id === "__coc7ko_test__" ? "테스트" : game.users.get(id)?.name))
     .filter(Boolean);
   const text = typingText(names);
+  const html = text ? `<span class="dots"><i></i><i></i><i></i></span><span>${foundry.utils.escapeHTML(text)}</span>` : "";
 
   // Leftovers from 1.2.2 (lines placed beside the form).
   document.querySelectorAll(".pkh-typing-float").forEach(node => node.remove());
 
   document.body.classList.toggle("pkh-typing-builtin", typingEnabled());
 
+  /*
+   * With the dice bar on, the line rides on top of it: the bar is placed
+   * against the chat input wherever Foundry puts it, so the line can't end up
+   * hidden inside the chat layout (which is what happened inside the form).
+   */
+  const dock = document.querySelector("#pkh-dice .pkh-dock-typing");
+  document.body.classList.toggle("pkh-typing-in-dock", !!dock && typingEnabled());
+  if (dock) {
+    dock.classList.toggle("active", !!text);
+    if (dock.innerHTML !== html) dock.innerHTML = html;
+  }
+
   for (const line of typingLines()) {
     line.classList.toggle("active", !!text);
-    line.innerHTML = text
-      ? `<span class="dots"><i></i><i></i><i></i></span><span>${foundry.utils.escapeHTML(text)}</span>`
-      : "";
+    if (line.innerHTML !== html) line.innerHTML = html;
   }
+}
+
+/** Your own "입력 중" shows on your screen too (it never goes over the socket from here). */
+function markSelfTyping(typing) {
+  if (!typingEnabled()) return;
+  const id = game.user.id;
+  clearTimeout(typingUsers.get(id));
+  if (typing) {
+    typingUsers.set(id, setTimeout(() => {
+      typingUsers.delete(id);
+      renderTyping();
+    }, TYPING_EXPIRES_MS));
+  } else {
+    typingUsers.delete(id);
+  }
+  renderTyping();
 }
 
 /** CGMP's own typing notice is on: stay out of its way. */
@@ -796,6 +825,7 @@ function sendTyping(typing) {
 }
 
 function stopTyping() {
+  if (typingUsers.has(game.user.id)) markSelfTyping(false);
   if (!amTyping) return;
   amTyping = false;
   sendTyping(false);
@@ -838,6 +868,7 @@ function onChatInput(event) {
     amTyping = true;
     lastTypingSent = now;
     sendTyping(true);
+    markSelfTyping(true);
   }
 }
 

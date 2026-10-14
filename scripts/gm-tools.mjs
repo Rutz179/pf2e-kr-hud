@@ -117,10 +117,16 @@ function gameMoment() {
 
 /** "골라리온력 4726년 5월 11일 문데이" */
 export function formatGameDate(m, theme = dateTheme(), systemYear = null) {
+  const { year, day } = formatGameDateParts(m, theme, systemYear);
+  return `${year} ${day}`;
+}
+
+/** The same date in two lines: "골라리온력 4726년" / "3월 15일 문데이". */
+export function formatGameDateParts(m, theme = dateTheme(), systemYear = null) {
   const era = ERAS[theme] ?? ERAS.AR;
   const year = Number.isFinite(systemYear) ? systemYear : m.year + era.offset;
   const weekday = (era.golarion ? GOLARION_WEEKDAYS : EARTH_WEEKDAYS)[(m.weekday - 1 + 7) % 7];
-  return `${era.label} ${year}년 ${m.month}월 ${m.day}일 ${weekday}`;
+  return { year: `${era.label} ${year}년`, day: `${m.month}월 ${m.day}일 ${weekday}` };
 }
 
 /** "오후 3:05" — or "15:05" when the 24-hour clock is chosen. */
@@ -135,8 +141,11 @@ function calendarText() {
   const theme = dateTheme();
   const wcYear = Number(game.pf2e?.worldClock?.year);
   const era = ERAS[theme];
+  const parts = formatGameDateParts(m, theme, Number.isFinite(wcYear) ? wcYear : null);
   return {
-    date: formatGameDate(m, theme, Number.isFinite(wcYear) ? wcYear : null),
+    date: `${parts.year} ${parts.day}`,
+    year: parts.year,
+    day: parts.day,
     month: era.golarion ? GOLARION_MONTHS[m.month - 1] : `${m.month}월`,
     time: formatGameTime(m.hour, m.minute, setting("clock12h", true) !== false),
     emoji: phaseEmoji(m.hour, m.minute),
@@ -149,34 +158,50 @@ const TIME_STEPS = [
   [600, "+10분"], [3600, "+1시간"], [86400, "+1일"]
 ];
 
-function clockHtml() {
-  const c = calendarText();
+/*
+ * The clock floats like the dice bar: fixed position, aligned with the chat
+ * input, sitting where the message list starts; the list gets a matching top
+ * margin. Inside Foundry's chat layout its buttons were covered and never
+ * received clicks. It is built once; later updates only change the text, so a
+ * click can't land on a button that was just replaced.
+ */
+function clockSkeleton() {
   const steps = game.user.isGM
     ? `<div class="steps">${TIME_STEPS.map(([s, l]) =>
         `<button type="button" data-adv="${s}" class="${s < 0 ? "back" : "fwd"}" data-tooltip="${s < 0 ? "되돌리기" : "앞으로"} ${l.slice(1)}">${l}</button>`).join("")}</div>`
     : "";
-  return `<div class="main" data-tooltip="${esc(c.month)} · ${esc(c.phase)}${game.user.isGM ? "<br><small>눌러서 시각 지정 · 조명 설정</small>" : ""}">
-      <span class="emoji">${c.emoji}</span><span class="date">${esc(c.date)}</span><b class="time">${esc(c.time)}</b>
-    </div>${steps}`;
+  return `<div class="main"><span class="emoji"></span><span class="date"><span class="year"></span><span class="day"></span></span><b class="time"></b></div>${steps}`;
+}
+
+function updateClockText(clock) {
+  const c = calendarText();
+  const set = (sel, text) => { const el = clock.querySelector(sel); if (el && el.textContent !== text) el.textContent = text; };
+  set(".emoji", c.emoji);
+  set(".year", c.year);
+  set(".day", c.day);
+  set(".time", c.time);
+  const main = clock.querySelector(".main");
+  if (main) main.dataset.tooltip = `${esc(c.month)} · ${esc(c.phase)}${game.user.isGM ? "<br><small>눌러서 시각 지정 · 조명 설정</small>" : ""}`;
 }
 
 function mountClock() {
-  const root = ui.chat?.element?.[0] ?? ui.chat?.element;
-  if (!setting("chatDock", true) || !root?.prepend) return;
   let clock = document.getElementById("pkh-clock");
-  if (clock && clock.tagName !== "DIV") { clock.remove(); clock = null; }   // older builds used a <button>
+  if (!setting("chatDock", true)) { clock?.remove(); return; }
+  if (clock && (clock.tagName !== "DIV" || clock.parentElement !== document.body)) { clock.remove(); clock = null; }
   if (!clock) {
     clock = document.createElement("div");
     clock.id = "pkh-clock";
-    clock.addEventListener("click", async ev => {
+    clock.innerHTML = clockSkeleton();
+    clock.addEventListener("click", ev => {
       if (!game.user.isGM) return;
       const step = ev.target.closest("[data-adv]");
       if (step) return game.time.advance(Number(step.dataset.adv));
       if (ev.target.closest(".main")) openClock(clock);
     });
+    document.body.appendChild(clock);
   }
-  if (clock.parentElement !== root) root.prepend(clock);
-  clock.innerHTML = clockHtml();
+  updateClockText(clock);
+  placeDice();
 }
 
 function mountDice() {
@@ -185,33 +210,57 @@ function mountDice() {
   if (!bar) {
     bar = document.createElement("section");
     bar.id = "pkh-dice";
-    bar.innerHTML = `${DICE.map(d => `<button type="button" data-die="${d.n}" data-tooltip="1d${d.n}<br><small>Shift: 2개</small>">
+    bar.innerHTML = `<div class="pkh-dock-typing" aria-live="polite"></div>
+      ${DICE.map(d => `<button type="button" data-die="${d.n}" data-tooltip="1d${d.n}<br><small>Shift: 2개</small>">
         <i class="fa-solid ${d.icon}"></i>${d.label ? `<b>${d.label}</b>` : ""}</button>`).join("")}
       <span class="sep"></span>
-      ${[5, 11].map(dc => `<button type="button" class="flat" data-flat="${dc}" data-tooltip="플랫 체크 DC ${dc}${dc === 5 ? "<br><small>숨겨짐·집중 방해 등</small>" : "<br><small>은폐·감지 등</small>"}">
-        <i class="fa-solid fa-dice-d20"></i><b>${dc}</b></button>`).join("")}`;
+      ${[5, 11].map(dc => `<button type="button" class="flat" data-flat="${dc}" data-tooltip="플랫 체크 DC ${dc}${dc === 5 ? "<br><small>숨겨짐·집중 방해 등</small>" : "<br><small>은폐·감지 등</small>"}" aria-label="플랫 체크 DC ${dc}">
+        <i class="fa-solid fa-dice-d20"></i><span class="dc">${dc}</span></button>`).join("")}`;
     bar.addEventListener("click", onDiceClick);
     document.body.appendChild(bar);
   }
   placeDice();
 }
 
-/** Sit just above the chat input, as wide as it; reserve that height in the log. */
+/**
+ * Dice bar: just above the chat input, as wide as it. Clock: where the message
+ * list starts, equally wide. The log gets matching bottom padding and top
+ * margin, so no message ever hides behind either.
+ */
 function placeDice() {
   const bar = document.getElementById("pkh-dice");
+  const clock = document.getElementById("pkh-clock");
   const root = ui.chat?.element?.[0] ?? ui.chat?.element;
   const input = root?.querySelector?.("#chat-message, .chat-form, form, prose-mirror");
   const box = input?.getBoundingClientRect?.();
-  const visible = !!bar && !!box && box.width > 0 && root.offsetParent !== null;
+  const visible = !!box && box.width > 0 && root.offsetParent !== null;
   bar?.classList.toggle("hidden", !visible);
-  if (!visible) return;
-  const controls = root.querySelector("#roll-privacy, .roll-privacy, .chat-controls, #chat-controls");
-  const top = Math.min(box.top, controls?.getBoundingClientRect?.().top ?? box.top);
-  bar.style.left = `${Math.round(box.left)}px`;
-  bar.style.width = `${Math.round(box.width)}px`;
-  bar.style.top = `${Math.round(top - bar.offsetHeight - 4)}px`;
-  root.style.setProperty("--pkh-dice-h", `${bar.offsetHeight + 6}px`);
-  root.classList.add("pkh-has-dice");
+  if (visible && bar) {
+    const controls = root.querySelector("#roll-privacy, .roll-privacy, .chat-controls, #chat-controls");
+    const top = Math.min(box.top, controls?.getBoundingClientRect?.().top ?? box.top);
+    bar.style.left = `${Math.round(box.left)}px`;
+    bar.style.width = `${Math.round(box.width)}px`;
+    bar.style.top = `${Math.round(top - bar.offsetHeight - 4)}px`;
+    // Room for the bar and for the "입력 중" line riding on top of it.
+    const typing = document.body.classList.contains("pkh-typing-in-dock") ? 20 : 0;
+    root.style.setProperty("--pkh-dice-h", `${bar.offsetHeight + 6 + typing}px`);
+    root.classList.add("pkh-has-dice");
+  }
+
+  if (!clock) return;
+  const log = root?.querySelector?.("#chat-log, ol.chat-log, .chat-log");
+  const logBox = log?.getBoundingClientRect?.();
+  const clockVisible = visible && !!logBox && logBox.width > 0;
+  clock.classList.toggle("hidden", !clockVisible);
+  if (!clockVisible) { root?.classList.remove("pkh-has-clock"); return; }
+  // The log's top without our margin is where the clock goes.
+  const applied = root.classList.contains("pkh-has-clock") ? (parseFloat(getComputedStyle(log).marginTop) || 0) : 0;
+  const top = logBox.top - applied;
+  root.classList.add("pkh-has-clock");
+  clock.style.left = `${Math.round(box.left)}px`;
+  clock.style.width = `${Math.round(box.width)}px`;
+  clock.style.top = `${Math.round(top + 2)}px`;
+  root.style.setProperty("--pkh-clock-h", `${clock.offsetHeight + 6}px`);
 }
 
 function refreshClocks() {
@@ -537,7 +586,7 @@ export function healthEstimate(actor) {
   const pct = Math.max(0, Number(hp.value)) / Number(hp.max) * 100;
   const levels = healthLevels();
   if (pct <= 0) return { label: setting("healthZero", "쓰러짐") || "쓰러짐", pct, depth: 1, top: 0, floor: 0, rank: levels.length + 1 };
-  if (pct >= 100) return { label: setting("healthFull", "멀쩡함") || "멀쩡함", pct, depth: 0, top: 100, floor: 100, rank: 0 };
+  if (pct >= 100) return { label: setting("healthFull", "건강함") || "건강함", pct, depth: 0, top: 100, floor: 100, rank: 0 };
   let index = levels.findIndex(l => pct >= l.pct);
   if (index < 0) index = levels.length - 1;
   const hit = levels[index];
@@ -558,12 +607,47 @@ export function healthEstimate(actor) {
  * differently: one just inside the band, one about to drop out of it.
  */
 export function healthColour(est) {
+  // Full health is what people see most: a calm, muted green rather than a bright one.
+  if (!Number(est.rank)) return { hue: 140, sat: 20, light: 28 };
   const mid = (Number(est.top) + Number(est.floor)) / 2;
   const hue = Math.round(Math.clamp(mid, 0, 100) * 1.2);
   const depth = Math.clamp(Number(est.depth) || 0, 0, 1);
-  const sat = Math.round(55 + depth * 25);
+  const sat = Math.round(46 + depth * 24);
   const light = Math.round(Math.max(12, 38 - (Number(est.rank) || 0) * 2 - depth * 16));
   return { hue, sat, light };
+}
+
+/*
+ * Token tooltip: distance and health estimate, stacked above the hovered token
+ *
+ *        [ 📏 35 ft. ]      ← distance from your token (top)
+ *     [ 가벼운 부상 ]        ← health estimate (under it)
+ *        ┌──────┐
+ *        │token │
+ *        └──────┘
+ *          name             ← Foundry's nameplate stays below, untouched
+ *
+ * This is how PF2e HUD's token tooltip does it: one stack above the token,
+ * with the distance as a tab on top of the status, and the PF2e system's own
+ * hover-distance label switched off so the two never collide. Here the
+ * system label is only hidden by CSS while our distance is on (the system
+ * setting itself is left alone). Near the top edge of the screen the stack
+ * flips below the token, under its nameplate.
+ */
+
+/** Top edge, in canvas coordinates, of anything drawn above the token (elevation text and the like). */
+function decorationTop(token) {
+  let top = Infinity;
+  const mid = (token.bounds?.y ?? token.y) + (token.bounds?.height ?? token.h) / 2;
+  for (const child of [token.tooltip, token.nameplate]) {
+    if (!child?.parent || !child.visible || !child.text) continue;
+    try {
+      const local = child.getLocalBounds();
+      const y = canvas.stage.toLocal(child.toGlobal(new PIXI.Point(0, local.y))).y;
+      if (y < mid) top = Math.min(top, y);
+    } catch (_) { /* not drawn yet */ }
+  }
+  return top;
 }
 
 /** Bottom edge of a token's nameplate in canvas coordinates, or null. */
@@ -580,31 +664,101 @@ function nameplateBottom(token) {
   }
 }
 
+/** The token distances are measured from: the one you control, else your character's. */
+function distanceOrigin(hovered) {
+  const controlled = canvas.tokens?.controlled ?? [];
+  const origin = controlled.length === 1 ? controlled[0] : controlled.length ? null : game.user.character?.getActiveTokens?.()[0];
+  if (!origin || origin === hovered || origin.isPreview || origin.animation) return null;
+  return origin;
+}
+
+export function distanceText(distance, units) {
+  if (!Number.isFinite(distance)) return "";
+  const n = Math.round(distance * 10) / 10;
+  return `${Number.isInteger(n) ? n : n.toFixed(1)} ${units ?? ""}`.trim();
+}
+
+function tokenDistance(hovered) {
+  const mode = setting("tokenTipDistance", "always");
+  if (mode === "never" || (mode === "encounters" && !game.combat?.started)) return "";
+  const origin = distanceOrigin(hovered);
+  if (!origin) return "";
+  let d = null;
+  try {
+    d = typeof origin.distanceTo === "function" ? origin.distanceTo(hovered)
+      : canvas.grid.measurePath([origin.center, hovered.center]).distance;
+  } catch (_) {
+    return "";
+  }
+  return distanceText(Number(d), canvas.scene?.grid?.units ?? canvas.grid?.units ?? "");
+}
+
+function healthLine(token) {
+  const actor = token?.actor;
+  if (!actor || !setting("healthOnHover", true)) return null;
+  const visibleHp = actor.testUserPermission(game.user, "OBSERVER");
+  if (visibleHp && !(game.user.isGM && setting("healthShowGM", false))) return null;
+  const est = healthEstimate(actor);
+  // "건강함" is the usual state: by default only worth showing in a fight.
+  if (est && !est.rank) {
+    const mode = setting("healthFullShow", "combat");
+    if (mode === "never" || (mode === "combat" && !game.combat?.started)) return null;
+  }
+  return est;
+}
+
 let hoverEl = null;
+let hoverToken = null;
 function showHealth(token, hovered) {
   hoverEl ??= Object.assign(document.body.appendChild(document.createElement("div")), { id: "pkh-health" });
-  const actor = token?.actor;
-  const visibleHp = actor?.testUserPermission(game.user, "OBSERVER");
-  const allowed = hovered && actor && setting("healthOnHover", true) && (!visibleHp || (game.user.isGM && setting("healthShowGM", false)));
-  const est = allowed ? healthEstimate(actor) : null;
-  if (!est) { hoverEl.classList.add("hidden"); return; }
+  if (!hovered || !token) {
+    if (!token || token === hoverToken) { hoverToken = null; hoverEl.classList.add("hidden"); }
+    return;
+  }
+  hoverToken = token;
+  // Secret tokens give nothing away.
+  const SECRET = CONST.TOKEN_DISPOSITIONS?.SECRET ?? -2;
+  if (token.document?.disposition === SECRET && !token.isOwner) { hoverEl.classList.add("hidden"); return; }
 
-  /*
-   * Below the token, not above it: above, the label covered the space between
-   * tokens that players read distances from. It goes under the nameplate when
-   * the token shows one, so the name stays readable, with a small gap.
-   */
-  const b = token.bounds ?? { x: token.x, y: token.y, width: token.w, height: token.h };
-  const gap = Math.max(4, (canvas.dimensions?.size ?? 100) * 0.04);
-  const below = Math.max(b.y + b.height, nameplateBottom(token) ?? (b.y + b.height + (canvas.dimensions?.size ?? 100) * 0.2));
-  const point = { x: b.x + b.width / 2, y: below + gap };
-  const screen = canvas.clientCoordinatesFromCanvas?.(point) ?? canvas.stage.worldTransform.apply(point);
+  const est = healthLine(token);
+  const dist = tokenDistance(token);
+  if (!est && !dist) { hoverEl.classList.add("hidden"); return; }
 
-  const c = healthColour(est);
-  hoverEl.innerHTML = `<span style="--h:${c.hue};--s:${c.sat}%;--l:${c.light}%">${esc(est.label)}</span>`;
+  const parts = [];
+  if (dist) parts.push(`<div class="dist">${esc(dist)}</div>`);
+  if (est) {
+    const c = healthColour(est);
+    parts.push(`<span class="health" style="--h:${c.hue};--s:${c.sat}%;--l:${c.light}%">${esc(est.label)}</span>`);
+  }
+  hoverEl.innerHTML = parts.join("");
+  hoverEl.classList.toggle("only-dist", !est);
   hoverEl.classList.remove("hidden");
-  hoverEl.style.left = `${Math.round(screen.x)}px`;
-  hoverEl.style.top = `${Math.round(screen.y)}px`;
+  placeTokenTip(token);
+}
+
+function placeTokenTip(token) {
+  if (!hoverEl || !token || hoverEl.classList.contains("hidden")) return;
+  const b = token.bounds ?? { x: token.x, y: token.y, width: token.w, height: token.h };
+  const size = canvas.dimensions?.size ?? 100;
+  const gap = Math.max(3, size * 0.04);
+  const toScreen = point => canvas.clientCoordinatesFromCanvas?.(point) ?? canvas.stage.worldTransform.apply(point);
+
+  const above = toScreen({ x: b.x + b.width / 2, y: Math.min(b.y, decorationTop(token)) - gap });
+  const height = hoverEl.getBoundingClientRect?.().height || 44;
+  const flip = above.y - height < 8;
+  let point = above;
+  if (flip) {
+    const below = Math.max(b.y + b.height, nameplateBottom(token) ?? (b.y + b.height + size * 0.2));
+    point = toScreen({ x: b.x + b.width / 2, y: below + gap });
+  }
+  hoverEl.classList.toggle("below", flip);
+  hoverEl.style.left = `${Math.round(point.x)}px`;
+  hoverEl.style.top = `${Math.round(point.y)}px`;
+}
+
+/** With our distance on, PF2e's own hover-distance label would sit in the same place. */
+function applyDistanceOwnership() {
+  document.body.classList.toggle("pkh-own-distance", setting("tokenTipDistance", "always") !== "never");
 }
 
 /* ======================================================================== */
@@ -620,12 +774,23 @@ export function registerGmToolSettings() {
   s("paletteOpacity", { name: "GM 팔레트 투명도", hint: "마우스를 올리면 불투명해집니다.", scope: "client", config: true, type: Number, default: 0.75, range: { min: 0.2, max: 1, step: 0.05 }, onChange: () => game.pkhPalette?.render() });
   s("healthOnHover", { name: "토큰에 마우스를 올리면 체력 상태 표시", hint: "HP를 볼 권한이 없는 토큰(보통 NPC)에 '가벼운 부상' 같은 대략적인 상태만 보여줍니다.", scope: "world", config: true, type: Boolean, default: true });
   s("healthShowGM", { name: "GM에게도 체력 상태 표시", scope: "client", config: true, type: Boolean, default: false });
-  s("healthFull", { name: "체력 상태: 최대일 때", scope: "world", config: true, type: String, default: "멀쩡함" });
+  s("tokenTipDistance", { name: "토큰에 마우스를 올리면 거리 표시", hint: "선택한 내 토큰(없으면 내 캐릭터)에서 그 토큰까지의 거리를 체력 상태 위에 쌓아 보여줍니다. 켜 두면 PF2e 기본 거리 표시는 겹치지 않도록 숨깁니다. '표시 안 함'이면 PF2e 기본 표시를 그대로 씁니다.", scope: "client", config: true, type: String, default: "always", choices: { always: "항상", encounters: "전투 중에만", never: "표시 안 함 (PF2e 기본 표시 사용)" }, onChange: () => applyDistanceOwnership() });
+  s("healthFull", { name: "체력 상태: 최대일 때", scope: "world", config: true, type: String, default: "건강함" });
+  s("healthFullShow", { name: "'건강함' 표시", hint: "HP가 가득 찬 상태는 가장 흔해서 평소에는 숨기고 전투 중에만 보여주는 것이 기본입니다.", scope: "world", config: true, type: String, default: "combat", choices: { combat: "전투 중에만", always: "항상", never: "표시 안 함" } });
   s("healthLevels", { name: "체력 상태 단계", hint: "\"퍼센트:이름\"을 |로 구분. 그 퍼센트 이상이면 그 이름. 예) 75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱", scope: "world", config: true, type: String, default: "75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱" });
   s("healthZero", { name: "체력 상태: 0일 때", scope: "world", config: true, type: String, default: "쓰러짐" });
 }
 
+/** The label used to be "멀쩡함"; worlds that kept the old default get the new one. */
+async function migrateHealthLabel() {
+  if (!game.user.isGM) return;
+  try {
+    if (game.settings.get(MODULE_ID, "healthFull") === "멀쩡함") await game.settings.set(MODULE_ID, "healthFull", "건강함");
+  } catch (_) { /* setting not ready */ }
+}
+
 export function initGmTools() {
+  migrateHealthLabel();
   document.body.classList.toggle("pkh-gm", game.user.isGM);
   const palette = new GmPalette();
   game.pkhPalette = palette;
@@ -639,8 +804,13 @@ export function initGmTools() {
   setInterval(placeDice, 1500); // chat input grows/shrinks with its toolbar
   Hooks.on("updateWorldTime", () => { refreshClocks(); syncDarkness(); });
   Hooks.on("canvasReady", () => syncDarkness());
+  applyDistanceOwnership();
   Hooks.on("hoverToken", (token, hovered) => showHealth(token, hovered));
-  Hooks.on("canvasPan", () => hoverEl?.classList.add("hidden"));
-  Hooks.on("updateActor", () => hoverEl?.classList.add("hidden"));
+  Hooks.on("canvasPan", () => requestAnimationFrame(() => placeTokenTip(hoverToken)));
+  Hooks.on("updateActor", actor => { if (hoverToken?.actor === actor) showHealth(hoverToken, true); });
+  Hooks.on("controlToken", () => { if (hoverToken) showHealth(hoverToken, true); });
+  Hooks.on("refreshToken", token => { if (token === hoverToken) placeTokenTip(token); });
+  Hooks.on("canvasTearDown", () => { hoverToken = null; hoverEl?.classList.add("hidden"); });
+  document.addEventListener("pointerdown", () => { if (hoverToken) hoverEl?.classList.add("hidden"); }, { capture: true, passive: true });
   game.pf2eKrHud = { ...(game.pf2eKrHud ?? {}), openRollRequest, palette };
 }

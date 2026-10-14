@@ -1,86 +1,145 @@
 /* ======================================================================== *
- * Turn tracker — BG3-style strip at the top of the screen
+ * Turn tracker — BG3 / Carousel-style strip at the top of the screen
+ * No panel behind it: portraits hang over the map on their own.
  * ======================================================================== */
 
 #pkh-turns {
-  --pkh-turn-size: 64px;
+  --pkh-turn-w: 70px;
+  --pkh-turn-aspect: 1.5;
+  --pkh-turn-h: calc(var(--pkh-turn-w) * var(--pkh-turn-aspect));
   --pkh-turn-top: 10px;
-  --pkh-turn-gold: #c9a227;
+  --pkh-turn-gold: #e2b93b;
   --pkh-turn-friendly: #3f8fd6;
   --pkh-turn-hostile: #c4442f;
   --pkh-turn-neutral: #c9a227;
   --pkh-turn-secret: #8a5bc4;
 
   position: fixed; z-index: 35; top: var(--pkh-turn-top); left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 8px; max-width: min(92vw, 1400px);
-  padding: 6px 10px; border-radius: 14px;
-  background: linear-gradient(180deg, rgba(15, 12, 9, 0.82), rgba(15, 12, 9, 0.62));
-  border: 1px solid rgba(201, 162, 39, 0.28);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
-  color: #e9dfc9; pointer-events: auto;
+  display: flex; align-items: flex-start; gap: 8px; max-width: 96vw;
+  padding: 0; background: none; border: none; box-shadow: none;
+  color: #f1e8d2;
+  /* the gaps between portraits stay click-through to the map */
+  pointer-events: none;
 }
+#pkh-turns > * { pointer-events: auto; }
 #pkh-turns.hidden { display: none; }
 
 #pkh-turns .round { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none;
-  min-width: 44px; padding: 0 4px; line-height: 1; }
-#pkh-turns .round em { font-style: normal; font-size: 0.62rem; letter-spacing: 0.08em; color: #a89b7c; }
-#pkh-turns .round b { font-size: 1.35rem; color: var(--pkh-turn-gold); }
-#pkh-turns .round b.small { font-size: 0.85rem; margin-top: 3px; }
+  min-width: 46px; height: var(--pkh-turn-h); line-height: 1;
+  text-shadow: 0 0 4px #000, 0 1px 2px #000, 0 0 10px rgba(0, 0, 0, 0.9); pointer-events: none; }
+#pkh-turns .round em { font-style: normal; font-size: 0.66rem; letter-spacing: 0.08em; color: #e6dcc3; }
+#pkh-turns .round b { font-size: 1.6rem; color: var(--pkh-turn-gold); }
+#pkh-turns .round b.small { font-size: 0.9rem; margin-top: 3px; }
 
-#pkh-turns .queue { display: flex; align-items: flex-start; gap: 6px; margin: 0; padding: 0; list-style: none;
-  min-width: 0; overflow-x: auto; overflow-y: visible; scrollbar-width: none; }
+#pkh-turns .queue { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 6px; margin: 0; padding: 0 0 4px; list-style: none;
+  min-width: 0; overflow: visible; scrollbar-width: none; }
 #pkh-turns .queue::-webkit-scrollbar { display: none; }
+#pkh-turns.expanded .queue { overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth;
+  padding-bottom: 22px; /* room for the active name */ }
 
-/* one portrait */
+/* one portrait: tall, hanging from the top like Carousel */
 #pkh-turns li.turn { position: relative; flex: none; display: flex; flex-direction: column; align-items: center;
-  width: calc(var(--pkh-turn-size) * 0.8); cursor: pointer;
-  transition: width 220ms ease, opacity 200ms ease, filter 200ms ease; }
-#pkh-turns li.turn .frame { position: relative; width: 100%; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
-  background: #120f0b; border: 2px solid #3a3226; border-bottom-width: 4px; transition: border-color 200ms ease, box-shadow 200ms ease; }
-#pkh-turns li.turn img { width: 100%; height: 100%; object-fit: cover; object-position: top; border: none; display: block; }
-#pkh-turns li.turn.friendly .frame { border-bottom-color: var(--pkh-turn-friendly); }
-#pkh-turns li.turn.hostile  .frame { border-bottom-color: var(--pkh-turn-hostile); }
-#pkh-turns li.turn.neutral  .frame { border-bottom-color: var(--pkh-turn-neutral); }
-#pkh-turns li.turn.secret   .frame { border-bottom-color: var(--pkh-turn-secret); }
-#pkh-turns li.turn:hover .frame { border-color: #6b5a2f; }
+  width: var(--pkh-turn-w); cursor: pointer;
+  transition: opacity 200ms ease, filter 200ms ease; }
+#pkh-turns li.turn .frame { position: relative; width: 100%; height: var(--pkh-turn-h); overflow: hidden;
+  background: #120f0b; border: 1px solid #000; border-top-width: 0; border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: border-color 120ms ease, box-shadow 200ms ease; }
+#pkh-turns li.turn img { width: 100%; height: 100%; object-fit: cover; object-position: top center; border: none; display: block; }
+/* side colour: a thin bar along the bottom */
+#pkh-turns li.turn .frame::before { content: ""; position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 4px;
+  background: var(--pkh-turn-neutral); }
+#pkh-turns li.turn.friendly .frame::before { background: var(--pkh-turn-friendly); }
+#pkh-turns li.turn.hostile  .frame::before { background: var(--pkh-turn-hostile); }
+#pkh-turns li.turn.secret   .frame::before { background: var(--pkh-turn-secret); }
+#pkh-turns li.turn:hover .frame { border-color: rgba(255, 255, 255, 0.62); }
 
-/* the one acting now: larger, gold frame, name underneath */
-#pkh-turns li.turn.active { width: var(--pkh-turn-size); }
-#pkh-turns li.turn.active .frame { border-color: var(--pkh-turn-gold);
-  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.5), 0 0 16px rgba(201, 162, 39, 0.45); }
-#pkh-turns li.turn.next .frame { border-top-color: #8a7638; }
-
-#pkh-turns li.turn .init { position: relative; z-index: 1; margin-top: -0.75rem;
-  min-width: 1.6rem; padding: 0 5px; border-radius: 999px; text-align: center;
-  background: rgba(10, 8, 6, 0.92); border: 1px solid #4a3f2a; color: #e9dfc9;
-  font-size: 0.72rem; font-weight: 700; line-height: 1.45; }
-#pkh-turns li.turn.active .init { border-color: var(--pkh-turn-gold); color: #fff; }
-#pkh-turns li.turn.no-init .init { color: #a89b7c; }
-#pkh-turns li.turn .init i[data-act] { color: var(--pkh-turn-gold); cursor: pointer; }
-#pkh-turns li.turn .name { margin-top: 2px; max-width: calc(var(--pkh-turn-size) * 1.6); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; font-weight: 700; color: var(--pkh-turn-gold);
+/* initiative: top-left inside the picture */
+#pkh-turns li.turn .init { position: absolute; z-index: 3; top: 3px; left: 3px;
+  min-width: 1.5rem; padding: 0 4px; border-radius: 999px; text-align: center;
+  background: rgba(10, 8, 6, 0.78); color: #f4ecd6;
+  font-size: calc(var(--pkh-turn-w) * 0.16); font-weight: 700; line-height: 1.4;
   text-shadow: 0 1px 2px #000; }
+#pkh-turns li.turn.no-init .init { color: #b9ad8f; }
+#pkh-turns li.turn .init i[data-act] { color: var(--pkh-turn-gold); cursor: pointer; }
+/* folded group: ×n at top-right */
+#pkh-turns li.turn .count { position: absolute; z-index: 3; top: 3px; right: 3px; padding: 0 5px; border-radius: 999px;
+  background: rgba(150, 40, 25, 0.9); color: #fff; font-size: calc(var(--pkh-turn-w) * 0.16); font-weight: 800; line-height: 1.4; }
+#pkh-turns li.turn .count:empty { display: none; }
+#pkh-turns li.turn.group .frame { box-shadow: 4px 4px 0 -1px #2a221a, 4px 4px 0 0 #000, 0 4px 10px rgba(0, 0, 0, 0.6); }
+
+/* the one acting now: 1.2× larger, gold frame, name underneath */
+@keyframes pkh-turn-blink { from { border-color: rgba(226, 185, 59, 0.55); } to { border-color: rgba(255, 228, 140, 1); } }
+#pkh-turns li.turn.active { width: calc(var(--pkh-turn-w) * 1.2); }
+#pkh-turns li.turn.active .frame { height: calc(var(--pkh-turn-h) * 1.2); border: 2px solid var(--pkh-turn-gold); border-top-width: 0;
+  box-shadow: 0 0 14px rgba(226, 185, 59, 0.55), 0 4px 12px rgba(0, 0, 0, 0.7);
+  animation: pkh-turn-blink 0.9s ease-in-out infinite alternate; }
+#pkh-turns li.turn.next .frame { border-color: rgba(226, 185, 59, 0.5); }
+#pkh-turns li.turn .name { margin-top: 3px; max-width: calc(var(--pkh-turn-w) * 2.2); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; font-weight: 700; color: var(--pkh-turn-gold);
+  text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 8px #000; }
 #pkh-turns li.turn .name:empty { display: none; }
 
-/* defeated: grey (or hidden by the setting); hidden from players: faded for the GM */
-#pkh-turns li.turn.defeated { filter: grayscale(1) brightness(0.6); opacity: 0.7; }
-#pkh-turns li.turn.defeated .frame::after { content: "\f54c"; font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif; font-weight: 900;
-  position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(var(--pkh-turn-size) * 0.32); color: rgba(255, 255, 255, 0.75); }
+/* your own turn: the portrait itself is the "end turn" button */
+#pkh-turns li.turn .end-hint { position: absolute; z-index: 4; inset: 0; display: none; flex-direction: column;
+  align-items: center; justify-content: flex-end; gap: 2px; padding-bottom: 12%;
+  background: linear-gradient(180deg, transparent 35%, rgba(0, 0, 0, 0.78));
+  color: #fff; text-shadow: 0 1px 3px #000; opacity: 0; transition: opacity 140ms ease; }
+#pkh-turns li.turn .end-hint i { font-size: calc(var(--pkh-turn-w) * 0.32); color: var(--pkh-turn-gold); }
+#pkh-turns li.turn .end-hint b { font-size: 0.78rem; }
+#pkh-turns li.turn.can-end .end-hint { display: flex; }
+#pkh-turns li.turn.can-end:hover .end-hint { opacity: 1; }
+
+/* dead / defeated: grey (or hidden, the default); down at 0 HP but alive: the lower half grey */
+#pkh-turns li.turn.defeated { filter: grayscale(1) brightness(0.62); opacity: 0.8; }
+#pkh-turns li.turn.down .frame::after { content: ""; position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: 50%;
+  -webkit-backdrop-filter: grayscale(1) brightness(0.72); backdrop-filter: grayscale(1) brightness(0.72);
+  border-top: 1px solid rgba(255, 255, 255, 0.35); pointer-events: none; }
 #pkh-turns li.turn.hidden-combatant { opacity: 0.45; }
+/* the one that just finished, leaving the front of the line */
+li.turn.ghost { list-style: none; display: flex; flex-direction: column; align-items: center; }
+li.turn.ghost .name, li.turn.ghost .end-hint { display: none; }
 
 /* where the next round starts */
-#pkh-turns li.divider { flex: none; align-self: stretch; display: flex; align-items: center; padding: 0 2px; }
-#pkh-turns li.divider span { writing-mode: vertical-rl; font-size: 0.62rem; letter-spacing: 0.08em; color: #a89b7c;
-  border-left: 1px dashed #4a3f2a; padding-left: 4px; }
+#pkh-turns li.divider { flex: none; display: flex; align-items: center; height: var(--pkh-turn-h); padding: 0 3px; }
+#pkh-turns li.divider span { writing-mode: vertical-rl; font-size: 0.66rem; letter-spacing: 0.08em; color: #efe6cf;
+  text-shadow: 0 0 3px #000, 0 0 6px #000; border-left: 2px solid rgba(255, 255, 255, 0.55); padding-left: 4px; }
 
-/* GM / player controls at the ends */
-#pkh-turns .side { display: flex; gap: 4px; flex: none; }
-#pkh-turns .side:empty { display: none; }
-#pkh-turns .side button { width: 28px; height: 28px; min-height: 0; margin: 0; padding: 0; border-radius: 7px;
-  border: 1px solid #3a3226; background: #1a140d; color: #cfc3a4; cursor: pointer; line-height: 1; }
-#pkh-turns .side button.wide { width: auto; padding: 0 10px; font-size: 0.78rem; font-weight: 700; }
-#pkh-turns .side button:hover { border-color: var(--pkh-turn-gold); color: #fff; }
+/* "+n" — the rest of the order */
+#pkh-turns li.more { flex: none; display: flex; align-items: center; justify-content: center; height: calc(var(--pkh-turn-h) * 0.6);
+  min-width: 40px; padding: 0 6px; margin-top: calc(var(--pkh-turn-h) * 0.2); border-radius: 6px; cursor: pointer;
+  background: rgba(12, 10, 8, 0.72); border: 1px solid rgba(255, 255, 255, 0.25); color: #f1e8d2;
+  font-weight: 800; font-size: 0.95rem; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5); }
+#pkh-turns li.more:hover { border-color: var(--pkh-turn-gold); color: #fff; }
+#pkh-turns.expanded li.more { position: sticky; right: 0; z-index: 5; }
+
+/* buttons: each keeps a small dark backing so it reads over any map */
+#pkh-turns .side, #pkh-turns .step { display: flex; gap: 4px; flex: none; align-items: center; height: var(--pkh-turn-h); }
+#pkh-turns .side:empty, #pkh-turns .step:empty { display: none; }
+#pkh-turns .side button, #pkh-turns .step button { width: 30px; height: 30px; min-height: 0; margin: 0; padding: 0; border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(12, 10, 8, 0.78); color: #e4d9bd; cursor: pointer; line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+#pkh-turns .step button { width: 30px; height: 52px; font-size: 1.05rem; }
+#pkh-turns .side button:hover, #pkh-turns .step button:hover { border-color: var(--pkh-turn-gold); color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
   #pkh-turns li.turn, #pkh-turns li.turn .frame { transition: none; }
+  #pkh-turns li.turn.active .frame { animation: none; }
 }
+
+/* initiative editor (GM, right-click a portrait) */
+#pkh-init-pop { position: fixed; z-index: 120; min-width: 250px; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 7px;
+  border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.97); color: #e9dfc9; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6); font-size: 13px; }
+#pkh-init-pop header { display: flex; align-items: center; gap: 8px; }
+#pkh-init-pop header img { width: 28px; height: 28px; object-fit: cover; object-position: top; border-radius: 4px; border: 1px solid #4a3f2a; }
+#pkh-init-pop header strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #e8d391; }
+#pkh-init-pop .row { display: flex; gap: 4px; align-items: center; }
+#pkh-init-pop .row.end { justify-content: flex-end; }
+#pkh-init-pop button { flex: none; width: auto; min-height: 0; height: 28px; margin: 0; padding: 0 9px; border-radius: 6px; line-height: 1;
+  border: 1px solid #4a3f2a; background: #1a140d; color: #e9dfc9; cursor: pointer; white-space: nowrap; }
+#pkh-init-pop button:hover { border-color: #c9a227; color: #fff; }
+#pkh-init-pop button.primary { border-color: #c9a227; font-weight: 700; }
+#pkh-init-pop button.wide { width: 100%; text-align: left; }
+#pkh-init-pop .row.value input { flex: 1; min-width: 0; width: 70px; height: 28px; text-align: center; font-size: 15px; font-weight: 700;
+  background: #120f0b; color: #fff; border: 1px solid #6b5a2f; border-radius: 6px; }
+#pkh-init-pop .row.value button { padding: 0 7px; }

@@ -271,7 +271,7 @@ body.pkh-players-icon #players { transition: opacity 180ms ease; }
 #pkh-map-pop.hidden { display: none; }
 #pkh-map-pop header {
   font-weight: 700; color: var(--pkh-gold-soft); margin: 0 0.15rem 0.55rem;
-  white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; max-width: 460px; overflow: hidden; text-overflow: ellipsis;
 }
 #pkh-map-pop .choices { display: flex; gap: 8px; }
 #pkh-map-pop button {
@@ -401,20 +401,29 @@ body.pkh-players-icon #players { transition: opacity 180ms ease; }
 
 /* ======================= v0.7: table tools ======================= */
 /* calendar clock: first line of the chat panel */
+/* Sizes are in em, so the whole clock follows the chat font size setting.
+   The time is deliberately larger than the date: it is what people glance at. */
 #pkh-clock {
-  display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 0 0 4px; padding: 6px 10px;
-  border: 1px solid #3a3226; border-radius: 8px; background: rgba(15, 12, 9, 0.88); color: #e9dfc9;
-  font-size: 0.82rem; line-height: 1.2; text-align: left; flex: none;
+  position: fixed; z-index: 80; box-sizing: border-box; pointer-events: auto;
+  display: flex; flex-direction: column; gap: 0.35em; margin: 0; padding: 0.45em 0.75em;
+  border: 1px solid #3a3226; border-radius: 8px; background: rgba(15, 12, 9, 0.94); color: #e9dfc9;
+  font-size: var(--pkh-chat-font-size, 14px); line-height: 1.3; text-align: left;
 }
-#pkh-clock .main { display: flex; align-items: center; gap: 8px; min-width: 0; cursor: default; }
+#pkh-clock.hidden { display: none; }
+#pkh-clock * { box-sizing: border-box; }
+/* the message list starts below the clock */
+.pkh-has-clock :is(#chat-log, ol.chat-log, .chat-log) { margin-top: var(--pkh-clock-h, 64px) !important; }
+#pkh-clock .main { display: flex; align-items: center; gap: 0.6em; min-width: 0; cursor: default; }
 body.pkh-gm #pkh-clock .main { cursor: pointer; }
 #pkh-clock:hover { border-color: #6b5a2f; }
-#pkh-clock .emoji { font-size: 1.05rem; flex: none; }
-#pkh-clock .date { flex: 1; min-width: 0; color: #cfc3a4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#pkh-clock .time { flex: none; font-size: 1rem; color: #fff; letter-spacing: 0.02em; white-space: nowrap; }
+#pkh-clock .emoji { font-size: 1.45em; line-height: 1; flex: none; }
+#pkh-clock .date { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.05em; word-break: keep-all; overflow-wrap: break-word; }
+#pkh-clock .date .year { font-size: 0.8em; color: #a89b7c; letter-spacing: 0.02em; }
+#pkh-clock .date .day { font-size: 0.95em; color: #e2d7bb; }
+#pkh-clock .time { flex: none; font-size: 1.3em; color: #fff; letter-spacing: 0.02em; white-space: nowrap; }
 /* GM only: six time steps, back on the left, forward on the right */
 #pkh-clock .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
-#pkh-clock .steps button { min-height: 0; height: 20px; margin: 0; padding: 0 2px; border-radius: 4px; font-size: 0.7rem;
+#pkh-clock .steps button { min-height: 0; height: 1.75em; margin: 0; padding: 0 2px; border-radius: 4px; font-size: 0.78em;
   line-height: 1; white-space: nowrap; border: 1px solid #3a3226; background: #1a140d; color: #cfc3a4; cursor: pointer; }
 #pkh-clock .steps button.back { color: #b9aa86; }
 #pkh-clock .steps button:hover { border-color: #c9a227; color: #fff; }
@@ -437,7 +446,23 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
   position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.62rem; font-weight: 800;
   color: #1a140d; text-shadow: 0 0 2px #e9dfc9, 0 0 2px #e9dfc9; pointer-events: none;
 }
-#pkh-dice button.flat { color: #c9a227; }
+#pkh-dice button.flat { color: #9c7c1f; }
+#pkh-dice button.flat i { font-size: 1.25rem; }
+/* the DC written on the die */
+#pkh-dice button.flat .dc { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 1px; z-index: 1; pointer-events: none;
+  font-size: 0.72rem; font-weight: 900; line-height: 1; color: #fff; letter-spacing: -0.02em;
+  text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 1px #000, 0 0 4px rgba(0, 0, 0, 0.8); }
+#pkh-dice button.flat:hover { color: #c9a227; }
+/* "…님이 입력 중입니다" rides just above the dice bar */
+#pkh-dice .pkh-dock-typing { position: absolute; left: 6px; right: 6px; bottom: calc(100% + 3px); height: 16px;
+  display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-size: 12px; font-style: italic; color: rgba(236, 230, 214, 0.85); text-shadow: 0 1px 2px #000; pointer-events: none; visibility: hidden; }
+#pkh-dice .pkh-dock-typing.active { visibility: visible; }
+#pkh-dice .pkh-dock-typing .dots { display: inline-flex; gap: 2px; }
+#pkh-dice .pkh-dock-typing .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: pkh-typing-dot 1.2s infinite ease-in-out; }
+#pkh-dice .pkh-dock-typing .dots i:nth-child(2) { animation-delay: 0.2s; }
+#pkh-dice .pkh-dock-typing .dots i:nth-child(3) { animation-delay: 0.4s; }
+body.pkh-typing-in-dock .pkh-typing-line { display: none !important; }
 #pkh-dice .sep { width: 1px; height: 18px; background: #3a3226; margin: 0 3px; flex: none; }
 /* keep the last messages above the floating dice bar */
 .pkh-has-dice :is(#chat-log, .chat-log) { padding-bottom: var(--pkh-dice-h, 40px) !important; }
@@ -476,13 +501,26 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
 #pkh-palette .cell.t-effect { border-color: #7fb069; }
 
 /* health estimate over hovered tokens */
-#pkh-health { position: fixed; z-index: 60; pointer-events: none; transform: translate(-50%, 0); }
+/* token tooltip: distance tab on top, health pill under it, both above the token */
+#pkh-health { position: fixed; z-index: 60; pointer-events: none; transform: translate(-50%, -100%);
+  display: flex; flex-direction: column; align-items: center; }
+#pkh-health.below { transform: translate(-50%, 0); flex-direction: column-reverse; }
 #pkh-health.hidden { display: none; }
-#pkh-health span { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap;
+#pkh-health .dist { position: relative; z-index: 0; padding: 1px 10px 2px; border-radius: 7px 7px 0 0;
+  background: rgba(15, 12, 9, 0.9); border: 1px solid rgba(255, 255, 255, 0.18); border-bottom: none;
+  color: #f1e8d2; font-size: 0.74rem; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px #000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+#pkh-health .dist i { color: #c9a227; font-size: 0.9em; margin-right: 2px; }
+#pkh-health.below .dist { border-radius: 0 0 7px 7px; border: 1px solid rgba(255, 255, 255, 0.18); border-top: none; }
+#pkh-health.only-dist .dist { border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.18); }
+#pkh-health .health { position: relative; z-index: 1; display: inline-block; min-width: 6.5em; text-align: center;
+  padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap;
   color: #fff; text-shadow: 0 1px 2px #000;
   background: hsla(var(--h, 60), var(--s, 55%), var(--l, 30%), 0.92);
   border: 1px solid hsla(var(--h, 60), var(--s, 60%), calc(var(--l, 30%) + 24%), 0.95);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+/* PF2e's own hover-distance label would sit in the same spot */
+body.pkh-own-distance #token-hover-distance { display: none !important; }
 
 /* ======================= reaction checker ======================= */
 .pkh-reaction header { font-size: 1rem; margin-bottom: 0.2rem; }
@@ -514,9 +552,17 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
 .pkh-rx-row label { font-size: 0.85rem; }
 
 /* spell popup: one button per way to cast */
-#pkh-map-pop .choices.spell { flex-wrap: wrap; }
-#pkh-map-pop .choices.spell button { min-width: 84px; }
-#pkh-map-pop button b.small { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+/* spell casting choices: up to five a row, each box as wide as its label needs */
+#pkh-map-pop .choices.spell { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(84px, auto)); gap: 6px; }
+#pkh-map-pop .choices.spell button { width: auto; min-width: 84px; padding: 0.5rem 0.6rem 0.55rem; }
+#pkh-map-pop button b.small { font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+/* focus magic gets its own colour */
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip) { border-color: #6b4fb0; background: #1a1328; }
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip) em { color: #c8b2ff; font-weight: 700; }
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip) b { color: #e6dcff; }
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip):hover,
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip):focus-visible { border-color: #a98bff; background: #241a38; }
+#pkh-map-pop .choices.spell button:is(.cast-focus, .cast-focus-cantrip).next { border-color: #a98bff; box-shadow: 0 0 0 1px rgba(169, 139, 255, 0.45); }
 #pkh-map-pop button[disabled] { opacity: 0.4; cursor: not-allowed; }
 
 /* ======================= quickslot hover card ======================= */
@@ -550,5 +596,15 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
 #pkh-slot-card .muted { margin: 0; color: var(--pkh-muted, #a89b7c); }
 #pkh-slot-card footer { margin-top: 0.35rem; padding-top: 0.3rem; border-top: 1px solid #3a3226;
   color: var(--pkh-muted, #a89b7c); font-size: 0.68rem; }
+#pkh-slot-card kbd { padding: 0 4px; border-radius: 3px; border: 1px solid #6b5a2f; background: #1a140d; color: #e8d391;
+  font-family: inherit; font-size: 0.95em; line-height: 1.3; box-shadow: none; }
+/* pinned: takes the mouse, the description scrolls */
+#pkh-slot-card.pinned { pointer-events: auto; border-color: #c9a227; box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.35), 0 12px 30px rgba(0, 0, 0, 0.6); }
+#pkh-slot-card.pinned .desc { max-height: min(52vh, 460px); overflow-y: auto; -webkit-mask-image: none; mask-image: none;
+  padding-right: 4px; scrollbar-width: thin; scrollbar-color: #6b5a2f transparent; overscroll-behavior: contain; }
+#pkh-slot-card .unpin { flex: none; width: 22px; height: 22px; min-height: 0; margin: 0 0 0 4px; padding: 0; line-height: 1;
+  border-radius: 5px; border: 1px solid #4a3f2a; background: #1a140d; color: #cfc3a4; cursor: pointer; }
+#pkh-slot-card .unpin:hover { border-color: #c9a227; color: #fff; }
+#pkh-slot-card .hint-pin i { color: #c9a227; }
 @keyframes pkh-card-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { #pkh-slot-card { animation: none; } }
