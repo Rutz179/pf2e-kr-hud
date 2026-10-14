@@ -412,7 +412,7 @@ body.pkh-players-icon #players { transition: opacity 180ms ease; }
 #pkh-clock.hidden { display: none; }
 #pkh-clock * { box-sizing: border-box; }
 /* the message list starts below the clock */
-.pkh-has-clock :is(#chat-log, ol.chat-log, .chat-log) { margin-top: var(--pkh-clock-h, 64px) !important; }
+.pkh-clock-reserve { margin-top: var(--pkh-clock-h, 64px) !important; }
 #pkh-clock .main { display: flex; align-items: center; gap: 0.6em; min-width: 0; cursor: default; }
 body.pkh-gm #pkh-clock .main { cursor: pointer; }
 #pkh-clock:hover { border-color: #6b5a2f; }

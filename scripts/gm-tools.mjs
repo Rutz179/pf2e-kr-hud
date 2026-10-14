@@ -248,19 +248,31 @@ function placeDice() {
   }
 
   if (!clock) return;
-  const log = root?.querySelector?.("#chat-log, ol.chat-log, .chat-log");
-  const logBox = log?.getBoundingClientRect?.();
-  const clockVisible = visible && !!logBox && logBox.width > 0;
+  // Reserve the space on the element that scrolls (the log or its scroll box),
+  // never on the scrolling content: that box stays put however far you scroll.
+  const scroller = chatScroller(root);
+  const box2 = scroller?.getBoundingClientRect?.();
+  const clockVisible = visible && !!box2 && box2.width > 0;
   clock.classList.toggle("hidden", !clockVisible);
-  if (!clockVisible) { root?.classList.remove("pkh-has-clock"); return; }
-  // The log's top without our margin is where the clock goes.
-  const applied = root.classList.contains("pkh-has-clock") ? (parseFloat(getComputedStyle(log).marginTop) || 0) : 0;
-  const top = logBox.top - applied;
-  root.classList.add("pkh-has-clock");
+  for (const el of document.querySelectorAll(".pkh-clock-reserve")) if (el !== scroller || !clockVisible) el.classList.remove("pkh-clock-reserve");
+  if (!clockVisible) return;
+  const applied = scroller.classList.contains("pkh-clock-reserve") ? (parseFloat(getComputedStyle(scroller).marginTop) || 0) : 0;
+  const top = box2.top - applied;
+  scroller.classList.add("pkh-clock-reserve");
   clock.style.left = `${Math.round(box.left)}px`;
   clock.style.width = `${Math.round(box.width)}px`;
   clock.style.top = `${Math.round(top + 2)}px`;
   root.style.setProperty("--pkh-clock-h", `${clock.offsetHeight + 6}px`);
+}
+
+/** The chat log, or the nearest box around it that actually scrolls. */
+function chatScroller(root) {
+  const log = root?.querySelector?.("#chat-log, ol.chat-log, .chat-log");
+  for (let el = log; el && el !== root; el = el.parentElement) {
+    const oy = getComputedStyle(el).overflowY;
+    if (oy === "auto" || oy === "scroll") return el;
+  }
+  return log ?? null;
 }
 
 function refreshClocks() {
