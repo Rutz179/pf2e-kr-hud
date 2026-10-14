@@ -2,17 +2,6 @@
 
 설치 주소(매니페스트): `https://github.com/Rutz179/pf2e-kr-hud/releases/latest/download/module.json`
 
-## 배포 (CoC 툴킷과 같은 방식)
-```bash
-git tag v0.4.1
-git push origin v0.4.1
-```
-태그를 올리면 GitHub Actions가 버전·주소를 채운 module.json과 module.zip을 릴리스에 올립니다.
-module.json의 version은 손으로 고칠 필요가 없습니다.
-
-
-Foundry VTT v14 + PF2e 전용. CoC7 한국어 툴킷의 초상화 배치와 디스코드 음성 연동을
-PF2e로 옮기고, 캐릭터별 퀵슬롯 HUD를 새로 붙였습니다.
 
 ## 파티 초상화
 - PC 최대 6명, CoC 툴킷과 같은 자리(왼쪽/오른쪽 × 위/가운데/아래). NPC는 표시하지 않습니다.
