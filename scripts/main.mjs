@@ -8,6 +8,8 @@ import { registerInfusedHelper } from "./slots.mjs";
 import { initTurnTracker, registerTurnTrackerSettings } from "./turn-tracker.mjs";
 import { PIN_ACTION } from "./slot-card.mjs";
 import { openSettings, registerSettingsWindows } from "./settings-window.mjs";
+import { patchChatPortraits, registerChatFaceSettings } from "./chat-faces.mjs";
+import { installCalmTooltips } from "./tips.mjs";
 
 /*
  * Hotkeys
@@ -97,13 +99,34 @@ Hooks.once("init", () => {
   registerHudSettings();
   registerKeybindings();
   registerToolkitSettings();
+  registerChatFaceSettings();
   registerGmToolSettings();
   registerReactionSettings();
   registerTurnTrackerSettings();
 });
 
+/*
+ * Raw "@UUID[…]" left in a chat message (some drops and macros post text that
+ * never went through the enricher) is enriched when the message is drawn, so
+ * the chat shows the item's name as a link instead of the code.
+ */
+const RAW_REF = /@(UUID|Compendium|Check|Damage|Template)\[|\[\[\//;
+async function enrichLeftovers(message, html) {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const content = root?.querySelector?.(".message-content");
+  if (!content || !RAW_REF.test(content.textContent ?? "")) return;
+  const Editor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+  try {
+    content.innerHTML = await Editor.enrichHTML(content.innerHTML, { relativeTo: message, rollData: message.getRollData?.() ?? {} });
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not enrich chat message`, err);
+  }
+}
+Hooks.on("renderChatMessageHTML", enrichLeftovers);
+
 // Every module file has registered its settings by now; group them into windows.
 Hooks.once("setup", () => {
+  patchChatPortraits();
   registerSettingsWindows();
 });
 
@@ -112,6 +135,7 @@ Hooks.once("ready", () => {
     console.warn(`${MODULE_ID} | PF2e 시스템이 아니므로 비활성화합니다.`);
     return;
   }
+  installCalmTooltips();
   applyPf2eDefaultsOnce();
   initPortraits();
   initHud();

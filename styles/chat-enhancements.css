@@ -209,3 +209,10 @@ body.pkh-typing-builtin .pkh-typing-reserve {
 @media (prefers-reduced-motion: reduce) {
   .pkh-typing-line .dots i { animation: none; opacity: 0.6; }
 }
+
+/* the chat input's formatting toolbar (Paragraph / Italic / HTML in v13–v14), hidden by setting */
+body.pkh-no-chat-menu #chat-message :is(.menu-container, menu.editor-menu) { display: none !important; }
+
+/* chat portraits: the finished round token made from a ring subject (chat-faces.mjs) */
+.chat-message .message-header .portrait.pkh-face { overflow: visible; }
+.chat-message .message-header .portrait.pkh-face img { width: 36px; height: 36px; object-fit: contain !important; transform: none !important; border: none; }

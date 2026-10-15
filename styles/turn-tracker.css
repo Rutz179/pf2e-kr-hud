@@ -75,9 +75,13 @@
   box-shadow: 0 0 14px rgba(226, 185, 59, 0.55), 0 4px 12px rgba(0, 0, 0, 0.7);
   animation: pkh-turn-blink 0.9s ease-in-out infinite alternate; }
 #pkh-turns li.turn.next .frame { border-color: rgba(226, 185, 59, 0.5); }
-#pkh-turns li.turn .name { margin-top: 3px; max-width: calc(var(--pkh-turn-w) * 2.2); overflow: hidden;
+/* name: hidden; appears under the portrait after resting the pointer on it for 1 s */
+#pkh-turns li.turn .name { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); z-index: 5;
+  max-width: calc(var(--pkh-turn-w) * 2.4); overflow: hidden; padding: 1px 7px; border-radius: 4px;
   text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; font-weight: 700; color: var(--pkh-turn-gold);
-  text-shadow: 0 0 3px #000, 0 1px 2px #000, 0 0 8px #000; }
+  background: rgba(10, 8, 6, 0.82); text-shadow: 0 1px 2px #000; pointer-events: none;
+  opacity: 0; visibility: hidden; transition: opacity 150ms ease, visibility 0s linear 150ms; }
+#pkh-turns li.turn:hover .name { opacity: 1; visibility: visible; transition: opacity 150ms ease 1s, visibility 0s linear 1s; }
 #pkh-turns li.turn .name:empty { display: none; }
 
 /* your own turn: the portrait itself is the "end turn" button */

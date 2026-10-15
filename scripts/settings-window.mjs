@@ -49,7 +49,7 @@ export const TABS = [
     id: "chat", label: "채팅창", icon: "fa-solid fa-comments",
     sections: [
       { title: "시계·주사위", keys: ["chatDock", "clock12h"] },
-      { title: "글꼴·크기", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth"] },
+      { title: "글꼴·크기", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth", "chatHideEditorMenu", "chatFaceZoom"] },
       { title: "메시지", keys: ["chatGrouping", "chatGroupWindow", "whisperPolicy"] },
       { title: "입력 중 표시", keys: ["typingIndicator", "typingShowKeeper", "typingReserveHeight", "typingSelector"] }
     ]

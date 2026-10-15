@@ -237,13 +237,21 @@ function placeDice() {
   bar?.classList.toggle("hidden", !visible);
   if (visible && bar) {
     const controls = root.querySelector("#roll-privacy, .roll-privacy, .chat-controls, #chat-controls");
-    const top = Math.min(box.top, controls?.getBoundingClientRect?.().top ?? box.top);
+    // Rutz's Cinematic Stage puts its speaker row above the chat controls: sit above that.
+    const speakers = document.querySelector("#rcs-speakers.inflow:not(.hidden)");
+    const tops = [box.top, controls?.getBoundingClientRect?.().top, speakers?.getBoundingClientRect?.().top].filter(t => Number.isFinite(t) && t > 0);
+    const top = Math.min(...tops);
     bar.style.left = `${Math.round(box.left)}px`;
     bar.style.width = `${Math.round(box.width)}px`;
     bar.style.top = `${Math.round(top - bar.offsetHeight - 4)}px`;
     // Room for the bar and for the "입력 중" line riding on top of it.
-    const typing = document.body.classList.contains("pkh-typing-in-dock") ? 20 : 0;
+    const typing = document.body.classList.contains("pkh-typing-in-dock") ? 24 : 0;
     root.style.setProperty("--pkh-dice-h", `${bar.offsetHeight + 6 + typing}px`);
+    // Reserve the bar's room below the scrolling box (not as padding inside it),
+    // so scrolled-up cards never slide under the bar or the "입력 중" line.
+    const scroller = chatScroller(root);
+    for (const el of document.querySelectorAll(".pkh-dice-reserve")) if (el !== scroller) el.classList.remove("pkh-dice-reserve");
+    scroller?.classList.add("pkh-dice-reserve");
     root.classList.add("pkh-has-dice");
   }
 
@@ -817,7 +825,13 @@ export function initGmTools() {
   Hooks.on("updateWorldTime", () => { refreshClocks(); syncDarkness(); });
   Hooks.on("canvasReady", () => syncDarkness());
   applyDistanceOwnership();
-  Hooks.on("hoverToken", (token, hovered) => showHealth(token, hovered));
+  // Only after the mouse rests on a token for a moment (passing over shows nothing).
+  let tipTimer = 0;
+  Hooks.on("hoverToken", (token, hovered) => {
+    clearTimeout(tipTimer);
+    if (!hovered) return showHealth(token, false);
+    tipTimer = setTimeout(() => { if (token.hover !== false) showHealth(token, true); }, 500);
+  });
   Hooks.on("canvasPan", () => requestAnimationFrame(() => placeTokenTip(hoverToken)));
   Hooks.on("updateActor", actor => { if (hoverToken?.actor === actor) showHealth(hoverToken, true); });
   Hooks.on("controlToken", () => { if (hoverToken) showHealth(hoverToken, true); });

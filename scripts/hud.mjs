@@ -614,7 +614,7 @@ export class PartyHud {
     if (!node) return;
     clearTimeout(this._cardHide);
     clearTimeout(this._cardShow);
-    this._cardShow = setTimeout(() => this._showCard(node, host), 350);
+    this._cardShow = setTimeout(() => this._showCard(node, host), 700);
   }
 
   _effectLeave(ev) {

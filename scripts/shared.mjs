@@ -70,6 +70,55 @@ export function leftChromeWidth(rect) {
   return rightmost;
 }
 
+/**
+ * Foundry's inline references as readable words, for places that show plain
+ * text (speech bubbles, popups): "@UUID[Compendium…Item.abc]{화염구}" → "화염구",
+ * "@UUID[Actor.xyz]" → that document's name, "@Check[reflex|dc:20]" → "반사 DC 20"-ish,
+ * "[[/r 2d6]]{피해}" → "피해", "[[/r 2d6]]" → "2d6".
+ */
+export function plainRefs(text) {
+  const src = String(text ?? "");
+  const nameOf = uuid => {
+    try { return globalThis.fromUuidSync?.(uuid)?.name ?? null; } catch (_) { return null; }
+  };
+  const readable = (type, body) => {
+    if (type === "UUID" || type === "Compendium") return nameOf(body) ?? body.split(".").pop();
+    if (type === "Check") {
+      const [stat, ...rest] = body.split("|");
+      const dc = rest.find(r => r.startsWith("dc:"))?.slice(3);
+      const label = globalThis.game?.i18n?.localize?.(globalThis.CONFIG?.PF2E?.saves?.[stat] ?? globalThis.CONFIG?.PF2E?.skills?.[stat]?.label ?? stat) ?? stat;
+      return dc ? `${label} DC ${dc}` : label;
+    }
+    if (type === "Damage" || type === "Template") return body.replace(/\[[^\]]*\]/g, "").split("|")[0];
+    return body.split("|")[0].split(".").pop();
+  };
+  // A small scanner, so brackets inside the reference (@Damage[2d6[fire]]) are handled.
+  let out = "";
+  let i = 0;
+  while (i < src.length) {
+    const ref = /^@(\w+)\[/.exec(src.slice(i, i + 40));
+    const roll = src.startsWith("[[", i);
+    if (!ref && !roll) { out += src[i++]; continue; }
+    let j = i + (ref ? ref[0].length : 2);
+    let depth = ref ? 1 : 2;
+    while (j < src.length && depth > 0) {
+      if (src[j] === "[") depth++;
+      else if (src[j] === "]") depth--;
+      j++;
+    }
+    if (depth > 0) { out += src[i++]; continue; }
+    const body = ref ? src.slice(i + ref[0].length, j - 1) : src.slice(i + 2, j - 2);
+    let label = null;
+    if (src[j] === "{") {
+      const close = src.indexOf("}", j);
+      if (close > j) { label = src.slice(j + 1, close); j = close + 1; }
+    }
+    out += label ?? (ref ? readable(ref[1], body) : body.replace(/^\/\w+\s*/, "").split("#")[0].trim());
+    i = j;
+  }
+  return out;
+}
+
 /** Short plain-text summary of a PF2e item description (for hover cards). */
 export function summaryOf(item, limit = 260) {
   let raw = String(item?.system?.description?.value ?? "");
