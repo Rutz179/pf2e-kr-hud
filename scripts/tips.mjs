@@ -4,13 +4,21 @@
  * Foundry shows a tooltip after a short wait, but once one is up the next
  * one appears the instant the mouse touches another button — so sweeping the
  * mouse down a popup covered the very button you were heading for. For the
+<<<<<<< HEAD
  * elements of Rutz's modules (ids/classes starting pkh- / rcs- / rcc- / rpb-), a
+=======
+ * elements of Rutz's modules (ids/classes starting pkh- / rcs- / rcc-), a
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
  * tooltip now appears only after the mouse has rested on it (0.8 s), never
  * while just passing over. Foundry's own and other modules' tooltips are not
  * touched. Installed once, whichever Rutz module loads first.
  * ======================================================================== */
 
+<<<<<<< HEAD
 const OURS = '[id^="pkh-"], [class^="pkh-"], [class*=" pkh-"], [id^="pf2e-kr-hud"], [id^="rcs-"], [class^="rcs-"], [class*=" rcs-"], [id^="rcc-"], [class^="rcc-"], [class*=" rcc-"], [id^="rpb-"], [class^="rpb-"], [class*=" rpb-"]';
+=======
+const OURS = '[id^="pkh-"], [class^="pkh-"], [class*=" pkh-"], [id^="pf2e-kr-hud"], [id^="rcs-"], [class^="rcs-"], [class*=" rcs-"], [id^="rcc-"], [class^="rcc-"], [class*=" rcc-"]';
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
 export const TIP_DELAY_MS = 800;
 
 let pending = null;
@@ -59,7 +67,11 @@ export function installCalmTooltips() {
     const el = ev.target?.closest?.("[data-tooltip]");
     if (!el || el === pending || el === shown || !el.closest(OURS)) return;
     if (shown && shown !== el) { game.tooltip?.deactivate?.(); shown = null; }
+<<<<<<< HEAD
     showTipLater(el, Number(el.dataset.rutzTipDelay) || TIP_DELAY_MS);
+=======
+    showTipLater(el);
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
   }, true);
   window.addEventListener("pointerout", ev => {
     const to = ev.relatedTarget;

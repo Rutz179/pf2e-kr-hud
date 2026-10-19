@@ -143,18 +143,25 @@ function ringColor(token) {
   return typeof c === "string" ? c : (c.css ?? null);
 }
 
+<<<<<<< HEAD
 function isPlayerCharacter(actor) {
   return !!actor && (actor.type === "character" || actor.hasPlayerOwner === true);
 }
 
 /** After PF2e built the card: NPCs get a finished round token, PCs their own token small. */
+=======
+/** After PF2e built the card: swap its portrait for a finished token. */
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
 export async function fixChatPortrait(message, html) {
   if (setting("chatFaceZoom", true) === false) return;
   const img = html?.querySelector?.("header.message-header .portrait img");
   if (!img || img.dataset.pkhFace) return;
   img.dataset.pkhFace = "1";
   const actor = message.speakerActor ?? null;
+<<<<<<< HEAD
   if (isPlayerCharacter(actor)) return;            // PCs: PF2e's own picture, untouched
+=======
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
   const token = message.token ?? actor?.prototypeToken ?? null;
   const ring = ringColor(token);
   let face = "";
@@ -187,8 +194,13 @@ export function patchChatPortraits() {
 
 export function registerChatFaceSettings() {
   game.settings.register(MODULE_ID, "chatFaceZoom", {
+<<<<<<< HEAD
     name: "채팅 초상화 정리 (NPC는 원형 토큰)",
     hint: "NPC: 토큰 링을 쓰는 토큰(아트 모듈의 NPC 등)이 채팅 카드 위로 크게 넘치지 않도록, 맵에서처럼 링 안에 들어간 원형 토큰으로 바꿉니다. PC: PF2e가 보여 주는 원래 그림 그대로 둡니다.",
+=======
+    name: "채팅 초상화: 큰 전신 그림 대신 원형 토큰",
+    hint: "토큰 링을 쓰는 토큰(아트 모듈의 NPC 등)은 채팅 카드 머리의 그림이 크게 넘쳐 보입니다. 맵에서처럼 링 안에 들어간 원형 토큰 그림으로 바꿔 보여 줍니다. 보통 정사각형 토큰 그림은 그대로 둡니다.",
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
     scope: "client", config: true, type: Boolean, default: true,
     onChange: () => ui.chat?.render?.()
   });

@@ -10,11 +10,14 @@ import { PIN_ACTION } from "./slot-card.mjs";
 import { openSettings, registerSettingsWindows } from "./settings-window.mjs";
 import { patchChatPortraits, registerChatFaceSettings } from "./chat-faces.mjs";
 import { installCalmTooltips } from "./tips.mjs";
+<<<<<<< HEAD
 import { initChatTrim, registerChatTrimSettings } from "./chat-trim.mjs";
 import { initBulkDamage, registerBulkDamageSettings } from "./bulk-damage.mjs";
 import { initSustain, registerSustainSettings } from "./sustain.mjs";
 import { initSkills, registerSkillsSettings } from "./skills.mjs";
 import { initBrowserLegacy, registerBrowserLegacySettings } from "./browser-legacy.mjs";
+=======
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
 
 /*
  * Hotkeys

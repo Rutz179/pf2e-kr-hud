@@ -216,6 +216,7 @@ body.pkh-no-chat-menu #chat-message :is(.menu-container, menu.editor-menu) { dis
 /* chat portraits: the finished round token made from a ring subject (chat-faces.mjs) */
 .chat-message .message-header .portrait.pkh-face { overflow: visible; }
 .chat-message .message-header .portrait.pkh-face img { width: 36px; height: 36px; object-fit: contain !important; transform: none !important; border: none; }
+<<<<<<< HEAD
 
 /* ---- v1.12: jump to newest ---- */
 #pkh-chat-jump {
@@ -236,3 +237,5 @@ body.pkh-no-chat-menu #chat-message :is(.menu-container, menu.editor-menu) { dis
 }
 .pkh-bulk button small { font-weight: 400; opacity: 0.8; }
 .pkh-bulk button:disabled { opacity: 0.7; }
+=======
+>>>>>>> 1829203ca48bc59f1555971316cd1e6e313fff8e
