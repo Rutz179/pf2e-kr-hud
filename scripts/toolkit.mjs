@@ -31,14 +31,15 @@ function registerToolkitTab() {
     // Brand icons (fa-brands) can't render in scene controls — Foundry forces the solid face there.
     add("pkhVoice", "디스코드 음성 연동", "fa-solid fa-headset", () => game.pf2eKrVoiceBridge?.openSetup?.(), game.user.isGM);
 
+    // Another Rutz module may already have put its buttons in here; keep them.
     controls.rutzToolkit = {
       name: "rutzToolkit",
       title: "러츠 툴킷",
       icon: "fa-solid fa-toolbox",
-      order: Object.keys(controls).length,
+      order: controls.rutzToolkit?.order ?? Object.keys(controls).length,
       visible: true,
       activeTool: "pkhHome",
-      tools
+      tools: { ...(controls.rutzToolkit?.tools ?? {}), ...tools }
     };
   });
 }
@@ -220,10 +221,16 @@ function faceActor(message) {
   return hudActor?.isOwner ? hudActor : null;
 }
 
+/** Rutz's Cinematic Stage in RP mode handles "@표정" itself (stage pictures, timed faces). */
+function stageOn() {
+  try { return !!game.modules.get("rutz-crit-cutin")?.active && !!game.settings.get("rutz-crit-cutin", "stageActive"); }
+  catch (_) { return false; }
+}
+
 function registerFaceKeywords() {
   // On the author's own client, before the message exists: pull "@키워드" out.
   Hooks.on("preCreateChatMessage", (message, data, options, userId) => {
-    if (userId !== game.user.id) return;
+    if (userId !== game.user.id || stageOn()) return;
     const content = String(message.content ?? "");
     if (!content.includes("@")) return;
     const actor = faceActor(message);

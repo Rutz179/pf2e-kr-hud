@@ -4,6 +4,8 @@ import {
   readSlots, resolveSlot, setSlot, storageActor, strikeForEntry, strikeUnavailable, swapSlots, withIconOverride
 } from "./slots.mjs";
 import { SlotCard, registerSlotCardSettings } from "./slot-card.mjs";
+import { reactionBudget, setReactionUsed } from "./reactions.mjs";
+import { openSkills, skillsOpenFor } from "./skills.mjs";
 import { activeConditions, debugEconomy, economyOf, itemActionCost, markNextUse, registerEconomyHooks, registerUseMarking, rollbackOne, setUsed, toggleBonus } from "./economy.mjs";
 
 const BUFF_CONDITIONS = new Set(["quickened", "hidden", "invisible", "concealed", "undetected"]);
@@ -21,16 +23,72 @@ function hpOf(actor) {
   return { value, max, temp, pct: Math.min(100, (value / max) * 100), tempPct: Math.min(100, (temp / max) * 100) };
 }
 
+/* ---------------- effect durations ---------------- */
+
+const UNIT_KO = { rounds: "라운드", minutes: "분", hours: "시간", days: "일" };
+const EXPIRY_KO = { "turn-start": "턴 시작에 끝남", "turn-end": "턴 끝에 끝남", "round-end": "라운드 끝에 끝남" };
+
+/** Seconds → "7분 24초" / "1시간 5분" / "2일 3시간" (exact, for the hover card). */
+function longTime(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (d) return `${d}일${h ? ` ${h}시간` : ""}`;
+  if (h) return `${h}시간${m ? ` ${m}분` : ""}`;
+  if (m) return `${m}분${s ? ` ${s}초` : ""}`;
+  return `${s}초`;
+}
+
+/** Seconds → a few characters for the circle: "3R" · "7분" · "2시간" · "3일". */
+function shortTime(sec) {
+  if (sec < 60) return `${Math.max(1, Math.ceil(sec / 6))}R`;
+  if (sec < 3600) return `${Math.ceil(sec / 60)}분`;
+  if (sec < 86400) return `${Math.round(sec / 3600)}시간`;
+  return `${Math.round(sec / 86400)}일`;
+}
+
+/**
+ * What an effect's clock says. PF2e gives remainingDuration = { expired, remaining (seconds) }
+ * and totalDuration (seconds; Infinity for "until the encounter ends"/unlimited), no label.
+ */
+export function durationOf(item) {
+  const sys = item?.system?.duration;
+  if (!sys || item.type === "condition") return null;
+  const unit = sys.unit;
+  const sustained = !!sys.sustained;
+  const expiry = EXPIRY_KO[sys.expiry] ?? "";
+  if (unit === "unlimited") return { finite: false, short: "", long: "무제한", sustained, expiry: "" };
+  if (unit === "encounter") return { finite: false, short: "전투", long: "전투가 끝날 때까지", sustained, expiry: "" };
+  let remaining = Number(item.remainingDuration?.remaining);
+  const total = Number(item.totalDuration);
+  const expired = !!item.remainingDuration?.expired;
+  if (!Number.isFinite(remaining)) {
+    if (!Number.isFinite(total)) return { finite: false, short: "", long: "무제한", sustained, expiry };
+    remaining = total;
+  }
+  const rounds = Math.ceil(remaining / 6);
+  const fraction = Number.isFinite(total) && total > 0 ? Math.max(0, Math.min(1, remaining / total)) : 1;
+  const totalText = sys.value > 0 && UNIT_KO[unit] ? `${sys.value}${UNIT_KO[unit]}` : (Number.isFinite(total) ? longTime(total) : "");
+  return {
+    finite: true, expired, remaining, fraction, sustained, expiry,
+    short: expired ? "끝" : shortTime(remaining),
+    long: expired ? "시간이 다 됨 (다음 턴 처리 때 사라짐)"
+      : remaining < 60 ? `${rounds}라운드 남음 (${longTime(remaining)})`
+      : `${longTime(remaining)} 남음${remaining <= 600 ? ` · 약 ${rounds}라운드` : ""}`,
+    total: totalText,
+    ending: expired || remaining <= 6
+  };
+}
+
 function effectsOf(actor) {
   const out = [];
   for (const c of activeConditions(actor)) {
     out.push({ kind: "condition", id: c.id, slug: c.slug, name: c.name, img: c.img, value: c.value ?? null, buff: BUFF_CONDITIONS.has(c.slug) });
   }
   for (const e of actor?.itemTypes?.effect ?? []) {
-    out.push({ kind: "effect", id: e.id, slug: e.slug, name: e.name, img: e.img, value: e.badge?.value ?? null, buff: true });
+    out.push({ kind: "effect", id: e.id, slug: e.slug, name: e.name, img: e.img, value: e.badge?.value ?? null, buff: true, dur: durationOf(e) });
   }
   for (const a of actor?.itemTypes?.affliction ?? []) {
-    out.push({ kind: "effect", id: a.id, slug: a.slug, name: a.name, img: a.img, value: a.badge?.value ?? a.stage ?? null, buff: false });
+    out.push({ kind: "effect", id: a.id, slug: a.slug, name: a.name, img: a.img, value: a.badge?.value ?? a.stage ?? null, buff: false, dur: durationOf(a) });
   }
   return out;
 }
@@ -437,11 +495,18 @@ export class PartyHud {
   _effectsHtml(actor) {
     const list = effectsOf(actor);
     if (!list.length) return `<div class="pkh-effects empty"></div>`;
-    return `<div class="pkh-effects">${list.map(e => `
-      <div class="pkh-effect ${e.buff ? "buff" : "debuff"}" data-kind="${e.kind}" data-id="${e.id}" data-slug="${esc(e.slug)}">
+    const showDur = setting("hudEffectDurations", true) !== false;
+    return `<div class="pkh-effects">${list.map(e => {
+      const d = showDur ? e.dur : null;
+      const ring = d?.finite ? ` style="--pkh-left:${(d.fraction * 360).toFixed(1)}deg"` : "";
+      const cls = ["pkh-effect", e.buff ? "buff" : "debuff", d?.finite ? "timed" : "", d?.finite && d.fraction <= 0.25 ? "low" : "", d?.ending ? "ending" : "", d?.sustained ? "sustained" : ""].join(" ");
+      return `
+      <div class="${cls}" data-kind="${e.kind}" data-id="${e.id}" data-slug="${esc(e.slug)}"${ring}>
         <img src="${esc(e.img)}" alt="${esc(e.name)}">
+        ${d?.short ? `<span class="dur">${esc(d.short)}</span>` : ""}
         ${e.value ? `<span class="val">${esc(e.value)}</span>` : ""}
-      </div>`).join("")}</div>`;
+      </div>`;
+    }).join("")}</div>`;
   }
 
   _hpHtml(actor, full) {
@@ -475,9 +540,18 @@ export class PartyHud {
       return `<button type="button" class="${cls}" data-act="pip" data-index="${i}" data-tooltip="${tip}" aria-label="${tip}"></button>`;
     }).join("");
     const over = eco.used > eco.max;
+    let rx = "";
+    if (game.combat?.started && setting("hudReactionPip", true) !== false) {
+      const b = reactionBudget(this.actor);
+      rx = `<span class="pkh-rx-sep"></span>` + Array.from({ length: b.max }, (_, i) => {
+        const used = i < b.used;
+        const tip = `반응 ${b.left} / ${b.max}${used ? " — 이번 라운드에 사용함" : ""}<br><small>클릭 반응 사용 · 우클릭 되돌리기 · 내 턴이 시작되면 돌아옵니다</small>`;
+        return `<button type="button" class="pkh-pip reaction ${used ? "used" : ""}" data-act="rx-pip" data-tooltip="${tip}" aria-label="${tip}"><i class="fa-solid fa-reply"></i></button>`;
+      }).join("");
+    }
     return `
       <div class="pkh-ap ${over ? "over" : ""}" data-tooltip="행동 ${eco.used} / ${eco.max} · ${source}<br><small>참조용 — 행동을 막지 않습니다</small>">
-        ${pips}
+        ${pips}${rx}
         <button type="button" class="pkh-rollback" data-act="rollback" ${eco.used ? "" : "disabled"}
                 data-tooltip="행동 하나 되돌리기<br><small>우클릭: 이번 턴 전부 되돌리기</small>" aria-label="행동 하나 되돌리기"><i class="fa-solid fa-rotate-left"></i></button>
       </div>`;
@@ -561,6 +635,8 @@ export class PartyHud {
         <div class="pkh-bar-right">
           ${actor.type === "character" ? `<button type="button" class="pkh-mini" data-act="faces" data-tooltip="초상화 표정 (@키워드로 바꾸기)">
             <i class="fa-solid fa-masks-theater"></i></button>` : ""}
+          <button type="button" class="pkh-mini ${skillsOpenFor(actor) ? "active" : ""}" data-act="skills" data-tooltip="기술 — 모든 기술과 기술 행동<br><small>클릭해서 굴리기 · 마우스를 올리면 설명</small>">
+            <i class="fa-solid fa-list-check"></i></button>
           <button type="button" class="pkh-mini" data-act="sheet-actions" data-tooltip="캐릭터 시트 — 액션 탭">
             <i class="fa-solid fa-person-running"></i></button>
           <button type="button" class="pkh-mini ${this.popover === "grimoire" ? "active" : ""}" data-act="pop" data-pop="grimoire" data-tooltip="주문 · 피트 훑어보기">
@@ -614,7 +690,7 @@ export class PartyHud {
     if (!node) return;
     clearTimeout(this._cardHide);
     clearTimeout(this._cardShow);
-    this._cardShow = setTimeout(() => this._showCard(node, host), 350);
+    this._cardShow = setTimeout(() => this._showCard(node, host), 700);
   }
 
   _effectLeave(ev) {
@@ -636,7 +712,13 @@ export class PartyHud {
     // "부상 3" already carries its number — don't print "부상 3 3".
     const value = rawValue && !String(item.name ?? "").trim().endsWith(String(rawValue)) ? rawValue : null;
     const summary = summaryOf(item) || "설명이 없습니다.";
-    const remaining = item.remainingDuration?.label ?? "";
+    const d = durationOf(item);
+    const remaining = d ? [
+      `<b>${esc(d.long)}</b>`,
+      d.total ? `전체 ${esc(d.total)}` : "",
+      d.expiry,
+      d.sustained ? `<span class="sus">지속(Sustain) 필요</span>` : ""
+    ].filter(Boolean).join(" · ") : "";
     this.cardEl.dataset.actorUuid = actor.uuid;
     this.cardEl.dataset.itemId = item.id;
     this.cardEl.innerHTML = `
@@ -646,7 +728,7 @@ export class PartyHud {
         ${actor.isOwner && actor.items.get(item.id) ? `<button type="button" data-act="card-edit" data-tooltip="효과 편집" aria-label="효과 편집"><i class="fa-solid fa-pen"></i></button>` : ""}
         <button type="button" data-act="card-chat" data-tooltip="채팅에 보내기" aria-label="채팅에 보내기"><i class="fa-solid fa-comment"></i></button>
       </header>
-      ${remaining ? `<div class="dur"><i class="fa-regular fa-hourglass-half"></i> ${esc(remaining)}</div>` : ""}
+      ${remaining ? `<div class="dur"><i class="fa-regular fa-hourglass-half"></i> ${remaining}</div>` : ""}
       <p>${esc(summary)}</p>
       ${actor.isOwner ? `<footer>${item.type === "condition" || item.badge?.type === "counter" ? "좌클릭 +1 · 우클릭 −1" : "우클릭 제거"} · Shift+클릭 모두 제거</footer>` : ""}`;
     this.cardEl.classList.remove("hidden");
@@ -733,6 +815,7 @@ export class PartyHud {
         if (ev.shiftKey) return toggleBonus(actor);
         return setUsed(actor, this.eco.used + 1);
       case "rollback": return rollbackOne(actor);
+      case "rx-pip": return setReactionUsed(actor, reactionBudget(actor).used + 1);
       case "page": return this.setPage(actor, Number(btn.dataset.page));
       case "rows": return game.settings.set(MODULE_ID, "hudRows", (this.rows() % MAX_ROWS) + 1);
       case "lock":
@@ -749,6 +832,7 @@ export class PartyHud {
         return ui.notifications.info(`PF2e-KR HUD | ${added}개를 빈칸에 채웠습니다.`);
       }
       case "sheet-actions": return openSheetTab(actor, "actions");
+      case "skills": openSkills(actor); return this.scheduleRender();
       case "save": {
         const key = btn.dataset.save;
         await actor.saves?.[key]?.roll?.({ event: ev });
@@ -786,6 +870,7 @@ export class PartyHud {
     }
 
     if (ev.target.closest(".pkh-rollback")) return setUsed(actor, 0);
+    if (ev.target.closest(".pkh-pip.reaction")) return setReactionUsed(actor, reactionBudget(actor).used - 1);
     if (ev.target.closest(".pkh-pip")) return rollbackOne(actor);
 
     const cell = ev.target.closest(".pkh-inv-cell, .pkh-list-row");
@@ -1122,6 +1207,16 @@ export function registerHudSettings() {
     name: "상태·효과 아이콘 크기 (px)", hint: "HP 막대 위에 뜨는 동그란 상태·효과 아이콘의 지름입니다.",
     scope: "client", config: true, type: Number, default: 42, range: { min: 24, max: 64, step: 2 }, onChange: rerender
   });
+  game.settings.register(MODULE_ID, "hudEffectDurations", {
+    name: "효과 남은 시간 표시",
+    hint: "효과 아이콘 둘레에 남은 시간만큼 테두리를 그리고 작은 글자(3R · 7분 · 1시간)를 붙입니다. 마우스를 올리면 정확한 남은 시간·전체 시간·끝나는 시점을 보여 줍니다.",
+    scope: "client", config: true, type: Boolean, default: true, onChange: () => game.pf2eKrHud?.hud?.scheduleRender?.()
+  });
+  game.settings.register(MODULE_ID, "hudReactionPip", {
+    name: "행동 칸 옆에 반응 표시",
+    hint: "전투 중 행동 점 옆에 반응(↩) 점을 보여 줍니다. 반응 확인 창에서 '사용'을 고르면 자동으로 채워지고, 직접 클릭/우클릭으로도 고칠 수 있습니다. 내 턴이 시작되면 돌아옵니다.",
+    scope: "client", config: true, type: Boolean, default: true
+  });
   game.settings.register(MODULE_ID, "hudSaveCard", {
     name: "내성 굴림 시 DC 카드도 올리기", hint: "HUD에서 인내·반사·의지를 누르면 굴림과 함께 '인내 DC 26'(10+수정치) 카드를 채팅에 올립니다.",
     scope: "client", config: true, type: Boolean, default: true
@@ -1174,6 +1269,8 @@ export function initHud() {
     else if (!targeted && actor === hud.inspectActor) hud.inspect(null);
   });
   Hooks.on("collapseSidebar", () => setTimeout(() => hud.position(), 250));
+  // Effect clocks move with game time and with the combat turn.
+  Hooks.on("updateWorldTime", rerender);
   registerEconomyHooks(rerender);
   registerUseMarking();
 }

@@ -402,8 +402,41 @@ function applySidebarWidth() {
   else document.documentElement.style.removeProperty("--pkh-sidebar-width");
 }
 
+/**
+ * Hide the chat input's formatting toolbar without making the input taller:
+ * the box gives back exactly the toolbar's height (measured once per input,
+ * while the toolbar is still shown), so the space goes to the rows above it.
+ */
+function fitChatInput() {
+  const hide = setting("chatHideEditorMenu", true) !== false;
+  const inputs = [...document.querySelectorAll("#chat-message")];
+  if (!hide) {
+    document.body.classList.remove("pkh-no-chat-menu");
+    for (const pm of inputs) {
+      if (!pm.dataset.pkhFit) continue;
+      for (const k of ["height", "minHeight", "flexBasis"]) pm.style[k] = "";
+      delete pm.dataset.pkhFit;
+    }
+    return;
+  }
+  const todo = inputs.filter(pm => !pm.dataset.pkhFit && pm.querySelector(".menu-container, menu.editor-menu"));
+  if (todo.length) {
+    document.body.classList.remove("pkh-no-chat-menu");
+    const sizes = todo.map(pm => [pm, pm.getBoundingClientRect().height, pm.querySelector(".menu-container, menu.editor-menu").getBoundingClientRect().height]);
+    for (const [pm, full, menu] of sizes) {
+      if (!(full > 0) || !(menu > 0)) continue;           // not on screen yet: try again later
+      pm.dataset.pkhFit = "1";
+      pm.style.height = `${Math.max(36, Math.round(full - menu))}px`;
+      pm.style.minHeight = "0";
+      pm.style.flexBasis = "auto";
+    }
+  }
+  document.body.classList.add("pkh-no-chat-menu");
+}
+
 function applyStyleVariables() {
   applySidebarWidth();
+  fitChatInput();
   let style = document.getElementById("pkh-chat-style");
   if (!style) {
     style = document.createElement("style");
@@ -568,6 +601,16 @@ Hooks.once("init", () => {
     onChange: applySidebarWidth
   });
 
+  game.settings.register(MODULE_ID, "chatHideEditorMenu", {
+    name: "채팅 입력창 서식 도구 숨기기",
+    hint: "Foundry v13/v14 채팅 입력창 위의 '문단 · 기울임 · HTML' 도구 줄을 숨깁니다. Ctrl+B, Ctrl+I 같은 단축키는 그대로 됩니다. 빈 자리에는 말하는 캐릭터 바(Rutz's Cinematic Stage)가 들어갑니다.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: applyStyleVariables
+  });
+
   game.settings.register(MODULE_ID, "typingIndicator", {
     name: "입력 중 표시",
     hint: "누군가 채팅창에 글을 쓰는 동안 입력창 위에 '…님이 입력 중입니다'를 보여줍니다. 귓속말(/w)을 쓰는 중에는 표시하지 않습니다. Cautious Gamemaster's Pack의 같은 기능을 대신합니다.",
@@ -685,6 +728,8 @@ if (Number(game.release?.generation ?? 13) < 13) {
 }
 
 Hooks.on("renderChatLog", () => scheduleInstall());
+for (const hook of ["renderChatLog", "renderChatInput", "changeSidebarTab", "collapseSidebar"]) Hooks.on(hook, () => setTimeout(fitChatInput, 60));
+Hooks.once("ready", () => { setTimeout(fitChatInput, 300); setInterval(fitChatInput, 2000); });
 Hooks.on("renderChatInput", () => scheduleInstall());
 Hooks.on("collapseSidebar", () => scheduleInstall());
 Hooks.on("changeSidebarTab", () => scheduleInstall());

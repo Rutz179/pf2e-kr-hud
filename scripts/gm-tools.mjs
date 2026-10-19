@@ -1,4 +1,5 @@
 import { MODULE_ID, SimpleWindow, esc, localizeMaybe, readDragData, setting } from "./shared.mjs";
+import { loreCheckLink, loreSlug, partyLores } from "./lore.mjs";
 
 /* ======================================================================== *
  * Time of day + scene lighting (no SmallTime needed)
@@ -237,13 +238,21 @@ function placeDice() {
   bar?.classList.toggle("hidden", !visible);
   if (visible && bar) {
     const controls = root.querySelector("#roll-privacy, .roll-privacy, .chat-controls, #chat-controls");
-    const top = Math.min(box.top, controls?.getBoundingClientRect?.().top ?? box.top);
+    // Rutz's Cinematic Stage puts its speaker row above the chat controls: sit above that.
+    const speakers = document.querySelector("#rcs-speakers.inflow:not(.hidden)");
+    const tops = [box.top, controls?.getBoundingClientRect?.().top, speakers?.getBoundingClientRect?.().top].filter(t => Number.isFinite(t) && t > 0);
+    const top = Math.min(...tops);
     bar.style.left = `${Math.round(box.left)}px`;
     bar.style.width = `${Math.round(box.width)}px`;
     bar.style.top = `${Math.round(top - bar.offsetHeight - 4)}px`;
     // Room for the bar and for the "입력 중" line riding on top of it.
-    const typing = document.body.classList.contains("pkh-typing-in-dock") ? 20 : 0;
+    const typing = document.body.classList.contains("pkh-typing-in-dock") ? 24 : 0;
     root.style.setProperty("--pkh-dice-h", `${bar.offsetHeight + 6 + typing}px`);
+    // Reserve the bar's room below the scrolling box (not as padding inside it),
+    // so scrolled-up cards never slide under the bar or the "입력 중" line.
+    const scroller = chatScroller(root);
+    for (const el of document.querySelectorAll(".pkh-dice-reserve")) if (el !== scroller) el.classList.remove("pkh-dice-reserve");
+    scroller?.classList.add("pkh-dice-reserve");
     root.classList.add("pkh-has-dice");
   }
 
@@ -348,47 +357,107 @@ function checkOptions() {
   return [{ slug: "perception", label: "지각" }, ...Object.entries(SAVES).map(([slug, label]) => ({ slug, label, save: true })), ...skills];
 }
 
-function requestContent({ checks, dc, secret, basic, note }) {
+export function requestContent({ checks, dc, secret, note }) {
   const parts = checks.map(c => {
+    if (c.lore) return loreCheckLink(c.slug, c.label, { dc: c.dc ?? dc, secret });
     const params = [c.slug];
-    if (dc) params.push(`dc:${dc}`);
-    if (basic && SAVES[c.slug]) params.push("basic");
+    const d = c.dc ?? dc;
+    if (d) params.push(`dc:${d}`);
+    if (c.basic && SAVES[c.slug]) params.push("basic");
     if (secret) params.push("traits:secret");
     return `@Check[${params.join("|")}]`;
   });
-  return `<div class="pkh-save-request"><header><i class="fa-solid fa-dice-d20"></i> <strong>굴림 요청</strong>${dc ? ` — DC <b>${dc}</b>` : ""}${secret ? " <em>(비밀)</em>" : ""}</header>
+  const dcs = [...new Set(checks.map(c => c.dc ?? dc).filter(Boolean))];
+  return `<div class="pkh-save-request"><header><i class="fa-solid fa-dice-d20"></i> <strong>굴림 요청</strong>${dcs.length === 1 ? ` — DC <b>${dcs[0]}</b>` : ""}${secret ? " <em>(비밀)</em>" : ""}</header>
     ${note ? `<p>${esc(note)}</p>` : ""}<div class="checks">${parts.join(" ")}</div></div>`;
 }
 
+/**
+ * A small window: pick checks from a drop-down (saves and skills on their
+ * own tabs); every pick becomes a row with its own DC (empty = the default DC
+ * below) and, for saves, "basic". Sending keeps the window open, so several
+ * requests can go out one after another.
+ */
 export function openRollRequest() {
   if (!game.user.isGM) return;
   const opts = checkOptions();
-  const html = `<div class="pkh-request">
-    <div class="pkh-req-grid">${opts.map(o => `<label class="${o.save ? "save" : ""}"><input type="checkbox" value="${o.slug}"> ${esc(o.label)}</label>`).join("")}</div>
-    <div class="pkh-req-row">DC <input type="number" name="dc" min="0" max="60" style="width:70px" placeholder="없음">
-      <span class="hint">레벨</span><select name="lv">${LEVEL_DC.map((d, i) => `<option value="${i}">${i}</option>`).join("")}</select>
+  let lores = partyLores();
+  const picked = [];
+  let tab = "save";
+  const optionList = () => tab === "lore"
+    ? `<option value="">시트의 지식 선택…</option>` + lores.map(o => `<option value="${esc(o.slug)}">${esc(o.label)} (${esc(o.actors.join(", "))})</option>`).join("")
+    : opts.filter(o => (tab === "save" ? o.save : !o.save))
+      .map(o => `<option value="${esc(o.slug)}">${esc(o.label)}</option>`).join("");
+  const rowsHtml = () => picked.length ? picked.map((c, i) => `<div class="pkh-req-pick" data-i="${i}">
+      <b>${esc(c.label)}</b>
+      <input type="number" data-f="dc" min="0" max="60" value="${c.dc ?? ""}" placeholder="기본 DC" title="이 굴림만의 DC (비우면 아래 기본 DC)">
+      ${c.save ? `<label title="기본 내성"><input type="checkbox" data-f="basic" ${c.basic ? "checked" : ""}> 기본</label>` : "<span></span>"}
+      <button type="button" data-act="del" data-i="${i}" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
+    : `<p class="hint">위에서 굴림을 고르세요. 여러 개를 고를 수 있습니다.</p>`;
+  const html = `<div class="pkh-request small">
+    <div class="pkh-req-tabs"><button type="button" data-tab="save" class="on">내성 굴림</button><button type="button" data-tab="skill">기술 · 지각</button><button type="button" data-tab="lore">지식</button></div>
+    <div class="pkh-req-row"><select name="pick" aria-label="요청할 굴림">${optionList()}</select><button type="button" data-act="add" class="primary"><i class="fa-solid fa-plus"></i> 추가</button></div>
+    <div class="pkh-req-lore" hidden><label>지식 이름 직접 입력<input type="text" name="loreName" maxlength="120" placeholder="예: 선원 지식, Sailing Lore"></label><p class="hint">시트에서 선택하거나 직접 입력한 뒤 ‘추가’와 ‘보내기’를 누르세요.</p></div>
+    <div class="pkh-req-picks">${rowsHtml()}</div>
+    <div class="pkh-req-row">기본 DC <input type="number" name="dc" min="0" max="60" style="width:62px" placeholder="없음">
+      <select name="lv" title="레벨">${LEVEL_DC.map((d, i) => `<option value="${i}">Lv ${i}</option>`).join("")}</select>
       <select name="adj">${Object.entries(ADJUST).map(([v, l]) => `<option value="${v}" ${v === "0" ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <button type="button" data-act="lvdc">레벨 DC 넣기</button></div>
-    <div class="pkh-req-row"><label><input type="checkbox" name="secret"> 비밀 굴림</label>
-      <label><input type="checkbox" name="basic"> 기본 내성</label>
-      <input type="text" name="note" placeholder="설명 (선택): 예) 함정이 작동합니다!" style="flex:1"></div>
-    <div class="pkh-req-row"><input type="text" name="mname" placeholder="매크로 이름 (예: 함정 반사 DC 20)" style="flex:1">
-      <button type="button" data-act="macro"><i class="fa-solid fa-scroll"></i> 매크로로 저장</button>
-      <button type="button" data-act="send" class="primary"><i class="fa-solid fa-paper-plane"></i> 채팅에 보내기</button></div>
-    <p class="hint">플레이어는 카드의 버튼으로 자기 캐릭터를 굴리고, GM은 토큰을 선택한 뒤 눌러 NPC를 굴립니다. 매크로는 GM 팔레트 빈칸에 자동으로 들어갑니다.</p>
+      <button type="button" data-act="lvdc" title="레벨 DC 넣기"><i class="fa-solid fa-arrow-left"></i></button></div>
+    <div class="pkh-req-row"><label><input type="checkbox" name="secret"> 비밀</label>
+      <input type="text" name="note" placeholder="설명 (선택)" style="flex:1"></div>
+    <div class="pkh-req-row"><input type="text" name="mname" placeholder="매크로 이름 (선택)" style="flex:1">
+      <button type="button" data-act="macro" title="매크로로 저장"><i class="fa-solid fa-scroll"></i></button>
+      <button type="button" data-act="send" class="primary"><i class="fa-solid fa-paper-plane"></i> 보내기</button></div>
   </div>`;
   new SimpleWindow({
-    id: `${MODULE_ID}-roll-request`, title: "굴림 요청 · 매크로 만들기", width: 560, html,
-    onRender: (root, app) => {
+    id: `${MODULE_ID}-roll-request`, title: "굴림 요청", width: 460, html,
+    onRender: (root) => {
+      const redraw = () => { root.querySelector(".pkh-req-picks").innerHTML = rowsHtml(); };
       const read = () => ({
-        checks: [...root.querySelectorAll(".pkh-req-grid input:checked")].map(i => opts.find(o => o.slug === i.value)),
+        checks: picked.map(c => ({ ...c })),
         dc: Number(root.querySelector("[name=dc]").value) || null,
         secret: root.querySelector("[name=secret]").checked,
-        basic: root.querySelector("[name=basic]").checked,
         note: root.querySelector("[name=note]").value.trim()
       });
+      root.addEventListener("input", ev => {
+        if (ev.target.name === "loreName") root.querySelector("[name=pick]").value = "";
+        const row = ev.target.closest(".pkh-req-pick");
+        if (!row) return;
+        const c = picked[Number(row.dataset.i)];
+        if (ev.target.dataset.f === "dc") c.dc = Number(ev.target.value) || null;
+        if (ev.target.dataset.f === "basic") c.basic = ev.target.checked;
+      });
+      root.addEventListener("change", ev => {
+        if (tab === "lore" && ev.target.name === "pick") {
+          const lore = lores.find(l => l.slug === ev.target.value);
+          if (lore) root.querySelector("[name=loreName]").value = lore.label;
+        }
+      });
       root.addEventListener("click", async ev => {
-        const act = ev.target.closest("button[data-act]")?.dataset.act;
+        const tabBtn = ev.target.closest("[data-tab]");
+        if (tabBtn) {
+          tab = tabBtn.dataset.tab;
+          if (tab === "lore") lores = partyLores();
+          root.querySelectorAll("[data-tab]").forEach(b => b.classList.toggle("on", b === tabBtn));
+          root.querySelector("[name=pick]").innerHTML = optionList();
+          root.querySelector(".pkh-req-lore").hidden = tab !== "lore";
+          return;
+        }
+        const btn = ev.target.closest("button[data-act]");
+        const act = btn?.dataset.act;
+        if (act === "add") {
+          const value = root.querySelector("[name=pick]").value;
+          let o = (tab === "lore" ? lores : opts).find(x => x.slug === value);
+          if (tab === "lore" && !o) {
+            const label = root.querySelector("[name=loreName]").value.trim();
+            const slug = loreSlug(label);
+            if (!label || !slug) return ui.notifications.warn("PF2e-KR HUD | 지식을 선택하거나 이름을 입력하세요.");
+            o = lores.find(l => l.label === label || l.slug === slug) ?? { slug, label, lore: true };
+          }
+          if (o && !picked.some(c => c.slug === o.slug)) { picked.push({ ...o, dc: null, basic: false }); redraw(); }
+          return;
+        }
+        if (act === "del") { picked.splice(Number(btn.dataset.i), 1); redraw(); return; }
         if (act === "lvdc") {
           const lv = Number(root.querySelector("[name=lv]").value);
           root.querySelector("[name=dc]").value = LEVEL_DC[lv] + Number(root.querySelector("[name=adj]").value);
@@ -396,11 +465,12 @@ export function openRollRequest() {
         }
         if (act !== "send" && act !== "macro") return;
         const data = read();
-        if (!data.checks.length) return ui.notifications.warn("PF2e-KR HUD | 굴림을 하나 이상 고르세요.");
+        if (!data.checks.length) return ui.notifications.warn("PF2e-KR HUD | 굴림을 하나 이상 추가하세요.");
         const content = requestContent(data);
         if (act === "send") {
           await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ alias: "GM" }), content });
-          return app.close();
+          ui.notifications.info("PF2e-KR HUD | 굴림 요청을 보냈습니다.");
+          return;
         }
         const name = root.querySelector("[name=mname]").value.trim()
           || `${data.checks.map(c => c.label).join("·")}${data.dc ? ` DC ${data.dc}` : ""}`;
@@ -817,7 +887,13 @@ export function initGmTools() {
   Hooks.on("updateWorldTime", () => { refreshClocks(); syncDarkness(); });
   Hooks.on("canvasReady", () => syncDarkness());
   applyDistanceOwnership();
-  Hooks.on("hoverToken", (token, hovered) => showHealth(token, hovered));
+  // Only after the mouse rests on a token for a moment (passing over shows nothing).
+  let tipTimer = 0;
+  Hooks.on("hoverToken", (token, hovered) => {
+    clearTimeout(tipTimer);
+    if (!hovered) return showHealth(token, false);
+    tipTimer = setTimeout(() => { if (token.hover !== false) showHealth(token, true); }, 500);
+  });
   Hooks.on("canvasPan", () => requestAnimationFrame(() => placeTokenTip(hoverToken)));
   Hooks.on("updateActor", actor => { if (hoverToken?.actor === actor) showHealth(hoverToken, true); });
   Hooks.on("controlToken", () => { if (hoverToken) showHealth(hoverToken, true); });

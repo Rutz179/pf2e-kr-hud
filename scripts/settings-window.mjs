@@ -31,11 +31,13 @@ export const TABS = [
   {
     id: "hud", label: "캐릭터 HUD", icon: "fa-solid fa-table-cells",
     sections: [
-      { title: "표시", keys: ["hudEnabled", "hudScale", "hudRows", "hudEffectSize"] },
+      { title: "표시", keys: ["hudEnabled", "hudScale", "hudRows", "hudEffectSize", "hudEffectDurations", "hudReactionPip"] },
       { title: "퀵슬롯 설명 카드", keys: ["hudSlotCard", "hudSlotCardDelay"] },
       { title: "동작", keys: ["hudSaveCard", "hudAutoInfused", "hudNpcAutoFill"] },
       { title: "Foundry·PF2e 기본 UI", keys: ["hudHideCoreHotbar", "hudHideEffectsPanel"] },
-      { title: "반응(리액션) 알림", keys: ["reactionChecker", "reactionCombatOnly", "reactionPopup", "reactionPopupGM"] }
+      { title: "반응(리액션) 알림", keys: ["reactionChecker", "reactionCombatOnly", "reactionPopup", "reactionPopupGM"] },
+      { title: "지속 주문", keys: ["sustainChecker"] },
+      { title: "피해 적용 (PF2e Toolbelt)", keys: ["bulkDamage"] }
     ]
   },
   {
@@ -49,8 +51,9 @@ export const TABS = [
     id: "chat", label: "채팅창", icon: "fa-solid fa-comments",
     sections: [
       { title: "시계·주사위", keys: ["chatDock", "clock12h"] },
-      { title: "글꼴·크기", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth"] },
+      { title: "글꼴·크기", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth", "chatHideEditorMenu", "chatFaceZoom"] },
       { title: "메시지", keys: ["chatGrouping", "chatGroupWindow", "whisperPolicy"] },
+      { title: "긴 세션 (렉 줄이기)", keys: ["chatTrim", "chatTrimKeep", "chatJumpButton"] },
       { title: "입력 중 표시", keys: ["typingIndicator", "typingShowKeeper", "typingReserveHeight", "typingSelector"] }
     ]
   },
@@ -65,7 +68,8 @@ export const TABS = [
     id: "gm", label: "GM 도구", icon: "fa-solid fa-hat-wizard", gm: true,
     sections: [
       { title: "시간·조명", keys: ["timeDarknessSync", "timeDarknessMax"] },
-      { title: "GM 팔레트", keys: ["paletteSize", "paletteOpacity"] }
+      { title: "GM 팔레트", keys: ["paletteSize", "paletteOpacity"] },
+      { title: "컴펜디움 브라우저", keys: ["browserHideLegacy"] }
     ]
   },
   {

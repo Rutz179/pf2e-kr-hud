@@ -72,6 +72,8 @@ function isRelayClient() {
 }
 
 function applyVoice(userId, speaking, slotKey = null) {
+  // Other Rutz modules (Cinematic Stage's RP mode) listen for this on every client.
+  Hooks.callAll("rutzVoiceSpeaking", userId, !!speaking);
   // The relay resolves the stage slot itself (a keeper can see every actor)
   // and sends it along, so a player never has to look up a character they
   // may not have permission to see.
