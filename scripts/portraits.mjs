@@ -1,4 +1,4 @@
-import { MODULE_ID, SimpleWindow, boardViewportRect, displayName, esc, leftChromeWidth, setting } from "./shared.mjs";
+import { MODULE_ID, SimpleWindow, boardViewportRect, displayName, esc, leftChromeWidth, plainRefs, setting } from "./shared.mjs";
 
 /*
  * Same seats as the CoC7 toolkit stage:
@@ -77,7 +77,7 @@ function chatToSpeech(message, limit = 160) {
   const div = document.createElement("div");
   div.innerHTML = String(message.content ?? "");
   if (div.querySelector(".dice-roll, .chat-card, table, .pkh-save-request")) return "";
-  const text = (div.textContent ?? "").replace(/\s+/g, " ").trim();
+  const text = plainRefs(div.textContent ?? "").replace(/\s+/g, " ").trim();
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
 }
 

@@ -70,6 +70,55 @@ export function leftChromeWidth(rect) {
   return rightmost;
 }
 
+/**
+ * Foundry's inline references as readable words, for places that show plain
+ * text (speech bubbles, popups): "@UUID[Compendium…Item.abc]{화염구}" → "화염구",
+ * "@UUID[Actor.xyz]" → that document's name, "@Check[reflex|dc:20]" → "반사 DC 20"-ish,
+ * "[[/r 2d6]]{피해}" → "피해", "[[/r 2d6]]" → "2d6".
+ */
+export function plainRefs(text) {
+  const src = String(text ?? "");
+  const nameOf = uuid => {
+    try { return globalThis.fromUuidSync?.(uuid)?.name ?? null; } catch (_) { return null; }
+  };
+  const readable = (type, body) => {
+    if (type === "UUID" || type === "Compendium") return nameOf(body) ?? body.split(".").pop();
+    if (type === "Check") {
+      const [stat, ...rest] = body.split("|");
+      const dc = rest.find(r => r.startsWith("dc:"))?.slice(3);
+      const label = globalThis.game?.i18n?.localize?.(globalThis.CONFIG?.PF2E?.saves?.[stat] ?? globalThis.CONFIG?.PF2E?.skills?.[stat]?.label ?? stat) ?? stat;
+      return dc ? `${label} DC ${dc}` : label;
+    }
+    if (type === "Damage" || type === "Template") return body.replace(/\[[^\]]*\]/g, "").split("|")[0];
+    return body.split("|")[0].split(".").pop();
+  };
+  // A small scanner, so brackets inside the reference (@Damage[2d6[fire]]) are handled.
+  let out = "";
+  let i = 0;
+  while (i < src.length) {
+    const ref = /^@(\w+)\[/.exec(src.slice(i, i + 40));
+    const roll = src.startsWith("[[", i);
+    if (!ref && !roll) { out += src[i++]; continue; }
+    let j = i + (ref ? ref[0].length : 2);
+    let depth = ref ? 1 : 2;
+    while (j < src.length && depth > 0) {
+      if (src[j] === "[") depth++;
+      else if (src[j] === "]") depth--;
+      j++;
+    }
+    if (depth > 0) { out += src[i++]; continue; }
+    const body = ref ? src.slice(i + ref[0].length, j - 1) : src.slice(i + 2, j - 2);
+    let label = null;
+    if (src[j] === "{") {
+      const close = src.indexOf("}", j);
+      if (close > j) { label = src.slice(j + 1, close); j = close + 1; }
+    }
+    out += label ?? (ref ? readable(ref[1], body) : body.replace(/^\/\w+\s*/, "").split("#")[0].trim());
+    i = j;
+  }
+  return out;
+}
+
 /** Short plain-text summary of a PF2e item description (for hover cards). */
 export function summaryOf(item, limit = 260) {
   let raw = String(item?.system?.description?.value ?? "");
@@ -121,4 +170,40 @@ export class SimpleWindow extends foundry.applications.api.ApplicationV2 {
     super._onRender?.(context, options);
     this._onRenderCb?.(this.element.querySelector(".window-content") ?? this.element, this);
   }
+}
+
+/* ---------------- translated copies of system packs ---------------- *
+ * Translation modules such as PF2e-KR ship "mirror" packs (same pack name,
+ * same entries, translated). A uuid into pf2e.actionspf2e is then better
+ * read from the mirror: same id first, else the entry whose name ends in
+ * "(English name)".
+ */
+const mirrors = new Map();
+export function mirrorPackOf(collection) {
+  if (mirrors.has(collection)) return mirrors.get(collection);
+  const [pkg, name] = String(collection).split(".");
+  const found = pkg === game.system.id
+    ? game.packs.find(p => p.metadata.name === name && p.collection !== collection && p.metadata.packageType !== "system") ?? null
+    : null;
+  mirrors.set(collection, found);
+  return found;
+}
+
+export async function localizedDoc(uuid) {
+  const m = /^Compendium\.([^.]+)\.([^.]+)\.(?:Item|Actor|JournalEntry|Macro)\.(.+)$/.exec(String(uuid ?? ""));
+  const original = await fromUuid(uuid).catch(() => null);
+  if (!m) return original;
+  const mirror = mirrorPackOf(`${m[1]}.${m[2]}`);
+  if (!mirror) return original;
+  try {
+    const index = await mirror.getIndex();
+    const byId = index.get(m[3]) ? await mirror.getDocument(m[3]) : null;
+    if (byId) return byId;
+    if (original) {
+      const want = `(${original.name})`.toLowerCase();
+      const hit = index.find(e => String(e.name).toLowerCase().endsWith(want) || e.name === original.name);
+      if (hit) return (await mirror.getDocument(hit._id)) ?? original;
+    }
+  } catch (_) { /* fall back */ }
+  return original;
 }

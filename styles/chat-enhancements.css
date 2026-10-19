@@ -209,3 +209,30 @@ body.pkh-typing-builtin .pkh-typing-reserve {
 @media (prefers-reduced-motion: reduce) {
   .pkh-typing-line .dots i { animation: none; opacity: 0.6; }
 }
+
+/* the chat input's formatting toolbar (Paragraph / Italic / HTML in v13–v14), hidden by setting */
+body.pkh-no-chat-menu #chat-message :is(.menu-container, menu.editor-menu) { display: none !important; }
+
+/* chat portraits: the finished round token made from a ring subject (chat-faces.mjs) */
+.chat-message .message-header .portrait.pkh-face { overflow: visible; }
+.chat-message .message-header .portrait.pkh-face img { width: 36px; height: 36px; object-fit: contain !important; transform: none !important; border: none; }
+
+/* ---- v1.12: jump to newest ---- */
+#pkh-chat-jump {
+  position: fixed; z-index: 70; width: 32px; height: 32px; padding: 0; margin: 0; border-radius: 50%;
+  display: grid; place-items: center; line-height: 1; font-size: 0.85rem; cursor: pointer;
+  border: 1px solid #c9a227; background: rgba(20, 16, 11, 0.92); color: #f3e6b8;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55); transition: opacity 150ms ease, transform 100ms ease;
+}
+#pkh-chat-jump:hover { transform: scale(1.08); background: rgba(48, 38, 20, 0.96); }
+#pkh-chat-jump.hidden { opacity: 0; pointer-events: none; }
+
+/* ---- v1.12: Toolbelt "apply to everyone" ---- */
+.pkh-bulk { margin: 0 0 4px; }
+.pkh-bulk button {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  line-height: 26px; padding: 0 8px; border-radius: 5px; font-weight: 700;
+  border: 1px solid #c4524a; background: linear-gradient(180deg, rgba(160, 50, 40, 0.35), rgba(90, 25, 20, 0.35));
+}
+.pkh-bulk button small { font-weight: 400; opacity: 0.8; }
+.pkh-bulk button:disabled { opacity: 0.7; }

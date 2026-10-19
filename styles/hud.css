@@ -431,12 +431,12 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
 
 /* dice bar: floats just above the chat input */
 #pkh-dice {
-  position: fixed; z-index: 80; display: flex; align-items: center; justify-content: center; gap: 3px;
+  position: fixed; z-index: 80; display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 3px;
   padding: 4px; border-radius: 8px; background: rgba(15, 12, 9, 0.92); border: 1px solid #3a3226; box-sizing: border-box;
 }
 #pkh-dice.hidden { display: none; }
 #pkh-dice button {
-  position: relative; width: 30px; height: 28px; min-height: 0; margin: 0; padding: 0; flex: none;
+  position: relative; width: 30px; max-width: 30px; min-width: 20px; height: 28px; min-height: 0; margin: 0; padding: 0; flex: 0 1 30px; box-sizing: border-box;
   display: grid; place-items: center; border-radius: 6px; border: 1px solid #4a3f2a; background: #1a140d;
   color: #e9dfc9; cursor: pointer; line-height: 1;
 }
@@ -454,7 +454,8 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
   text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 1px #000, 0 0 4px rgba(0, 0, 0, 0.8); }
 #pkh-dice button.flat:hover { color: #c9a227; }
 /* "…님이 입력 중입니다" rides just above the dice bar */
-#pkh-dice .pkh-dock-typing { position: absolute; left: 6px; right: 6px; bottom: calc(100% + 3px); height: 16px;
+#pkh-dice .pkh-dock-typing { position: absolute; left: 0; right: 0; bottom: calc(100% + 3px); height: 20px; padding: 0 8px;
+  border-radius: 6px; background: rgba(15, 12, 9, 0.88);
   display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   font-size: 12px; font-style: italic; color: rgba(236, 230, 214, 0.85); text-shadow: 0 1px 2px #000; pointer-events: none; visibility: hidden; }
 #pkh-dice .pkh-dock-typing.active { visibility: visible; }
@@ -463,9 +464,9 @@ body.pkh-gm #pkh-clock .main { cursor: pointer; }
 #pkh-dice .pkh-dock-typing .dots i:nth-child(2) { animation-delay: 0.2s; }
 #pkh-dice .pkh-dock-typing .dots i:nth-child(3) { animation-delay: 0.4s; }
 body.pkh-typing-in-dock .pkh-typing-line { display: none !important; }
-#pkh-dice .sep { width: 1px; height: 18px; background: #3a3226; margin: 0 3px; flex: none; }
+#pkh-dice .sep { width: 1px; height: 18px; background: #3a3226; margin: 0 2px; flex: none; }
 /* keep the last messages above the floating dice bar */
-.pkh-has-dice :is(#chat-log, .chat-log) { padding-bottom: var(--pkh-dice-h, 40px) !important; }
+.pkh-dice-reserve { margin-bottom: var(--pkh-dice-h, 40px) !important; }
 
 #pkh-clock-pop { position: fixed; z-index: 100; padding: 8px; border-radius: 9px; border: 1px solid #6b5a2f;
   background: rgba(15, 12, 9, 0.97); color: #e9dfc9; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
@@ -608,3 +609,157 @@ body.pkh-own-distance #token-hover-distance { display: none !important; }
 #pkh-slot-card .hint-pin i { color: #c9a227; }
 @keyframes pkh-card-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { #pkh-slot-card { animation: none; } }
+
+/* ---- v1.12: effect clocks ---- */
+/* A thin ring just outside the icon's own border: how much time is left (full = just started).
+   Its own colour (sky blue → orange near the end) so it never blends with the gold/red border. */
+.pkh-effect.timed::before {
+  content: ""; position: absolute; inset: -5px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--pkh-ring, #5fcbff) var(--pkh-left, 360deg), rgba(255, 255, 255, 0.13) 0);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+          mask: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+}
+.pkh-effect.timed.low { --pkh-ring: #ffb547; }
+.pkh-effect.ending { --pkh-ring: #ff7a59; animation: pkh-ending 1.4s ease-in-out infinite; }
+@keyframes pkh-ending { 50% { box-shadow: 0 0 0 3px rgba(255, 122, 89, 0.45), 0 2px 6px rgba(0, 0, 0, 0.5); } }
+.pkh-effects:has(.pkh-effect.timed) { gap: 10px; }
+.pkh-effect .dur {
+  position: absolute; left: 50%; top: -9px; transform: translateX(-50%);
+  padding: 0 4px; height: 14px; border-radius: 7px; white-space: nowrap; pointer-events: none;
+  background: rgba(15, 12, 9, 0.92); border: 1px solid #6b5a2f;
+  font-size: 0.6rem; font-weight: 700; line-height: 12px; color: #f3e6b8;
+}
+.pkh-effect.sustained .dur { border-color: #7fb3e0; color: #cfe6fa; }
+.pkh-effects:has(.pkh-effect .dur) { padding-top: 8px; }
+#pkh-effect-card .dur b { color: var(--pkh-gold-soft); }
+#pkh-effect-card .dur .sus { color: #9fc8ee; }
+
+/* ---- v1.12: reaction pip next to the action pips ---- */
+.pkh-rx-sep { width: 1px; height: 14px; margin: 0 2px; background: #4a3f2a; }
+.pkh-pip.reaction {
+  border-radius: 4px; width: 17px; height: 17px; display: grid; place-items: center; font-size: 0.55rem; color: #10202e;
+  border-color: #8cc4ee; background: radial-gradient(circle at 35% 30%, #d6ecfb, #4b8fc4); box-shadow: 0 0 6px rgba(90, 160, 220, 0.5);
+}
+.pkh-pip.reaction.used { background: #10161c; border-color: #2c3a46; color: #2c3a46; box-shadow: none; }
+
+/* ---- v1.12: grouped reaction card (GM) ---- */
+.pkh-reaction.group header small { opacity: 0.7; font-weight: 400; margin-left: 4px; }
+.pkh-reaction .rx-event { margin: 0.4rem 0 0.1rem; padding: 0.15rem 0.35rem; border-radius: 4px; background: rgba(201, 162, 39, 0.14); font-size: 0.85rem; }
+.pkh-reaction .rx-event + .rx-row { border-top: none; }
+.pkh-reaction .rx-row.spent, .pkh-reaction .rx-row.expired { opacity: 0.6; }
+.pkh-reaction .rx-row { border-top: 1px solid rgba(201, 162, 39, 0.25); padding: 0.3rem 0 0.2rem; }
+.pkh-reaction .rx-row:first-of-type { border-top: none; }
+.pkh-reaction .rx-who { display: flex; align-items: center; gap: 6px; }
+.pkh-reaction .rx-who img { width: 24px; height: 24px; border: none; border-radius: 50%; object-fit: cover; }
+.pkh-reaction .rx-who small { opacity: 0.7; }
+.pkh-reaction .rx-who .budget { margin-left: auto; }
+.pkh-reaction .rx-row .done { margin: 0.1rem 0 0 30px; font-size: 0.9rem; }
+.pkh-reaction .rx-row.used .done { color: #c9a227; }
+.pkh-reaction .rx-row.skipped { opacity: 0.75; }
+.pkh-sb-note { margin-bottom: 0.3rem; padding: 0.25rem 0.4rem; border-radius: 5px; border: 1px solid #c9a227; background: rgba(201, 162, 39, 0.12); font-size: 0.85rem; }
+
+/* ---- v1.12: sustain card ---- */
+.pkh-sustain header { font-size: 1rem; margin-bottom: 0.25rem; }
+.pkh-sustain header i { color: #7fb3e0; }
+.pkh-sustain .sus-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0.25rem 0; border-top: 1px solid rgba(127, 179, 224, 0.25); }
+.pkh-sustain .sus-row:first-of-type { border-top: none; }
+.pkh-sustain .sus-row img { width: 24px; height: 24px; border: none; border-radius: 4px; }
+.pkh-sustain .sus-row .btns { display: flex; gap: 4px; margin-left: auto; }
+.pkh-sustain .sus-row .btns button { width: auto; line-height: 24px; padding: 0 8px; font-size: 0.85rem; }
+.pkh-sustain .sus-row .btns button small { opacity: 0.7; }
+.pkh-sustain .sus-row .btns button.end { opacity: 0.85; }
+.pkh-sustain .sus-row .done { margin-left: auto; font-weight: 700; }
+.pkh-sustain .sus-row.kept .done { color: #7fb3e0; }
+.pkh-sustain .sus-row.ended { opacity: 0.75; }
+.pkh-sustain.note { font-size: 0.9rem; }
+
+/* ---- v1.13: skills page ---- */
+#pkh-skills {
+  position: fixed; z-index: 75; transform: translateX(-50%); width: max-content; min-width: 520px;
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid #6b5a2f; border-radius: 10px; background: rgba(15, 12, 9, 0.97); color: var(--pkh-hud-text, #efe6d0);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6); font-size: 0.82rem; line-height: 1.25;
+}
+#pkh-skills.hidden, #pkh-skill-card.hidden { display: none; }
+#pkh-skills > header {
+  flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-bottom: 1px solid #3a3226;
+  background: linear-gradient(180deg, rgba(48, 38, 20, 0.6), rgba(15, 12, 9, 0));
+}
+#pkh-skills > header strong { color: var(--pkh-gold-soft, #f3e6b8); font-size: 0.95rem; }
+#pkh-skills > header .sub { color: var(--pkh-muted, #a89c80); margin-right: auto; }
+#pkh-skills > header label.hide { display: flex; align-items: center; gap: 4px; color: var(--pkh-muted, #a89c80); cursor: pointer; }
+#pkh-skills > header label.hide input { margin: 0; width: 14px; height: 14px; }
+#pkh-skills button { font: inherit; color: inherit; }
+#pkh-skills .pkh-sk-act button { color: #f1e8d2; }
+#pkh-skills > header .follow {
+  width: auto; height: 24px; line-height: 22px; padding: 0 8px; border-radius: 5px; border: 1px solid #4a3f2a; background: #14100b; cursor: pointer;
+}
+#pkh-skills > header .follow.on { border-color: #c9a227; color: #f3e6b8; background: rgba(201, 162, 39, 0.18); }
+#pkh-skills > header .close { width: 24px; height: 24px; padding: 0; border: none; background: none; cursor: pointer; color: var(--pkh-muted, #a89c80); }
+#pkh-skills > header .close:hover { color: #fff; }
+.pkh-sk-loading { padding: 18px; text-align: center; color: var(--pkh-muted, #a89c80); }
+.pkh-sk-cols { overflow-y: auto; padding: 6px 10px 10px; columns: 5 215px; column-gap: 14px; }
+.pkh-sk { break-inside: avoid; margin-bottom: 8px; }
+.pkh-sk h3 {
+  display: flex; align-items: baseline; gap: 6px; margin: 0 0 2px; padding: 2px 6px; border: none; border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05); font-size: 0.85rem; font-weight: 700; cursor: pointer; color: #f1e8d2;
+}
+.pkh-sk h3:hover { background: rgba(201, 162, 39, 0.18); }
+.pkh-sk h3 .mod { color: #e9705f; min-width: 22px; }
+.pkh-sk h3 .lbl { flex: 1; }
+.pkh-sk h3 .rank { font-size: 0.72rem; font-weight: 400; color: #8a8070; }
+.pkh-sk h3 .rank.r1 { color: #79a6ff; } .pkh-sk h3 .rank.r2 { color: #c27bff; }
+.pkh-sk h3 .rank.r3 { color: #ffb43a; } .pkh-sk h3 .rank.r4 { color: #ff6464; }
+.pkh-sk h4 { margin: 2px 0 4px; padding: 2px 6px; text-align: center; font-size: 0.85rem; color: var(--pkh-gold-soft, #f3e6b8); border-bottom: 1px solid #3a3226; }
+.pkh-sk h3.lore { margin-bottom: 3px; }
+#pkh-skills .pkh-lore-picker { display: flex; flex-direction: column; gap: 10px; padding: 10px 6px; }
+#pkh-skills .pkh-lore-picker select { width: 100%; min-width: 0; height: 34px; background: #15110c; color: #f1e8d2; border: 1px solid #4d4230; border-radius: 5px; }
+#pkh-skills .pkh-lore-picker button { width: 100%; height: auto; min-height: 34px; padding: 6px 12px; border: 1px solid #c9a227; border-radius: 5px; background: #302719; }
+.pkh-request .pkh-req-lore[hidden] { display: none; }
+.pkh-request .pkh-req-lore { padding: 10px; margin: 10px 0; border: 1px solid #665b44; border-radius: 6px; }
+.pkh-request .pkh-req-lore label { display: flex; flex-direction: column; gap: 8px; }
+.pkh-request .pkh-req-lore input { width: 100%; }
+.pkh-request .pkh-req-lore .hint { font-size: 0.8rem; line-height: 1.5; margin: 8px 0 0; }
+.pkh-sk-act { padding: 1px 6px; }
+#pkh-skills .pkh-sk-act .name {
+  display: inline-flex; align-items: center; gap: 4px; width: auto; height: auto; min-height: 0; margin: 0; padding: 1px 0;
+  border: none; background: none; cursor: pointer; text-align: left; font-weight: 600; color: #f1e8d2; line-height: 1.3;
+}
+#pkh-skills .pkh-sk-act .name:hover { color: var(--pkh-gold, #c9a227); }
+#pkh-skills .pkh-sk-act .name .action-glyph { font-size: 0.9em; color: #b7ab8f; font-weight: 400; }
+#pkh-skills .pkh-sk-act.dim .name { color: #6f6656; font-weight: 400; }
+#pkh-skills .pkh-sk-act.dim .chip { color: #6f6656; }
+#pkh-skills .pkh-sk-act .chips { display: flex; flex-wrap: wrap; gap: 3px; margin: 1px 0 3px; }
+#pkh-skills .pkh-sk-act .chip {
+  width: auto; height: auto; min-height: 0; margin: 0; padding: 1px 5px; border-radius: 3px; cursor: pointer;
+  border: 1px solid #4a3f2a; background: #1d1810; font-size: 0.72rem; line-height: 1.3; color: #d9cfb6;
+}
+#pkh-skills .pkh-sk-act .chip:hover { border-color: #c9a227; color: #fff; }
+#pkh-skill-card {
+  position: fixed; z-index: 95; width: 420px; max-width: 92vw; max-height: 70vh; overflow-y: auto;
+  padding: 0.6rem 0.8rem 0.7rem; border-radius: 10px; border: 1px solid #6b5a2f; background: rgba(15, 12, 9, 0.97);
+  color: var(--pkh-hud-text, #efe6d0); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); font-size: 0.82rem; line-height: 1.45; pointer-events: none;
+}
+#pkh-skill-card header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+#pkh-skill-card header img { width: 26px; height: 26px; border: none; }
+#pkh-skill-card header strong { font-size: 0.95rem; color: var(--pkh-gold-soft, #f3e6b8); }
+#pkh-skill-card .traits { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+#pkh-skill-card .traits span { padding: 0 5px; border: 1px solid #c9a227; background: #5e0000; color: #fff; font-size: 0.68rem; text-transform: uppercase; }
+#pkh-skill-card .desc p { margin: 0.25rem 0; }
+#pkh-skill-card .desc hr { border-color: #3a3226; }
+
+/* ---- v1.14: small roll request window ---- */
+.pkh-request.small .pkh-req-row { flex-wrap: nowrap; }
+.pkh-request.small .pkh-req-row select[name=pick] { flex: 1; min-width: 0; }
+.pkh-request.small .pkh-req-row select[name=adj] { flex: 1; min-width: 0; }
+.pkh-request.small .pkh-req-row button { width: auto; flex: none; padding: 0 8px; }
+.pkh-req-tabs { display: flex; gap: 4px; margin-bottom: 4px; }
+.pkh-req-tabs button { flex: 1; height: 28px; border-radius: 6px 6px 0 0; opacity: 0.7; }
+.pkh-req-tabs button.on { opacity: 1; font-weight: 700; border-bottom-color: transparent; }
+.pkh-req-picks { max-height: 220px; overflow-y: auto; border: 1px solid var(--color-border-light-2, #8884); border-radius: 6px; padding: 3px 6px; }
+.pkh-req-pick { display: grid; grid-template-columns: minmax(0, 1fr) 74px 52px 26px; align-items: center; gap: 6px; padding: 2px 0; border-bottom: 1px solid #8882; }
+.pkh-req-pick b { min-width: 0; overflow-wrap: anywhere; }
+.pkh-req-pick:last-child { border-bottom: none; }
+.pkh-req-pick input[type=number] { height: 24px; }
+.pkh-req-pick label { display: flex; align-items: center; gap: 2px; font-size: 0.8rem; }
+.pkh-req-pick button { width: 24px; height: 24px; padding: 0; line-height: 1; }

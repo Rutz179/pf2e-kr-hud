@@ -427,7 +427,7 @@ export class TurnTracker {
     if (init) initEl.textContent = init;
     else initEl.innerHTML = c.isOwner ? `<i class="fa-solid fa-dice-d20" data-act="roll-one"></i>` : "–";
     li._count.textContent = members.length > 1 ? `×${members.length}` : "";
-    li._name.textContent = active ? name : "";
+    li._name.textContent = name;   // shown only on hover (see CSS)
     li._members = members.map(m => m.id);
   }
 
@@ -547,7 +547,7 @@ export function openInitiativeEditor(combat, c, anchor) {
       <input type="number" step="0.1" value="${current}" aria-label="우선권">
       <button type="button" data-d="0.1">+0.1</button><button type="button" data-d="1">+1</button>
     </div>
-    ${after !== null ? `<button type="button" class="wide" data-act="after" data-value="${after}" data-tooltip="${esc(active.name)}의 차례 바로 다음으로 (우선권 ${after})">
+    ${after !== null ? `<button type="button" class="wide" data-act="after" data-value="${after}">
       <i class="fa-solid fa-arrow-turn-down"></i> 지금 차례(${esc(active.name)}) 바로 다음으로</button>` : ""}
     <div class="row">
       <button type="button" data-act="defeated">${lifeState(c) === "dead" ? "쓰러짐 해제" : "쓰러짐 표시"}</button>

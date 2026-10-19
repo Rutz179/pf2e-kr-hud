@@ -46,8 +46,8 @@ const BUILTIN = {
   "dueling-riposte": { triggers: ["crit-fail"], ...STRIKE },
   "twin-riposte": { triggers: ["crit-fail"], ...STRIKE },
   "reflexive-riposte": { triggers: ["crit-fail"], ...STRIKE },
-  "shield-block": { triggers: ["damaged"], needShield: true },
-  "quick-shield-block": { triggers: ["damaged"], needShield: true },
+  "shield-block": { triggers: ["damaged"], needShield: true, needPhysicalAttack: true },
+  "quick-shield-block": { triggers: ["damaged"], needShield: true, needPhysicalAttack: true },
   "orc-ferocity": { triggers: ["damaged"] },
   "wounded-rage": { triggers: ["damaged"] },
   "fiery-retort": { triggers: ["damaged"] },
@@ -69,6 +69,8 @@ const NO_REACTING = ["unconscious", "paralyzed", "petrified", "stunned", "dying"
  * ------------------------------------------------------------------------ */
 
 const baseOf = actor => (actor?.isToken ? game.actors.get(actor.id) ?? actor : actor);
+
+export { reactionBudget };
 
 export function respondersFor(actor) {
   const base = baseOf(actor);
@@ -92,6 +94,7 @@ function configFor(actor, item) {
     range: Number(custom.range) || builtin?.range || null,
     strike: custom.strike ?? builtin?.strike ?? false,
     needShield: builtin?.needShield ?? false,
+    needPhysicalAttack: builtin?.needPhysicalAttack ?? false,
     off: !!custom.off
   };
 }
@@ -104,6 +107,12 @@ function reactionBudget(actor) {
   const key = game.combat?.started ? `${game.combat.id}` : "free";
   const used = use.key === key ? Number(use.used) || 0 : 0;
   return { max, used, left: Math.max(0, max - used), key };
+}
+
+/** HUD: set how many reactions this creature has used (click = use, right-click = give back). */
+export async function setReactionUsed(actor, used) {
+  const b = reactionBudget(actor);
+  await actor.setFlag(MODULE_ID, "reactionUse", { key: b.key, used: Math.max(0, Math.min(b.max, used)) });
 }
 
 async function spendReaction(actor) {
@@ -152,70 +161,211 @@ function hostile(a, b) {
 
 /* ------------------------------------------------------------------------ *
  * Detection (active GM only)
+ *
+ * Less noise:
+ *  - hidden tokens (not yet revealed, or dead and hidden) never set anything
+ *    off, and dead or defeated creatures neither;
+ *  - a token's movement is read once it has stopped (one drag = one check);
+ *  - the same reactor is asked about the same mover once per turn;
+ *  - everything one event sets off goes to the GM as ONE card listing every
+ *    reactor; each player still gets a small card of their own.
  * ------------------------------------------------------------------------ */
 
 const lastPos = new Map();
-const recent = new Map(); // de-dupe: actor+trigger within a few seconds
+const moving = new Map();      // mover token id → { from, timer }
+const asked = new Set();       // `${turn}|${reactor}|${trigger}|${key}`
 
 function isActiveGM() {
   return !!game.users.activeGM?.isSelf;
+}
+
+function turnStamp() {
+  const c = game.combat;
+  return c?.started ? `${c.id}.${c.round}.${c.turn}` : `free.${Math.floor(Date.now() / 60000)}`;
+}
+
+/** Out of play: hidden, at 0 HP, or marked defeated. */
+function outOfPlay(tokenDoc) {
+  if (!tokenDoc) return true;
+  if (tokenDoc.hidden) return true;
+  const actor = tokenDoc.actor;
+  if (!actor) return true;
+  const hp = actor.hitPoints ?? actor.system?.attributes?.hp;
+  if (hp && Number(hp.max) > 0 && Number(hp.value) <= 0 && !actor.hasPlayerOwner) return true;
+  const combatant = game.combat?.combatants?.find(c => c.tokenId === tokenDoc.id);
+  return !!combatant?.defeated;
 }
 
 function candidates(trigger, test) {
   const out = [];
   for (const tokenDoc of canvas.scene?.tokens ?? []) {
     const actor = tokenDoc.actor;
-    if (!actor || tokenDoc.hidden && !actor.hasPlayerOwner) continue;
+    if (!actor || outOfPlay(tokenDoc)) continue;
     const items = reactionItems(actor).filter(item => {
       const cfg = configFor(actor, item);
       if (cfg.off || !cfg.triggers.includes(trigger)) return false;
       if (cfg.needShield && !actor.attributes?.shield?.raised && !actor.system?.attributes?.shield?.raised) return false;
-      return test(tokenDoc, cfg);
+      return test(tokenDoc, cfg, item);
     });
     if (items.length && canReact(actor)) out.push({ tokenDoc, actor, items });
   }
   return out;
 }
 
-async function prompt(found, trigger, detail) {
-  if (!setting("reactionChecker", true) || (setting("reactionCombatOnly", true) && !game.combat?.started)) return;
-  for (const { tokenDoc, actor, items } of found) {
-    const key = `${tokenDoc.id}:${trigger}`;
-    if (Date.now() - (recent.get(key) ?? 0) < 4000) continue;
-    recent.set(key, Date.now());
-    const budget = reactionBudget(actor);
-    const responders = respondersFor(actor);
-    const content = `<div class="pkh-reaction">
-      <header><i class="fa-solid fa-bolt"></i> <strong>${esc(tokenDoc.name)}</strong> — 반응 기회</header>
-      <p>${esc(TRIGGERS[trigger])}${detail ? `: <b>${esc(detail)}</b>` : ""}</p>
-      <p class="budget">리액션 <b>${budget.left}/${budget.max}</b> 남음</p>
-      <div class="choices">
-        ${items.map(i => `<button type="button" data-rx-use="${i.id}"><img src="${esc(i.img)}" alt=""> ${esc(i.name)}</button>`).join("")}
-        <button type="button" data-rx-skip="1" class="skip">반응 안 함</button>
-      </div></div>`;
-    await ChatMessage.create({
-      speaker: ChatMessage.getSpeaker({ token: tokenDoc }),
-      whisper: responders,
-      content,
-      flags: { [MODULE_ID]: { reaction: { tokenUuid: tokenDoc.uuid, responders, trigger, detail, state: "pending" } } }
-    });
+const gmIds = () => game.users.filter(u => u.isGM).map(u => u.id);
+
+/* ---------------- the cards ---------------- *
+ * GM: ONE card per turn ("반응 기회 — 3라운드 · 고블린의 턴"). Every event in
+ * that turn adds its rows to it; the card is posted again at the bottom so the
+ * newest is always in view, and the old copy goes. Players: a small card (and
+ * pop-up) per row of their own.
+ */
+
+const randomId = () => foundry.utils.randomID?.() ?? Math.random().toString(36).slice(2, 12);
+
+function eventLine(row) {
+  return `${esc(TRIGGERS[row.trigger] ?? "")}${row.detail ? `: <b>${esc(row.detail)}</b>` : ""}`;
+}
+
+function rowHtml(row, i, { gm }) {
+  const who = row.players.length ? row.players.map(id => game.users.get(id)?.name).filter(Boolean).join(", ") : "NPC";
+  const body = row.state === "pending"
+    ? `<div class="choices">${row.items.map(it => `<button type="button" data-rx-use="${it.id}" data-row="${i}"><img src="${esc(it.img)}" alt=""> ${esc(it.name)}</button>`).join("")}
+        <button type="button" data-rx-skip="1" data-row="${i}" class="skip">반응 안 함</button></div>`
+    : `<p class="done">${{
+      used: `✔ <b>${esc(row.choice)}</b> 사용`,
+      skipped: "✖ 반응하지 않음",
+      spent: "— 남은 리액션 없음",
+      expired: "— 턴이 지나감"
+    }[row.state] ?? ""}${row.by ? ` <small>(${esc(row.by)})</small>` : ""}</p>`;
+  return `<div class="rx-row ${row.state}" data-row="${i}">
+    <div class="rx-who"><img src="${esc(row.img)}" alt=""><b>${esc(row.name)}</b>${gm ? `<small>${esc(who)}</small>` : ""}<span class="budget">리액션 ${row.left}/${row.max}</span></div>
+    ${body}</div>`;
+}
+
+function groupHtml(flag) {
+  const pending = flag.rows.filter(r => r.state === "pending").length;
+  let html = "";
+  let last = null;
+  flag.rows.forEach((r, i) => {
+    const ev = `${r.trigger}|${r.key}|${r.detail}`;
+    if (ev !== last) { html += `<p class="rx-event">${eventLine(r)}</p>`; last = ev; }
+    html += rowHtml(r, i, { gm: true });
+  });
+  return `<div class="pkh-reaction group">
+    <header><i class="fa-solid fa-bolt"></i> 반응 기회 <small>${esc(flag.title ?? "")}${pending ? ` · 대기 ${pending}` : ""}</small></header>
+    ${html}</div>`;
+}
+
+function playerHtml(row) {
+  return `<div class="pkh-reaction">
+    <header><i class="fa-solid fa-bolt"></i> <strong>${esc(row.name)}</strong> — 반응 기회</header>
+    <p>${eventLine(row)}</p>
+    ${rowHtml(row, 0, { gm: false })}</div>`;
+}
+
+function turnTitle() {
+  const c = game.combat;
+  if (!c?.started) return "";
+  const name = c.combatant?.token?.name ?? c.combatant?.name ?? "";
+  return `${c.round}라운드${name ? ` · ${name}의 턴` : ""}`;
+}
+
+/** The GM card of a turn (the newest copy). */
+function boardFor(turn) {
+  const list = game.messages.contents;
+  for (let i = list.length - 1, n = 0; i >= 0 && n < 400; i--, n++) {
+    const flag = list[i].flags?.[MODULE_ID]?.reactionGroup;
+    if (flag?.turn === turn) return list[i];
   }
+  return null;
+}
+
+/* Everything that edits the GM card goes through one queue: events can arrive together. */
+let queue = Promise.resolve();
+function serial(fn) {
+  queue = queue.then(fn).catch(err => console.warn(`${MODULE_ID} | reactions`, err));
+  return queue;
+}
+
+/** Post the turn's GM card again at the bottom with these rows (and drop the old copy). */
+async function postBoard(turn, rows, old) {
+  const flag = { turn, title: old?.flags?.[MODULE_ID]?.reactionGroup?.title || turnTitle(), rows };
+  const msg = await ChatMessage.create({
+    speaker: { alias: "반응 기회" },
+    whisper: gmIds(),
+    content: groupHtml(flag),
+    flags: { [MODULE_ID]: { reactionGroup: flag } }
+  });
+  if (old) await old.delete().catch(() => null);
+  return msg;
+}
+
+/**
+ * Something can be reacted to. `key` identifies the event so the same reactor
+ * is never asked twice about it.
+ */
+function prompt(found, trigger, detail, { key = "", extra = null } = {}) {
+  if (!setting("reactionChecker", true) || (setting("reactionCombatOnly", true) && !game.combat?.started)) return;
+  const stamp = turnStamp();
+  const fresh = found.filter(({ tokenDoc }) => {
+    const k = `${stamp}|${tokenDoc.id}|${trigger}|${key}`;
+    if (asked.has(k)) return false;
+    asked.add(k);
+    return true;
+  });
+  if (asked.size > 2000) asked.clear();
+  if (!fresh.length) return;
+  return serial(async () => {
+    const rows = fresh.map(({ tokenDoc, actor, items }) => {
+      const budget = reactionBudget(actor);
+      return {
+        id: randomId(), trigger, detail, key, extra,
+        tokenUuid: tokenDoc.uuid, name: tokenDoc.name, img: tokenDoc.texture?.src ?? actor.img,
+        items: items.map(i => ({ id: i.id, name: i.name, img: i.img, slug: i.slug ?? "" })),
+        players: respondersFor(actor).filter(id => !game.users.get(id)?.isGM),
+        left: budget.left, max: budget.max, state: "pending", choice: null, by: null, card: null
+      };
+    });
+    for (const row of rows) {
+      if (!row.players.length) continue;
+      const token = fromUuidSync(row.tokenUuid);
+      const card = await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ token }),
+        whisper: row.players,
+        content: playerHtml(row),
+        flags: { [MODULE_ID]: { reaction: { turn: stamp, rowId: row.id, tokenUuid: row.tokenUuid, responders: row.players, state: "pending" } } }
+      });
+      row.card = card.id;
+    }
+    const old = boardFor(stamp);
+    const before = old ? foundry.utils.deepClone(old.flags[MODULE_ID].reactionGroup.rows ?? []) : [];
+    await postBoard(stamp, [...before, ...rows], old);
+  });
 }
 
 function onPreUpdateToken(doc, changes) {
   if ("x" in changes || "y" in changes) lastPos.set(doc.id, { x: doc.x, y: doc.y });
 }
 
+/** Read a movement once the token has come to rest (a drag, or a path of waypoints, is one move). */
 function onUpdateToken(doc, changes) {
   if (!isActiveGM() || !("x" in changes || "y" in changes)) return;
   const from = lastPos.get(doc.id);
   lastPos.delete(doc.id);
   if (!from || !doc.actor) return;
-  const start = rectOf(doc, from);
-  const found = candidates("move", (reactor, cfg) =>
-    reactor.id !== doc.id && hostile(reactor.actor, doc.actor)
-    && distanceFt(rectOf(reactor), start) <= (cfg.range ?? reachOf(reactor.actor)));
-  if (found.length) prompt(found, "move", doc.name);
+  const pending = moving.get(doc.id) ?? { from };
+  clearTimeout(pending.timer);
+  pending.timer = setTimeout(() => {
+    moving.delete(doc.id);
+    if (outOfPlay(doc)) return;                  // hidden or dead: sets nothing off
+    const start = rectOf(doc, pending.from);
+    const found = candidates("move", (reactor, cfg) =>
+      reactor.id !== doc.id && hostile(reactor.actor, doc.actor)
+      && distanceFt(rectOf(reactor), start) <= (cfg.range ?? reachOf(reactor.actor)));
+    if (found.length) prompt(found, "move", doc.name, { key: doc.id });
+  }, 700);
+  moving.set(doc.id, pending);
 }
 
 function tokenFromUuidOrId(ref) {
@@ -228,13 +378,52 @@ function tokenFromUuidOrId(ref) {
   }
 }
 
+/* ---------------- what the damage was (Shield Block) ---------------- */
+
+const PHYSICAL = new Set(["bludgeoning", "piercing", "slashing"]);
+
+/**
+ * Shield Block (Player Core): "Trigger: While you have your shield raised,
+ * you would take damage from a physical attack." So only damage from an
+ * attack (a Strike or another attack roll) that includes bludgeoning,
+ * piercing or slashing damage — never persistent damage, never a basic save
+ * spell, never energy damage alone.
+ * Finds the damage roll that the "damage taken" message came from.
+ */
+function damageSource(taken) {
+  const origin = taken.flags?.pf2e?.origin?.uuid ?? null;
+  const list = game.messages.contents;
+  for (let i = list.length - 1, n = 0; i >= 0 && n < 60; i--, n++) {
+    const m = list[i];
+    if (m.id === taken.id) continue;
+    const ctx = m.flags?.pf2e?.context;
+    if (ctx?.type !== "damage-roll") continue;
+    if (origin && m.flags?.pf2e?.origin?.uuid !== origin) continue;
+    return m;
+  }
+  return null;
+}
+
+function physicalAttack(source) {
+  if (!source || source.getFlag?.(MODULE_ID, "shieldRepost")) return false;
+  const ctx = source.flags?.pf2e?.context ?? {};
+  const isAttack = ctx.sourceType === "attack" || (ctx.options ?? []).includes("attack");
+  if (!isAttack) return false;
+  const roll = source.rolls?.[0];
+  const instances = roll?.instances ?? [];
+  if (instances.length) return instances.some(inst => PHYSICAL.has(inst.type) && !inst.persistent);
+  const types = source.flags?.pf2e?.damageRoll?.types ?? {};
+  return Object.entries(types).some(([type, cats]) => PHYSICAL.has(type) && Object.keys(cats ?? {}).some(c => c !== "persistent"));
+}
+
 function onChatMessage(message) {
   const result = message.getFlag?.(MODULE_ID, "reactionResult");
-  if (result && isActiveGM()) return closeCard(result);
+  if (result && isActiveGM()) return closeResult(result);
   if (!isActiveGM()) return;
   const pf2e = message.flags?.pf2e ?? {};
   const ctx = pf2e.context;
   const sourceToken = message.speaker?.token ? canvas.scene?.tokens.get(message.speaker.token) : null;
+  if (sourceToken?.hidden) return;                 // a hidden token's actions set nothing off
 
   // Attacks: targeted / critical failure / ranged attack within reach
   if (ctx && ["attack-roll", "spell-attack-roll"].includes(ctx.type)) {
@@ -242,61 +431,82 @@ function onChatMessage(message) {
     if (target) {
       const onlyTarget = (tok) => tok.id === target.id;
       const targeted = candidates("targeted", onlyTarget);
-      if (targeted.length) prompt(targeted, "targeted", sourceToken?.name ?? "");
+      if (targeted.length) prompt(targeted, "targeted", sourceToken?.name ?? "", { key: message.id });
       if (ctx.outcome === "criticalFailure") {
         const riposte = candidates("crit-fail", onlyTarget);
-        if (riposte.length) prompt(riposte, "crit-fail", sourceToken?.name ?? "");
+        if (riposte.length) prompt(riposte, "crit-fail", sourceToken?.name ?? "", { key: message.id });
       }
     }
     const ranged = (ctx.domains ?? []).includes("ranged-attack-roll") || (ctx.options ?? []).includes("item:ranged") || ctx.type === "spell-attack-roll";
-    if (ranged && sourceToken) nearbyEnemies("manipulate", sourceToken);
+    if (ranged && sourceToken) nearbyEnemies("manipulate", sourceToken, message.id);
   }
 
   // Casting a spell (manipulate) within someone's reach
-  if (!ctx && pf2e.casting && sourceToken) nearbyEnemies("manipulate", sourceToken);
+  if (!ctx && pf2e.casting && sourceToken) nearbyEnemies("manipulate", sourceToken, message.id);
 
   // Saving throws
   if (ctx?.type === "saving-throw" && sourceToken) {
     const own = candidates("save", tok => tok.id === sourceToken.id);
-    if (own.length) prompt(own, "save", "");
+    if (own.length) prompt(own, "save", "", { key: message.id });
   }
 
-  // Damage actually applied (PF2e posts an "applied damage" message for the target)
+  // Damage actually applied (PF2e posts a "damage taken" message for the target)
   const applied = pf2e.appliedDamage;
-  if (applied && !applied.isHealing && sourceToken) {
-    const self = candidates("damaged", tok => tok.id === sourceToken.id);
-    if (self.length) prompt(self, "damaged", "");
+  if (applied && !applied.isHealing && !applied.isReverted && sourceToken) {
+    const source = damageSource(message);
+    const physical = physicalAttack(source);
+    const self = candidates("damaged", (tok, cfg) => tok.id === sourceToken.id && (!cfg.needPhysicalAttack || physical));
+    if (self.length) {
+      prompt(self, "damaged", source?.flags?.pf2e?.origin ? (fromUuidSync(source.flags.pf2e.origin.uuid)?.name ?? "") : "", {
+        key: message.id,
+        extra: { takenId: message.id, sourceId: source?.id ?? null }
+      });
+    }
     const allies = candidates("ally-damaged", (tok, cfg) =>
       tok.id !== sourceToken.id && !hostile(tok.actor, sourceToken.actor)
       && distanceFt(rectOf(tok), rectOf(sourceToken)) <= (cfg.range ?? 15));
-    if (allies.length) prompt(allies, "ally-damaged", sourceToken.name);
+    if (allies.length) prompt(allies, "ally-damaged", sourceToken.name, { key: message.id });
   }
 }
 
-function nearbyEnemies(trigger, sourceToken) {
+function nearbyEnemies(trigger, sourceToken, key) {
   const found = candidates(trigger, (tok, cfg) =>
     tok.id !== sourceToken.id && hostile(tok.actor, sourceToken.actor)
     && distanceFt(rectOf(tok), rectOf(sourceToken)) <= (cfg.range ?? reachOf(tok.actor)));
-  if (found.length) prompt(found, trigger, sourceToken.name);
+  if (found.length) prompt(found, trigger, sourceToken.name, { key });
 }
 
 /* ------------------------------------------------------------------------ *
- * Using / declining (any responder), closing the card (GM)
+ * Answering (a player in their card, or the GM in the group card)
  * ------------------------------------------------------------------------ */
 
-async function useReaction(message, itemId, event) {
-  const flag = message.getFlag(MODULE_ID, "reaction");
-  const token = flag?.tokenUuid ? fromUuidSync(flag.tokenUuid) : null;
+const SHIELD_BLOCKS = new Set(["shield-block", "quick-shield-block"]);
+
+/** Which turn, row and player card a button belongs to. */
+function contextOf(message, rowIndex) {
+  const single = message.getFlag(MODULE_ID, "reaction");
+  if (single) return { turn: single.turn, rowId: single.rowId, cardId: message.id, tokenUuid: single.tokenUuid, responders: single.responders };
+  const group = message.getFlag(MODULE_ID, "reactionGroup");
+  const row = group?.rows?.[rowIndex];
+  if (!row) return null;
+  return { turn: group.turn, rowId: row.id, cardId: row.card, tokenUuid: row.tokenUuid, responders: row.players };
+}
+
+async function useReaction(message, rowIndex, itemId, event) {
+  const ctx = contextOf(message, rowIndex);
+  const token = ctx?.tokenUuid ? fromUuidSync(ctx.tokenUuid) : null;
   const actor = token?.actor;
   const item = actor?.items.get(itemId);
   if (!item) return;
   const cfg = configFor(actor, item);
+  // Spend first: the GM's client reads the count when it closes the other rows.
+  try { await spendReaction(actor); } catch (_) { /* responder without ownership: the GM's count still resets each turn */ }
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ token }),
     content: `<div class="pkh-reaction used"><i class="fa-solid fa-bolt"></i> <b>${esc(token.name)}</b>이(가) 반응 <b>${esc(item.name)}</b>을(를) 사용했습니다.</div>`,
-    flags: { [MODULE_ID]: { reactionResult: { cardId: message.id, choice: item.name } } }
+    flags: { [MODULE_ID]: { reactionResult: { ...ctx, choice: item.name, slug: item.slug ?? "", by: game.user.name } } }
   });
-  try { await spendReaction(actor); } catch (_) { /* responder without ownership: the GM's count still resets each turn */ }
+  if (SHIELD_BLOCKS.has(item.slug)) return;        // the GM's client takes the damage back and re-posts it
   if (cfg.strike) return rollReactionStrike(actor, event);
   return item.toMessage?.(event);
 }
@@ -316,55 +526,143 @@ async function rollReactionStrike(actor, event) {
   if (choice !== null && choice !== undefined && strikes[Number(choice)]) return strikes[Number(choice)].variants[0].roll({ event });
 }
 
-async function declineReaction(message) {
-  const flag = message.getFlag(MODULE_ID, "reaction");
-  const token = flag?.tokenUuid ? fromUuidSync(flag.tokenUuid) : null;
+async function declineReaction(message, rowIndex) {
+  const ctx = contextOf(message, rowIndex);
+  const token = ctx?.tokenUuid ? fromUuidSync(ctx.tokenUuid) : null;
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ token }),
-    whisper: flag?.responders ?? game.users.filter(u => u.isGM).map(u => u.id),
+    whisper: [...new Set([...(ctx?.responders ?? []), ...gmIds()])],
     content: `<div class="pkh-reaction skipped"><i class="fa-regular fa-circle-xmark"></i> ${esc(token?.name ?? "")}: 반응하지 않음</div>`,
-    flags: { [MODULE_ID]: { reactionResult: { cardId: message.id, choice: null } } }
+    flags: { [MODULE_ID]: { reactionResult: { ...ctx, choice: null, by: game.user.name } } }
   });
 }
 
-/** GM: turn the prompt into a closed record so nobody answers twice. */
-async function closeCard({ cardId, choice }) {
-  const card = game.messages.get(cardId);
+async function closePlayerCard(cardId, row) {
+  const card = cardId ? game.messages.get(cardId) : null;
   const flag = card?.getFlag(MODULE_ID, "reaction");
   if (!card || flag?.state !== "pending") return;
-  const tail = choice ? `<p class="done">✔ <b>${esc(choice)}</b> 사용</p>` : `<p class="done">✖ 반응하지 않음</p>`;
-  await card.update({
-    content: card.content.replace(/<div class="choices">[\s\S]*?<\/div><\/div>$/, `${tail}</div>`),
-    [`flags.${MODULE_ID}.reaction.state`]: choice ? "used" : "skipped"
+  await card.update({ content: playerHtml(row), [`flags.${MODULE_ID}.reaction.state`]: row.state });
+}
+
+/**
+ * GM: close the answered row (in the GM card and the player's card), and the
+ * same creature's other open rows when it has no reaction left.
+ */
+function closeResult(result) {
+  return serial(async () => {
+    const { turn, rowId, choice } = result;
+    const board = turn ? boardFor(turn) : null;
+    const gflag = board?.getFlag(MODULE_ID, "reactionGroup");
+    const rows = foundry.utils.deepClone(gflag?.rows ?? []);
+    const row = rows.find(r => r.id === rowId);
+    if (!row) {
+      await closePlayerCard(result.cardId, { name: fromUuidSync(result.tokenUuid)?.name ?? "", img: "", items: [], players: [], left: 0, max: 1, trigger: "", detail: "", state: choice ? "used" : "skipped", choice, by: result.by });
+      return;
+    }
+    if (row.state !== "pending") return;
+    Object.assign(row, { state: choice ? "used" : "skipped", choice: choice ?? null, by: result.by ?? null });
+    const touched = [row];
+    if (choice) {
+      const actor = fromUuidSync(row.tokenUuid)?.actor;
+      const left = actor ? reactionBudget(actor).left : 0;
+      for (const other of rows) {
+        if (other === row || other.tokenUuid !== row.tokenUuid || other.state !== "pending") continue;
+        other.left = left;
+        if (left <= 0) { other.state = "spent"; touched.push(other); }
+      }
+    }
+    await board.update({ content: groupHtml({ ...gflag, rows }), [`flags.${MODULE_ID}.reactionGroup.rows`]: rows });
+    for (const r of touched) await closePlayerCard(r.card, r);
+    if (choice && SHIELD_BLOCKS.has(result.slug) && row.extra?.takenId) await shieldBlockRedo(row.extra, row.tokenUuid);
   });
+}
+
+/** GM: a new turn — what nobody answered in the last one is closed. */
+function expireTurn(turn) {
+  return serial(async () => {
+    const board = turn ? boardFor(turn) : null;
+    const gflag = board?.getFlag(MODULE_ID, "reactionGroup");
+    if (!gflag?.rows?.some(r => r.state === "pending")) return;
+    const rows = foundry.utils.deepClone(gflag.rows);
+    const touched = [];
+    for (const r of rows) if (r.state === "pending") { r.state = "expired"; touched.push(r); }
+    await board.update({ content: groupHtml({ ...gflag, rows }), [`flags.${MODULE_ID}.reactionGroup.rows`]: rows });
+    for (const r of touched) await closePlayerCard(r.card, r);
+  });
+}
+
+/**
+ * Shield Block chosen after the damage was already applied: take that damage
+ * back (as PF2e's own "revert" does) and post the damage card again, for this
+ * target only, so the GM can re-apply it with the shield toggle on.
+ */
+async function shieldBlockRedo({ takenId, sourceId }, tokenUuid) {
+  const taken = game.messages.get(takenId);
+  const applied = taken?.flags?.pf2e?.appliedDamage;
+  const token = fromUuidSync(tokenUuid);
+  if (applied && !applied.isReverted) {
+    const actor = fromUuidSync(applied.uuid) ?? token?.actor;
+    try {
+      await actor?.undoDamage?.(applied);
+      await taken.update({ "flags.pf2e.appliedDamage.isReverted": true });
+    } catch (err) { console.warn(`${MODULE_ID} | shield block: revert`, err); }
+  }
+  const source = sourceId ? game.messages.get(sourceId) : null;
+  if (!source) {
+    ui.notifications.info(`${token?.name ?? ""}: 피해를 되돌렸습니다. 원래 피해 카드에서 방패를 켜고 다시 적용하세요.`);
+    return;
+  }
+  const data = source.toObject();
+  delete data._id;
+  data.timestamp = Date.now();
+  data.whisper = gmIds();
+  data.flavor = `<div class="pkh-sb-note"><i class="fa-solid fa-shield-halved"></i> <b>${esc(token?.name ?? "")}</b> 방패 막기 — 피해를 되돌렸습니다. 방패(막기) 버튼을 켜고 다시 적용하세요.</div>${data.flavor ?? ""}`;
+  foundry.utils.setProperty(data, `flags.${MODULE_ID}.shieldRepost`, true);
+  const th = data.flags?.["pf2e-toolbelt"]?.targetHelper;
+  if (th) {
+    th.targets = tokenUuid ? [tokenUuid] : [];
+    th.splashTargets = [];
+    th.applied = {};
+  }
+  await ChatMessage.create(data);
 }
 
 function wireCard(message, html) {
   const root = html instanceof HTMLElement ? html : html?.[0];
-  const flag = message.getFlag?.(MODULE_ID, "reaction");
-  if (!root || !flag) return;
-  const mine = flag.responders?.includes(game.user.id);
+  const single = message.getFlag?.(MODULE_ID, "reaction");
+  const group = message.getFlag?.(MODULE_ID, "reactionGroup");
+  if (!root || (!single && !group)) return;
+  const allowed = single ? (single.responders?.includes(game.user.id) || game.user.isGM) && single.state === "pending" : game.user.isGM;
   for (const btn of root.querySelectorAll("[data-rx-use], [data-rx-skip]")) {
-    if (!mine || flag.state !== "pending") { btn.disabled = true; continue; }
+    const rowIndex = Number(btn.dataset.row) || 0;
+    const rowState = group ? group.rows?.[rowIndex]?.state : single?.state;
+    if (!allowed || rowState !== "pending") { btn.disabled = true; continue; }
     btn.addEventListener("click", ev => {
-      root.querySelectorAll("[data-rx-use], [data-rx-skip]").forEach(b => (b.disabled = true));
-      if (btn.dataset.rxSkip) return declineReaction(message);
-      return useReaction(message, btn.dataset.rxUse, ev);
+      root.querySelectorAll(`[data-rx-use][data-row="${rowIndex}"], [data-rx-skip][data-row="${rowIndex}"]`).forEach(b => (b.disabled = true));
+      if (btn.dataset.rxSkip) return declineReaction(message, rowIndex);
+      return useReaction(message, rowIndex, btn.dataset.rxUse, ev);
     });
   }
 }
 
-/** Optional pop-up for the responder, mirroring the card's buttons. */
+/** Optional pop-up: players for their own card; the GM (setting) for the turn's card. */
 function popup(message) {
-  const flag = message.getFlag?.(MODULE_ID, "reaction");
-  if (!flag || flag.state !== "pending" || !flag.responders?.includes(game.user.id) || !setting("reactionPopup", true)) return;
-  if (game.user.isGM && !setting("reactionPopupGM", false)) return;
+  const single = message.getFlag?.(MODULE_ID, "reaction");
+  const group = message.getFlag?.(MODULE_ID, "reactionGroup");
+  if (!setting("reactionPopup", true)) return;
+  if (single && (single.state !== "pending" || !single.responders?.includes(game.user.id))) return;
+  if (group && (!game.user.isGM || !setting("reactionPopupGM", false) || !group.rows?.some(r => r.state === "pending"))) return;
+  if (!single && !group) return;
+  // The GM card is re-posted for every new event: one pop-up for it, not a pile.
+  if (group) document.querySelectorAll(".pkh-reaction-pop.gm").forEach(e => e.remove());
+  document.querySelectorAll(`.pkh-reaction-pop[data-message="${message.id}"]`).forEach(e => e.remove());
   const el = document.createElement("section");
-  el.className = "pkh-reaction-pop";
+  el.className = `pkh-reaction-pop${group ? " gm" : ""}`;
+  el.dataset.message = message.id;
   el.innerHTML = message.content;
   document.body.appendChild(el);
   wireCard(message, el);
-  el.addEventListener("click", ev => { if (ev.target.closest("button")) setTimeout(() => el.remove(), 200); });
+  el.addEventListener("click", ev => { if (ev.target.closest("button") && single) setTimeout(() => el.remove(), 200); });
   setTimeout(() => el.remove(), 30000);
 }
 
@@ -441,8 +739,12 @@ export function initReactions() {
   Hooks.on("createChatMessage", message => { onChatMessage(message); popup(message); });
   Hooks.on("renderChatMessageHTML", wireCard);
   // A creature's reactions come back at the start of its turn.
+  // Open questions stay answerable through the next turn too (the GM may click on quickly), then close.
+  const recent = game.combat?.started ? [turnStamp()] : [];
   Hooks.on("updateCombat", (combat, changed) => {
     if (!isActiveGM() || !("turn" in changed || "round" in changed)) return;
+    if (recent.at(-1) !== turnStamp()) recent.push(turnStamp());
+    while (recent.length > 2) expireTurn(recent.shift());
     const actor = combat.combatant?.actor;
     if (actor?.getFlag(MODULE_ID, "reactionUse")) actor.unsetFlag(MODULE_ID, "reactionUse");
   });
