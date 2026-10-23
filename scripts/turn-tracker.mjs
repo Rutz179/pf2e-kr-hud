@@ -458,7 +458,19 @@ export class TurnTracker {
     if (!this._canEnd(combat.combatant, combat)) return null;
     if (performance.now() - this.activeSince < END_TURN_GUARD_MS) return null;
     this.activeSince = performance.now();   // one click, one turn
-    return combat.nextTurn();
+    return this._step(combat, "nextTurn");
+  }
+
+  /**
+   * Move the turn once. A click that lands while a change is still on its way (or right after the turn
+   * moved on its own — a creature dying, another module, the GM's other window) would move it a second
+   * time: that skipped the first character of the next round, or counted a round twice.
+   */
+  async _step(combat, how) {
+    if (this._stepping) return null;
+    if (performance.now() - (this.turnChangedAt ?? 0) < END_TURN_GUARD_MS) return null;
+    this._stepping = true;
+    try { return await combat[how](); } finally { this._stepping = false; this.turnChangedAt = performance.now(); }
   }
 
   async _onClick(ev) {
@@ -479,8 +491,8 @@ export class TurnTracker {
         return ids.length ? combat.rollInitiative(ids) : null;
       }
       case "start": return game.user.isGM ? combat.startCombat() : null;
-      case "prev": return game.user.isGM ? combat.previousTurn() : null;
-      case "next": return game.user.isGM ? combat.nextTurn() : null;
+      case "prev": return game.user.isGM ? this._step(combat, "previousTurn") : null;
+      case "next": return game.user.isGM ? this._step(combat, "nextTurn") : null;
       case "end-turn": return this._endTurn(combat);
       case "end": return game.user.isGM ? combat.endCombat() : null;
       case "more": {
@@ -631,6 +643,11 @@ export function registerTurnTrackerSettings() {
     hint: "차례가 연달아 붙은 같은 종류의 적(같은 이름·그림)을 초상화 하나로 묶고 ×n으로 표시합니다. 지금 차례와 다음 차례는 묶지 않습니다.",
     scope: "client", config: true, type: Boolean, default: true, onChange: redraw
   });
+  game.settings.register(MODULE_ID, "turnSkipDead", {
+    name: "턴 트래커: 쓰러진 적 차례 자동으로 넘기기",
+    hint: "HP 0이거나 사망 상태인 적(플레이어 캐릭터 제외)의 차례가 오면 GM 화면에서 한 번 자동으로 넘깁니다. 죽은 적에게 차례가 가서 다음 버튼을 두 번 누르다 1번 캐릭터를 건너뛰는 일을 막습니다.",
+    scope: "world", config: true, type: Boolean, default: true
+  });
   game.settings.register(MODULE_ID, "turnTrackerTop", {
     name: "턴 트래커: 화면 위에서 띄울 거리 (px)",
     hint: "장면 탐색 막대 등과 겹치면 늘리세요.",
@@ -644,6 +661,21 @@ export function initTurnTracker() {
   game.pf2eKrHud = { ...(game.pf2eKrHud ?? {}), turns: tracker };
 
   const redraw = () => tracker.schedule();
+  Hooks.on("updateCombat", (combat, changed) => {
+    if ("turn" in changed || "round" in changed) tracker.turnChangedAt = performance.now();
+  });
+  // A creature that is already dead (0 HP / dead) gets no turn of its own: pass it on once, on the GM's side.
+  Hooks.on("updateCombat", (combat, changed) => {
+    if (!("turn" in changed || "round" in changed) || setting("turnSkipDead", true) === false) return;
+    if (!game.users.activeGM?.isSelf || !combat.started || combat !== game.combat) return;
+    const c = combat.combatant;
+    if (!c || c.hasPlayerOwner || lifeState(c) !== "dead") return;
+    if (!combat.turns.some(x => x !== c && lifeState(x) !== "dead")) return;       // nobody left to act
+    const key = `${combat.round}.${combat.turn}`;
+    if (tracker._skipped === key) return;
+    tracker._skipped = key;
+    setTimeout(() => { if (combat.combatant === c && combat.started) combat.nextTurn(); }, 350);
+  });
   for (const hook of ["createCombat", "updateCombat", "deleteCombat", "combatStart", "combatTurn", "combatRound",
     "createCombatant", "updateCombatant", "deleteCombatant", "canvasReady"]) {
     Hooks.on(hook, redraw);

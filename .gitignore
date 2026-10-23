@@ -5,3 +5,6 @@ package-lock.json
 dist/
 .DS_Store
 Thumbs.db
+
+# 개인 기록 (업데이트 로그 등) — 저장소에 올리지 않음
+.private/

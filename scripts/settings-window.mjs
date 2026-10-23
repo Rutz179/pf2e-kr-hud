@@ -44,7 +44,7 @@ export const TABS = [
     id: "turns", label: "턴 트래커", icon: "fa-solid fa-list-ol",
     sections: [
       { title: "표시", keys: ["turnTracker", "turnTrackerWidth", "turnTrackerAspect", "turnTrackerTop"] },
-      { title: "전투원", keys: ["turnTrackerGroup", "turnTrackerDefeated"] }
+      { title: "전투원", keys: ["turnTrackerGroup", "turnTrackerDefeated", "turnSkipDead"] }
     ]
   },
   {
