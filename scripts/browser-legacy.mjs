@@ -9,8 +9,8 @@ import { MODULE_ID, setting } from "./shared.mjs";
 
 export function registerBrowserLegacySettings() {
   game.settings.register(MODULE_ID, "browserHideLegacy", {
-    name: "컴펜디움 브라우저: 레거시 숨기기",
-    hint: "PF2e 컴펜디움 브라우저(피트·주문·장비 …)에서 리마스터 이전(레거시) 항목을 빼고 보여 줍니다. 바꾼 뒤에는 브라우저를 다시 열거나 새로고침하세요.",
+    name: "PKH.Settings.browserHideLegacy.Name",
+    hint: "PKH.Settings.browserHideLegacy.Hint",
     scope: "world", config: true, type: Boolean, default: false,
     onChange: () => game.pf2e?.compendiumBrowser?.resetInitializedTabs?.()
   });

@@ -1,4 +1,4 @@
-import { MODULE_ID, SimpleWindow, boardViewportRect, displayName, esc, leftChromeWidth, plainRefs, setting } from "./shared.mjs";
+import { MODULE_ID, SimpleWindow, boardViewportRect, displayName, esc, leftChromeWidth, plainRefs, setting, t } from "./shared.mjs";
 
 /*
  * Same seats as the CoC7 toolkit stage:
@@ -95,7 +95,7 @@ export class PortraitStage {
     if (this.element) return;
     const el = document.createElement("section");
     el.id = "pkh-portraits";
-    el.setAttribute("aria-label", "파티 초상화");
+    el.setAttribute("aria-label", t("Portraits.Aria"));
     document.body.appendChild(el);
     this.element = el;
 
@@ -152,7 +152,7 @@ export class PortraitStage {
             ${showNumbers ? `<span class="num">${hp.value}/${hp.max}</span>` : ""}
           </div>
           <div class="pkh-bubble" hidden></div>
-          ${this.editing ? `<div class="pkh-edit-tag">${key.toUpperCase()} · 끌어서 이동 · 휠로 크기</div>` : ""}
+          ${this.editing ? `<div class="pkh-edit-tag">${key.toUpperCase()} · ${t("Portraits.EditTag")}</div>` : ""}
         </div>`;
     }).join("");
 
@@ -256,15 +256,13 @@ export class PortraitStage {
   toggleEditing(force) {
     if (!game.user.isGM) return;
     this.editing = force ?? !this.editing;
-    ui.notifications.info(this.editing
-      ? "PF2e-KR HUD | 초상화 배치 편집: 끌어서 옮기고, 휠로 크기를 바꾸세요. 같은 버튼으로 잠급니다."
-      : "PF2e-KR HUD | 초상화 배치를 잠갔습니다.");
+    ui.notifications.info(`PF2e-KR HUD | ${t(this.editing ? "Portraits.Editing" : "Portraits.Locked")}`);
     this.render();
   }
 
   async resetLayout() {
     await game.settings.set(MODULE_ID, "portraitLayout", {});
-    ui.notifications.info("PF2e-KR HUD | 초상화 배치를 기본 자리로 되돌렸습니다.");
+    ui.notifications.info(`PF2e-KR HUD | ${t("Portraits.Reset")}`);
   }
 
   _dragStart(ev) {
@@ -397,7 +395,7 @@ function clearSpeaking() {
 
 export function setFace(actorId, key) {
   if (!actorId) return;
-  if (!key || key === "기본") currentFace.delete(actorId);
+  if (!key || key === "기본" || key === "default") currentFace.delete(actorId);   // "기본" = the default-face keyword (data)
   else currentFace.set(actorId, key);
   game.pf2eKrStage?.overlay?.scheduleRender();
 }
@@ -432,61 +430,61 @@ export function registerPortraitSettings() {
   const relayout = () => game.pf2eKrStage?.overlay?.layout();
 
   game.settings.registerMenu(MODULE_ID, "portraitSlotsMenu", {
-    name: "초상화 관리", label: "초상화 관리 열기",
-    hint: "PC 1~6 자리에 캐릭터를 지정합니다. 비워 두면 플레이어의 할당된 캐릭터가 자동으로 들어갑니다.",
+    name: "PKH.Settings.portraitSlotsMenu.Name", label: "PKH.Settings.portraitSlotsMenu.Label",
+    hint: "PKH.Settings.portraitSlotsMenu.Hint",
     icon: "fa-solid fa-users", type: PortraitSlotsMenu, restricted: true
   });
   game.settings.register(MODULE_ID, "portraitSlots", { scope: "world", config: false, type: Object, default: {}, onChange: rerender });
   game.settings.register(MODULE_ID, "portraitLayout", { scope: "world", config: false, type: Object, default: {}, onChange: relayout });
 
   game.settings.register(MODULE_ID, "portraitsShown", {
-    name: "파티 초상화 표시 (모두)", hint: "GM이 켜면 모든 참가자 화면에 파티 초상화가 뜹니다.",
+    name: "PKH.Settings.portraitsShown.Name", hint: "PKH.Settings.portraitsShown.Hint",
     scope: "world", config: true, type: Boolean, default: true, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitsHideLocal", {
-    name: "내 화면에서만 초상화 숨기기", hint: "GM이 켜 두었더라도 이 컴퓨터에서는 숨깁니다.",
+    name: "PKH.Settings.portraitsHideLocal.Name", hint: "PKH.Settings.portraitsHideLocal.Hint",
     scope: "client", config: true, type: Boolean, default: false, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitStyleDefault", {
-    name: "초상화 모양 (월드 기본값)",
-    hint: "GM이 정하는 모두의 기본 모양입니다. 플레이어는 아래 '초상화 모양 (내 화면)'에서 따로 바꿀 수 있습니다.",
+    name: "PKH.Settings.portraitStyleDefault.Name",
+    hint: "PKH.Settings.portraitStyleDefault.Hint",
     scope: "world", config: true, type: String, default: "bare",
-    choices: { bare: "이미지만 (배경 없음)", card: "카드 (반투명 판)" }, onChange: rerender
+    choices: { bare: "PKH.Settings.portraitStyle.Choices.bare", card: "PKH.Settings.portraitStyle.Choices.card" }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitStyle", {
-    name: "초상화 모양 (내 화면)",
-    hint: "'카드'는 반투명 판 위에 초상화를 올립니다. '이미지만'은 판과 테두리를 없애 캐릭터 그림만 보입니다. 권장 그림: 정사각형 512×512 px (최소 256×256, 화면이 4K면 768×768). 카드: 얼굴이 위쪽 1/3에 오게 — 위아래가 잘릴 수 있습니다. 이미지만: 배경이 투명한 PNG/WebP, 인물의 허리나 발끝이 아래 가장자리에 닿게. 세로로 긴 전신 그림(예: 400×800)은 작게 보이니 정사각형으로 여백을 맞춰 주세요.",
+    name: "PKH.Settings.portraitStyle.Name",
+    hint: "PKH.Settings.portraitStyle.Hint",
     scope: "client", config: true, type: String, default: "",
-    choices: { "": "GM 기본값 따르기", bare: "이미지만 (배경 없음)", card: "카드 (반투명 판)" }, onChange: rerender
+    choices: { "": "PKH.Settings.portraitStyle.Choices.Default", bare: "PKH.Settings.portraitStyle.Choices.bare", card: "PKH.Settings.portraitStyle.Choices.card" }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitIdleDim", {
-    name: "대기 중 초상화 흐리게", hint: "말하거나 채팅하지 않는 동안 초상화를 회색으로 살짝 눌러 둡니다.",
+    name: "PKH.Settings.portraitIdleDim.Name", hint: "PKH.Settings.portraitIdleDim.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitScale", {
-    name: "초상화 크기", hint: "최대 크기입니다. 화면이 낮으면 겹치지 않도록 자동으로 줄어듭니다.",
+    name: "PKH.Settings.portraitScale.Name", hint: "PKH.Settings.portraitScale.Hint",
     scope: "client", config: true, type: Number, default: 1, range: { min: 0.6, max: 1.6, step: 0.05 }, onChange: relayout
   });
   game.settings.register(MODULE_ID, "portraitBottomMargin", {
-    name: "초상화 아래 여백 (px)", hint: "맨 아래 줄(PC 5·6)을 화면 아래에서 얼마나 띄울지 정합니다. 접속 프로그램이나 하단 UI에 가리면 늘리세요.",
+    name: "PKH.Settings.portraitBottomMargin.Name", hint: "PKH.Settings.portraitBottomMargin.Hint",
     scope: "client", config: true, type: Number, default: 150, range: { min: 40, max: 400, step: 10 }, onChange: relayout
   });
   game.settings.register(MODULE_ID, "portraitImage", {
-    name: "초상화 그림 출처", hint: "토큰 그림(다이나믹 토큰 링 포함)은 원형 틀 때문에 초상화에서 작아 보일 수 있습니다. 가능하면 액터 초상화에 정사각형 512×512 그림을 넣으세요.",
+    name: "PKH.Settings.portraitImage.Name", hint: "PKH.Settings.portraitImage.Hint",
     scope: "world", config: true, type: String, default: "actor",
-    choices: { actor: "액터 초상화 (actor.img)", token: "토큰 그림" }, onChange: rerender
+    choices: { actor: "PKH.Settings.portraitImage.Choices.actor", token: "PKH.Settings.portraitImage.Choices.token" }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitHpNumbers", {
-    name: "초상화 HP 숫자", hint: "HP 막대는 항상 보입니다. 숫자를 누구에게 보여줄지 정합니다.",
+    name: "PKH.Settings.portraitHpNumbers.Name", hint: "PKH.Settings.portraitHpNumbers.Hint",
     scope: "world", config: true, type: String, default: "owner",
-    choices: { owner: "소유자와 GM만", all: "모두", none: "아무에게도 안 보임" }, onChange: rerender
+    choices: { owner: "PKH.Settings.portraitHpNumbers.Choices.owner", all: "PKH.Settings.portraitHpNumbers.Choices.all", none: "PKH.Settings.portraitHpNumbers.Choices.none" }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "portraitChatBubbles", {
-    name: "채팅 말풍선", hint: "캐릭터가 채팅하면 초상화를 밝히고 옆에 말풍선을 띄웁니다. (굴림·카드는 말풍선 없이 잠깐 밝히기만)",
+    name: "PKH.Settings.portraitChatBubbles.Name", hint: "PKH.Settings.portraitChatBubbles.Hint",
     scope: "world", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "portraitBubbleSeconds", {
-    name: "말풍선 표시 시간 (초)", scope: "world", config: true, type: Number, default: 7, range: { min: 2, max: 20, step: 1 }
+    name: "PKH.Settings.portraitBubbleSeconds.Name", scope: "world", config: true, type: Number, default: 7, range: { min: 2, max: 20, step: 1 }
   });
 }
 

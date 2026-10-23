@@ -1,4 +1,4 @@
-import { MODULE_ID, esc, setting } from "./shared.mjs";
+import { MODULE_ID, esc, setting, t } from "./shared.mjs";
 
 /* ======================================================================== *
  * PF2e Toolbelt's target helper: apply everyone's damage with one click.
@@ -17,7 +17,7 @@ import { MODULE_ID, esc, setting } from "./shared.mjs";
 
 const DEGREES = ["criticalFailure", "failure", "success", "criticalSuccess"];
 const MULT = { criticalFailure: 2, failure: 1, success: 0.5, criticalSuccess: 0 };
-const LABEL = { 2: "×2", 1: "×1", 0.5: "×½", "-1": "회복" };
+const LABEL = { 2: "×2", 1: "×1", 0.5: "×½", get "-1"() { return t("Bulk.Heal"); } };
 const busy = new Set();
 
 /**
@@ -57,9 +57,9 @@ function addButton(message, root) {
   const box = document.createElement("div");
   box.className = "pkh-bulk";
   const summary = plan.map(p => `${p.name} ${LABEL[p.mult] ?? `×${p.mult}`}`).join(" · ")
-    + (waiting.length ? `<br><small>내성 굴림 전 (빼고 적용): ${waiting.join(", ")}</small>` : "");
+    + (waiting.length ? `<br><small>${t("Bulk.WaitingSaves", { names: waiting.join(", ") })}</small>` : "");
   const healing = plan.every(p => p.mult < 0);
-  box.innerHTML = `<button type="button" data-tooltip="${esc(summary)}"><i class="fa-solid fa-${healing ? "heart" : "bolt"}"></i> 모두 ${healing ? "회복" : "적용"} <small>(${people}명${waiting.length ? ` · 내성 대기 ${waiting.length}` : ""})</small></button>`;
+  box.innerHTML = `<button type="button" data-tooltip="${esc(summary)}"><i class="fa-solid fa-${healing ? "heart" : "bolt"}"></i> ${t(healing ? "Bulk.HealAll" : "Bulk.ApplyAll")} <small>(${t("Bulk.People", { n: people })}${waiting.length ? ` · ${t("Bulk.SavesPending", { n: waiting.length })}` : ""})</small></button>`;
   const btn = box.querySelector("button");
   btn.addEventListener("click", async ev => {
     ev.preventDefault();
@@ -69,11 +69,11 @@ function addButton(message, root) {
     btn.disabled = true;
     try {
       for (const [i, p] of plan.entries()) {
-        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 적용 중 ${i + 1}/${plan.length}`;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t("Bulk.Applying", { i: i + 1, n: plan.length })}`;
         p.btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
         await new Promise(r => setTimeout(r, 350));
       }
-      btn.innerHTML = `<i class="fa-solid fa-check"></i> 모두 적용함`;
+      btn.innerHTML = `<i class="fa-solid fa-check"></i> ${t("Bulk.Applied")}`;
     } finally {
       busy.delete(message.id);
     }
@@ -84,8 +84,8 @@ function addButton(message, root) {
 
 export function registerBulkDamageSettings() {
   game.settings.register(MODULE_ID, "bulkDamage", {
-    name: "피해 카드: '모두 적용' 버튼 (PF2e Toolbelt)",
-    hint: "Toolbelt의 대상 목록이 붙은 피해 카드에, 각 대상의 내성 결과대로(대실패 ×2 · 실패 ×1 · 성공 ×½ · 대성공 없음) 한 번에 적용하는 버튼을 띄웁니다. GM만 보입니다.",
+    name: "PKH.Settings.bulkDamage.Name",
+    hint: "PKH.Settings.bulkDamage.Hint",
     scope: "world", config: true, type: Boolean, default: true
   });
 }

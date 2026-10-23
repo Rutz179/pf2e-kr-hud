@@ -1,4 +1,4 @@
-import { MODULE_ID, setting } from "./shared.mjs";
+import { MODULE_ID, setting, t } from "./shared.mjs";
 
 /* ======================================================================== *
  * Long sessions: keep the chat light, and a "jump to the newest" button.
@@ -150,9 +150,9 @@ function jump() {
 
 export function registerChatTrimSettings() {
   const s = (key, data) => game.settings.register(MODULE_ID, key, { scope: "client", config: true, ...data });
-  s("chatTrim", { name: "채팅 카드 정리 (긴 세션 렉 줄이기)", hint: "화면에는 최근 카드만 남기고 오래된 카드는 페이지에서 내려 둡니다(메시지는 그대로). 위로 스크롤하면 다시 불러옵니다. Less Chat 모듈과 같은 역할이니 둘 중 하나만 켜세요.", type: Boolean, default: true });
-  s("chatTrimKeep", { name: "화면에 남길 채팅 카드 수", type: Number, default: 80, range: { min: 30, max: 300, step: 10 } });
-  s("chatJumpButton", { name: "가장 최근 채팅으로 가는 ↓ 버튼", hint: "위로 스크롤해 있을 때 채팅창 구석에 작은 버튼을 띄웁니다.", type: Boolean, default: true });
+  s("chatTrim", { name: "PKH.Settings.chatTrim.Name", hint: "PKH.Settings.chatTrim.Hint", type: Boolean, default: true });
+  s("chatTrimKeep", { name: "PKH.Settings.chatTrimKeep.Name", type: Number, default: 80, range: { min: 30, max: 300, step: 10 } });
+  s("chatJumpButton", { name: "PKH.Settings.chatJumpButton.Name", hint: "PKH.Settings.chatJumpButton.Hint", type: Boolean, default: true });
 }
 
 export function initChatTrim() {
@@ -188,8 +188,8 @@ export function initChatTrim() {
   jumpEl.type = "button";
   jumpEl.id = "pkh-chat-jump";
   jumpEl.className = "hidden";
-  jumpEl.dataset.tooltip = "가장 최근 채팅으로";
-  jumpEl.setAttribute("aria-label", "가장 최근 채팅으로");
+  jumpEl.dataset.tooltip = t("Chat.JumpLatest");
+  jumpEl.setAttribute("aria-label", t("Chat.JumpLatest"));
   jumpEl.innerHTML = `<i class="fa-solid fa-arrow-down"></i>`;
   jumpEl.addEventListener("click", jump);
   document.body.appendChild(jumpEl);

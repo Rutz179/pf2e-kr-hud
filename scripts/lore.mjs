@@ -1,4 +1,4 @@
-import { esc } from "./shared.mjs";
+import { esc, t } from "./shared.mjs";
 
 /** Match PF2e LorePF2e.slug; prefer the document's slug whenever it exists. */
 export function loreSlug(value) {
@@ -48,7 +48,7 @@ export function checkLabel(value) {
 }
 
 export function loreCheckLink(slug, label, { dc = null, secret = false } = {}) {
-  if (!slug || !/^[\p{L}\p{N}-]+$/u.test(slug)) throw new Error("올바른 지식 이름을 입력하세요.");
+  if (!slug || !/^[\p{L}\p{N}-]+$/u.test(slug)) throw new Error(t("Lore.BadName"));
   const params = [slug];
   if (Number.isFinite(dc) && dc > 0) params.push(`dc:${Math.trunc(dc)}`);
   if (secret) params.push("traits:secret");
@@ -58,7 +58,7 @@ export function loreCheckLink(slug, label, { dc = null, secret = false } = {}) {
 export async function rollLore(actor, slug, event) {
   if (!actor?.isOwner && !game.user.isGM) return;
   const lore = actorLores(actor).find(l => l.slug === slug);
-  if (!lore?.stat?.roll) return ui.notifications.warn("PF2e-KR HUD | 이 캐릭터의 지식 판정을 찾지 못했습니다. 시트의 지식 항목을 확인하세요.");
+  if (!lore?.stat?.roll) return ui.notifications.warn(`PF2e-KR HUD | ${t("Lore.NoCheck")}`);
   try { return await lore.stat.roll({ event }); }
-  catch (error) { console.error(error); ui.notifications.error("PF2e-KR HUD | 지식 굴림에 실패했습니다. 시트에서 다시 확인하세요."); }
+  catch (error) { console.error(error); ui.notifications.error(`PF2e-KR HUD | ${t("Lore.RollFailed")}`); }
 }

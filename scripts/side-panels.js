@@ -11,6 +11,8 @@
  * the sidebar DOM, so nothing Foundry does to the sidebar can disturb them.
  * ========================================================================== */
 
+import { t } from "./shared.mjs";
+
 const MODULE_ID = "pf2e-kr-hud";
 
 const PANEL_DEFAULTS = {
@@ -112,14 +114,14 @@ class PkhPanel {
     el.innerHTML = `
       <header class="panel-header" data-drag-handle>
         <i class="${this.icon}"></i>
-        <span class="panel-title">${escapeHtml(this.title)}</span>
+        <span class="panel-title">${escapeHtml(t(this.title))}</span>
         ${this._headerButtons()}
-        <button type="button" class="panel-btn" data-action="close" title="닫기">
+        <button type="button" class="panel-btn" data-action="close" title="${escapeHtml(t("Common.Close"))}">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </header>
       <div class="panel-body">${this._body()}</div>
-      <div class="panel-grip" data-resize-handle title="크기 조정"></div>
+      <div class="panel-grip" data-resize-handle title="${escapeHtml(t("Panels.Resize"))}"></div>
     `;
 
     this._activate(el);
@@ -279,7 +281,7 @@ class PkhWhisperPanel extends PkhPanel {
   constructor() {
     super("whisper", {
       id: "pkh-whisper-panel",
-      title: "귓속말",
+      title: "Panels.Whisper.Title",   // lang key, read when drawn
       icon: "fa-solid fa-user-secret"
     });
     this.activeTarget = "all";
@@ -331,11 +333,11 @@ class PkhWhisperPanel extends PkhPanel {
   _headerButtons() {
     const offline = game.user.isGM ? `
       <button type="button" class="panel-btn ${this.showOffline ? "active" : ""}" data-action="offline"
-              title="${this.showOffline ? "접속 중인 플레이어만 보기" : "접속하지 않은 플레이어도 보기 (지난 대화 확인)"}">
+              title="${escapeHtml(t(this.showOffline ? "Panels.Whisper.OnlineOnly" : "Panels.Whisper.ShowOffline"))}">
         <i class="fa-solid ${this.showOffline ? "fa-user-check" : "fa-user-clock"}"></i>
       </button>` : "";
     return `${offline}
-      <button type="button" class="panel-btn" data-action="refresh" title="새로고침">
+      <button type="button" class="panel-btn" data-action="refresh" title="${escapeHtml(t("Panels.Refresh"))}">
         <i class="fa-solid fa-rotate"></i>
       </button>
     `;
@@ -346,7 +348,7 @@ class PkhWhisperPanel extends PkhPanel {
 
     const tabs = [
       `<button type="button" class="wtab ${this.activeTarget === "all" ? "active" : ""}"
-               data-action="tab" data-target="all">전체</button>`,
+               data-action="tab" data-target="all">${escapeHtml(t("Panels.Whisper.All"))}</button>`,
       ...partners.map(user => `
         <button type="button"
                 class="wtab ${this.activeTarget === user.id ? "active" : ""} ${user.active ? "" : "offline"}"
@@ -384,11 +386,11 @@ class PkhWhisperPanel extends PkhPanel {
                 <span>${escapeHtml(targets || "?")}</span>
                 <time>${new Date(message.timestamp).toLocaleTimeString(game.i18n.lang)}</time>
               </div>
-              <div class="whisper-text">${escapeHtml(text) || "<i>(내용 없음)</i>"}</div>
+              <div class="whisper-text">${escapeHtml(text) || `<i>${escapeHtml(t("Panels.Whisper.Empty"))}</i>`}</div>
             </article>
           `;
         }).join("")
-      : `<p class="hint">주고받은 귓속말이 없습니다.</p>`;
+      : `<p class="hint">${escapeHtml(t("Panels.Whisper.None"))}</p>`;
 
     const canSend = this.activeTarget !== "all";
     const targetName = canSend ? game.users.get(this.activeTarget)?.name ?? "" : "";
@@ -396,9 +398,9 @@ class PkhWhisperPanel extends PkhPanel {
     const compose = canSend
       ? `<div class="whisper-compose">
            <input type="text" class="whisper-input"
-                  placeholder="${escapeHtml(targetName)}에게 귓속말... (Enter로 전송)">
+                  placeholder="${escapeHtml(t("Panels.Whisper.Placeholder", { name: targetName }))}">
          </div>`
-      : `<p class="hint compose-hint">탭에서 상대를 고르면 바로 귓속말을 보낼 수 있습니다.</p>`;
+      : `<p class="hint compose-hint">${escapeHtml(t("Panels.Whisper.PickHint"))}</p>`;
 
     return `
       <nav class="whisper-tabs">${tabs}</nav>
@@ -472,7 +474,7 @@ class PkhNotesPanel extends PkhPanel {
   constructor() {
     super("notes", {
       id: "pkh-notes-panel-window",
-      title: "노트 (공유)",
+      title: "Panels.Notes.Title",   // lang key, read when drawn
       icon: "fa-solid fa-book"
     });
     this._draftTimer = null;
@@ -480,10 +482,10 @@ class PkhNotesPanel extends PkhPanel {
 
   _headerButtons() {
     return `
-      <button type="button" class="panel-btn" data-action="export" title="저널 항목으로 내보내기">
+      <button type="button" class="panel-btn" data-action="export" title="${escapeHtml(t("Panels.Notes.Export"))}">
         <i class="fa-solid fa-file-export"></i>
       </button>
-      <button type="button" class="panel-btn" data-action="copy" title="전체 복사">
+      <button type="button" class="panel-btn" data-action="copy" title="${escapeHtml(t("Panels.Notes.Copy"))}">
         <i class="fa-solid fa-copy"></i>
       </button>
     `;
@@ -510,19 +512,19 @@ class PkhNotesPanel extends PkhPanel {
               <div class="note-meta">
                 <strong>${escapeHtml(author?.name ?? "?")}</strong>
                 <time>${new Date(message.timestamp).toLocaleString(game.i18n.lang)}</time>
-                ${editable ? `<span class="editable" title="우클릭하여 수정"><i class="fa-solid fa-pen"></i></span>` : ""}
+                ${editable ? `<span class="editable" title="${escapeHtml(t("Panels.Notes.EditTip"))}"><i class="fa-solid fa-pen"></i></span>` : ""}
               </div>
               <div class="note-text">${escapeHtml(this._plainText(message))}</div>
             </article>
           `;
         }).join("")
-      : `<p class="hint">아직 기록이 없습니다. 아래에 입력하고 Enter를 누르세요.</p>`;
+      : `<p class="hint">${escapeHtml(t("Panels.Notes.None"))}</p>`;
 
     return `
       <div class="note-list">${rows}</div>
       <div class="note-compose">
         <textarea class="note-input"
-                  placeholder="모두가 함께 보는 기록장입니다. Enter로 등록, Shift+Enter로 줄바꿈. 내 기록은 우클릭으로 수정·삭제할 수 있습니다.">${escapeHtml(draft)}</textarea>
+                  placeholder="${escapeHtml(t("Panels.Notes.Placeholder"))}">${escapeHtml(draft)}</textarea>
         <span class="note-status"></span>
       </div>
     `;
@@ -537,12 +539,12 @@ class PkhNotesPanel extends PkhPanel {
 
     // The unsent draft survives a reload; failure here is never fatal.
     input?.addEventListener("input", () => {
-      status.textContent = "임시 저장 중...";
+      status.textContent = t("Panels.Notes.Saving");
       clearTimeout(this._draftTimer);
       this._draftTimer = setTimeout(async () => {
         try {
           await game.user.setFlag(MODULE_ID, "noteDraft", input.value);
-          status.textContent = "임시 저장됨";
+          status.textContent = t("Panels.Notes.Saved");
         } catch (error) {
           console.warn(`${MODULE_ID} | could not save note draft`, error);
           status.textContent = "";
@@ -568,7 +570,7 @@ class PkhNotesPanel extends PkhPanel {
       } catch (error) {
         console.error(`${MODULE_ID} | note create failed`, error);
         input.value = text;
-        ui.notifications.error("PF2e-KR HUD | 노트를 등록하지 못했습니다.");
+        ui.notifications.error(`PF2e-KR HUD | ${t("Panels.Notes.CreateFailed")}`);
         return;
       }
 
@@ -594,25 +596,25 @@ class PkhNotesPanel extends PkhPanel {
     if (!message) return;
 
     if (!message.isAuthor && !game.user.isGM) {
-      return ui.notifications.warn("PF2e-KR HUD | 다른 사람의 기록은 GM만 수정할 수 있습니다.");
+      return ui.notifications.warn(`PF2e-KR HUD | ${t("Panels.Notes.NotYours")}`);
     }
 
     const result = await foundry.applications.api.DialogV2.wait({
-      window: { title: "노트 수정", icon: "fa-solid fa-pen" },
+      window: { title: t("Panels.Notes.EditTitle"), icon: "fa-solid fa-pen" },
       position: { width: 460 },
       content: `<textarea name="text" style="width:100%;height:160px;">${escapeHtml(this._plainText(message))}</textarea>`,
       buttons: [
         {
           action: "save",
-          label: "저장",
+          label: t("Common.Save"),
           default: true,
           callback: (event, button, dialog) => {
             const root = dialog?.element ?? button?.form ?? button?.closest("dialog");
             return { type: "edit", text: root?.querySelector("[name='text']")?.value ?? "" };
           }
         },
-        { action: "delete", label: "삭제", callback: () => ({ type: "delete" }) },
-        { action: "cancel", label: "취소" }
+        { action: "delete", label: t("Common.Delete"), callback: () => ({ type: "delete" }) },
+        { action: "cancel", label: t("Common.Cancel") }
       ]
     });
 
@@ -627,7 +629,7 @@ class PkhNotesPanel extends PkhPanel {
       }
     } catch (error) {
       console.error(`${MODULE_ID} | note edit failed`, error);
-      ui.notifications.error("PF2e-KR HUD | 노트를 수정하지 못했습니다.");
+      ui.notifications.error(`PF2e-KR HUD | ${t("Panels.Notes.EditFailed")}`);
     }
   }
 
@@ -641,12 +643,12 @@ class PkhNotesPanel extends PkhPanel {
 
     if (action === "copy") {
       await navigator.clipboard?.writeText(lines.join("\n"));
-      return ui.notifications.info("PF2e-KR HUD | 노트를 클립보드에 복사했습니다.");
+      return ui.notifications.info(`PF2e-KR HUD | ${t("Panels.Notes.Copied")}`);
     }
 
     if (action === "export") {
       if (!game.user.can("JOURNAL_CREATE")) {
-        return ui.notifications.warn("PF2e-KR HUD | 저널을 생성할 권한이 없습니다.");
+        return ui.notifications.warn(`PF2e-KR HUD | ${t("Panels.Notes.NoJournal")}`);
       }
 
       const paragraphs = entries.map(message => {
@@ -655,8 +657,8 @@ class PkhNotesPanel extends PkhPanel {
       }).join("");
 
       const journal = await JournalEntry.create({
-        name: `공유 노트 (${new Date().toLocaleString(game.i18n.lang)})`,
-        pages: [{ name: "노트", type: "text", text: { content: paragraphs } }]
+        name: t("Panels.Notes.JournalName", { date: new Date().toLocaleString(game.i18n.lang) }),
+        pages: [{ name: t("Panels.Notes.Page"), type: "text", text: { content: paragraphs } }]
       });
 
       journal?.sheet?.render(true);
@@ -672,15 +674,15 @@ const panels = {
 Hooks.once("init", () => {
 
   game.settings.register(MODULE_ID, "whisperPolicy", {
-    name: "귓속말 범위",
-    hint: "플레이어가 누구에게 귓속말할 수 있는지, GM이 플레이어끼리의 귓속말을 보는지 정합니다. '/w'로 직접 입력한 귓속말에도 똑같이 적용됩니다.",
+    name: "PKH.Settings.whisperPolicy.Name",
+    hint: "PKH.Settings.whisperPolicy.Hint",
     scope: "world",
     config: true,
     type: String,
     choices: {
-      gm: "GM하고만 (기본)",
-      allGmSees: "플레이어끼리도 가능 — GM이 항상 함께 봄",
-      all: "플레이어끼리도 가능 — GM 없이"
+      gm: "PKH.Settings.whisperPolicy.Choices.gm",
+      allGmSees: "PKH.Settings.whisperPolicy.Choices.allGmSees",
+      all: "PKH.Settings.whisperPolicy.Choices.all"
     },
     default: "gm",
     onChange: () => panels.whisper.refresh()

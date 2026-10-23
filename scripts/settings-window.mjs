@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./shared.mjs";
+import { MODULE_ID, t } from "./shared.mjs";
 
 /* ======================================================================== *
  * Settings, tidied
@@ -19,76 +19,79 @@ export const BASIC = ["hudScale", "portraitScale", "turnTrackerWidth", "chatFont
 
 export const TABS = [
   {
-    id: "portraits", label: "파티 초상화", icon: "fa-solid fa-users",
-    menus: [{ key: "portraitSlotsMenu", label: "PC 자리 지정 (초상화 관리)", icon: "fa-solid fa-users-gear" }],
+    id: "portraits", label: "SettingsWindow.Tabs.Portraits", icon: "fa-solid fa-users",
+    menus: [{ key: "portraitSlotsMenu", label: "SettingsWindow.Menus.PortraitSlots", icon: "fa-solid fa-users-gear" }],
     sections: [
-      { title: "표시", keys: ["portraitsShown", "portraitsHideLocal", "portraitStyleDefault", "portraitStyle", "portraitIdleDim", "portraitImage"] },
-      { title: "크기·위치", keys: ["portraitScale", "portraitBottomMargin"] },
-      { title: "HP·말풍선", keys: ["portraitHpNumbers", "portraitChatBubbles", "portraitBubbleSeconds"] },
-      { title: "접속자 목록", keys: ["playersListMode"] }
+      { title: "SettingsWindow.Sections.Display", keys: ["portraitsShown", "portraitsHideLocal", "portraitStyleDefault", "portraitStyle", "portraitIdleDim", "portraitImage"] },
+      { title: "SettingsWindow.Sections.SizePosition", keys: ["portraitScale", "portraitBottomMargin"] },
+      { title: "SettingsWindow.Sections.HpBubbles", keys: ["portraitHpNumbers", "portraitChatBubbles", "portraitBubbleSeconds"] },
+      { title: "SettingsWindow.Sections.PlayersList", keys: ["playersListMode"] }
     ]
   },
   {
-    id: "hud", label: "캐릭터 HUD", icon: "fa-solid fa-table-cells",
+    id: "hud", label: "SettingsWindow.Tabs.Hud", icon: "fa-solid fa-table-cells",
     sections: [
-      { title: "표시", keys: ["hudEnabled", "hudScale", "hudRows", "hudEffectSize", "hudEffectDurations", "hudReactionPip"] },
-      { title: "퀵슬롯 설명 카드", keys: ["hudSlotCard", "hudSlotCardDelay"] },
-      { title: "동작", keys: ["hudSaveCard", "hudAutoInfused", "hudNpcAutoFill"] },
-      { title: "Foundry·PF2e 기본 UI", keys: ["hudHideCoreHotbar", "hudHideEffectsPanel"] },
-      { title: "반응(리액션) 알림", keys: ["reactionChecker", "reactionCombatOnly", "reactionPopup", "reactionPopupGM"] },
-      { title: "지속 주문", keys: ["sustainChecker"] },
-      { title: "피해 적용 (PF2e Toolbelt)", keys: ["bulkDamage"] }
+      { title: "SettingsWindow.Sections.Display", keys: ["hudEnabled", "hudScale", "hudRows", "hudEffectSize", "hudEffectDurations", "hudReactionPip"] },
+      { title: "SettingsWindow.Sections.SlotCard", keys: ["hudSlotCard", "hudSlotCardDelay"] },
+      { title: "SettingsWindow.Sections.Behaviour", keys: ["hudSaveCard", "hudAutoInfused", "hudNpcAutoFill"] },
+      { title: "SettingsWindow.Sections.CoreUi", keys: ["hudHideCoreHotbar", "hudHideEffectsPanel"] },
+      { title: "SettingsWindow.Sections.Reactions", keys: ["reactionChecker", "reactionCombatOnly", "reactionPopup", "reactionPopupGM"] },
+      { title: "SettingsWindow.Sections.Sustain", keys: ["sustainChecker"] },
+      { title: "SettingsWindow.Sections.BulkDamage", keys: ["bulkDamage"] }
     ]
   },
   {
-    id: "turns", label: "턴 트래커", icon: "fa-solid fa-list-ol",
+    id: "turns", label: "SettingsWindow.Tabs.Turns", icon: "fa-solid fa-list-ol",
     sections: [
-      { title: "표시", keys: ["turnTracker", "turnTrackerWidth", "turnTrackerAspect", "turnTrackerTop"] },
-      { title: "전투원", keys: ["turnTrackerGroup", "turnTrackerDefeated", "turnSkipDead"] }
+      { title: "SettingsWindow.Sections.Display", keys: ["turnTracker", "turnTrackerWidth", "turnTrackerAspect", "turnTrackerTop"] },
+      { title: "SettingsWindow.Sections.Combatants", keys: ["turnTrackerGroup", "turnTrackerDefeated", "turnSkipDead"] }
     ]
   },
   {
-    id: "chat", label: "채팅창", icon: "fa-solid fa-comments",
+    id: "chat", label: "SettingsWindow.Tabs.Chat", icon: "fa-solid fa-comments",
     sections: [
-      { title: "시계·주사위", keys: ["chatDock", "clock12h"] },
-      { title: "글꼴·크기", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth", "chatHideEditorMenu", "chatFaceZoom"] },
-      { title: "메시지", keys: ["chatGrouping", "chatGroupWindow", "whisperPolicy"] },
-      { title: "긴 세션 (렉 줄이기)", keys: ["chatTrim", "chatTrimKeep", "chatJumpButton"] },
-      { title: "입력 중 표시", keys: ["typingIndicator", "typingShowKeeper", "typingReserveHeight", "typingSelector"] }
+      { title: "SettingsWindow.Sections.ClockDice", keys: ["chatDock", "clock12h"] },
+      { title: "SettingsWindow.Sections.FontSize", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth", "chatHideEditorMenu", "chatFaceZoom"] },
+      { title: "SettingsWindow.Sections.Messages", keys: ["chatGrouping", "chatGroupWindow", "whisperPolicy"] },
+      { title: "SettingsWindow.Sections.LongSessions", keys: ["chatTrim", "chatTrimKeep", "chatJumpButton"] },
+      { title: "SettingsWindow.Sections.Typing", keys: ["typingIndicator", "typingShowKeeper", "typingReserveHeight", "typingSelector"] }
     ]
   },
   {
-    id: "tokens", label: "토큰 툴팁", icon: "fa-solid fa-heart-pulse",
+    id: "tokens", label: "SettingsWindow.Tabs.Tokens", icon: "fa-solid fa-heart-pulse",
     sections: [
-      { title: "거리", keys: ["tokenTipDistance"] },
-      { title: "체력 상태", keys: ["healthOnHover", "healthFullShow", "healthShowGM", "healthFull", "healthLevels", "healthZero"] }
+      { title: "SettingsWindow.Sections.Distance", keys: ["tokenTipDistance"] },
+      { title: "SettingsWindow.Sections.Health", keys: ["healthOnHover", "healthFullShow", "healthShowGM", "healthFull", "healthLevels", "healthZero"] }
     ]
   },
   {
-    id: "gm", label: "GM 도구", icon: "fa-solid fa-hat-wizard", gm: true,
+    id: "gm", label: "SettingsWindow.Tabs.Gm", icon: "fa-solid fa-hat-wizard", gm: true,
     sections: [
-      { title: "시간·조명", keys: ["timeDarknessSync", "timeDarknessMax"] },
-      { title: "GM 팔레트", keys: ["paletteSize", "paletteOpacity"] },
-      { title: "컴펜디움 브라우저", keys: ["browserHideLegacy"] }
+      { title: "SettingsWindow.Sections.TimeLight", keys: ["timeDarknessSync", "timeDarknessMax"] },
+      { title: "SettingsWindow.Sections.Palette", keys: ["paletteSize", "paletteOpacity"] },
+      { title: "SettingsWindow.Sections.Browser", keys: ["browserHideLegacy"] }
     ]
   },
   {
-    id: "voice", label: "디스코드 음성", icon: "fa-brands fa-discord", gm: true,
+    id: "voice", label: "SettingsWindow.Tabs.Voice", icon: "fa-brands fa-discord", gm: true,
     menus: [
-      { key: "voiceSetupMenu", label: "설정 도우미 열기", icon: "fa-solid fa-wand-magic-sparkles" },
-      { key: "voiceBridgeMenu", label: "디스코드 ↔ Foundry 사용자 연결", icon: "fa-brands fa-discord" }
+      { key: "voiceSetupMenu", label: "SettingsWindow.Menus.VoiceSetup", icon: "fa-solid fa-wand-magic-sparkles" },
+      { key: "voiceBridgeMenu", label: "SettingsWindow.Menus.VoiceBridge", icon: "fa-brands fa-discord" }
     ],
-    sections: [{ title: "연동", keys: ["voiceBridgeEnabled", "voiceBridgeUrl"] }]
+    sections: [{ title: "SettingsWindow.Sections.Link", keys: ["voiceBridgeEnabled", "voiceBridgeUrl"] }]
   }
 ];
 
-const OTHER_TAB = { id: "other", label: "기타", icon: "fa-solid fa-ellipsis", sections: [{ title: "기타", keys: [] }] };
+const OTHER_TAB = { id: "other", label: "SettingsWindow.Tabs.Other", icon: "fa-solid fa-ellipsis", sections: [{ title: "SettingsWindow.Sections.Other", keys: [] }] };
 
 /** Menus that now open from inside the window instead of the main list. */
 const capturedMenus = new Map();
 
 const esc = value => foundry.utils.escapeHTML(String(value ?? ""));
 const config = key => game.settings.settings.get(`${MODULE_ID}.${key}`);
+
+/** Tab labels, section titles and menu labels are lang keys (under PKH), read when drawn. */
+const label = key => t(key);
 
 function visibleTabs() {
   const tabs = [...TABS];
@@ -112,9 +115,9 @@ function fieldHtml(key, context = []) {
   const cfg = config(key);
   if (!editable(cfg)) return "";
   const value = game.settings.get(MODULE_ID, key);
-  const name = esc(shortName(String(cfg.name ?? key), context));
-  const hint = cfg.hint ? `<p class="hint">${esc(cfg.hint)}</p>` : "";
-  const world = cfg.scope === "world" ? `<span class="scope" data-tooltip="월드 설정 — 모두에게 적용">월드</span>` : "";
+  const name = esc(shortName(game.i18n.localize(String(cfg.name ?? key)), context));
+  const hint = cfg.hint ? `<p class="hint">${esc(game.i18n.localize(String(cfg.hint)))}</p>` : "";
+  const world = cfg.scope === "world" ? `<span class="scope" data-tooltip="${esc(t("SettingsWindow.WorldTip"))}">${esc(t("SettingsWindow.World"))}</span>` : "";
   let input;
   if (cfg.type === Boolean) {
     return `<div class="pkh-set-field check"><label><input type="checkbox" data-key="${key}" ${value ? "checked" : ""}><span>${name}</span>${world}</label>${hint}</div>`;
@@ -140,7 +143,7 @@ export class PkhSettingsWindow extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     id: "pkh-settings",
     classes: ["pkh-window", "pkh-settings"],
-    window: { title: "Rutz's PF2e HUD 설정", icon: "fa-solid fa-sliders", resizable: true },
+    window: { title: "PKH.SettingsWindow.Title", icon: "fa-solid fa-sliders", resizable: true },
     position: { width: 760, height: 640 }
   };
 
@@ -175,26 +178,26 @@ export class PkhSettingsWindow extends foundry.applications.api.ApplicationV2 {
     const tabs = visibleTabs();
     if (!tabs.some(t => t.id === this.tab)) this.tab = tabs[0]?.id;
     const tab = tabs.find(t => t.id === this.tab);
-    const nav = tabs.map(t => `<button type="button" class="${t.id === this.tab ? "active" : ""}" data-tab="${t.id}"><i class="${t.icon}"></i><span>${esc(t.label)}</span></button>`).join("");
+    const nav = tabs.map(t => `<button type="button" class="${t.id === this.tab ? "active" : ""}" data-tab="${t.id}"><i class="${t.icon}"></i><span>${esc(label(t.label))}</span></button>`).join("");
     const menus = (tab?.menus ?? []).filter(m => capturedMenus.has(m.key) && (!capturedMenus.get(m.key).restricted || game.user.isGM))
-      .map(m => `<button type="button" class="menu" data-menu="${m.key}"><i class="${m.icon}"></i> ${esc(m.label)}</button>`).join("");
+      .map(m => `<button type="button" class="menu" data-menu="${m.key}"><i class="${m.icon}"></i> ${esc(label(m.label))}</button>`).join("");
     const sections = (tab?.sections ?? []).map(sec => {
-      const fields = sec.keys.map(key => fieldHtml(key, [tab.label, sec.title])).join("");
-      return fields ? `<section class="pkh-set-section"><h3>${esc(sec.title)}</h3>${fields}</section>` : "";
+      const fields = sec.keys.map(key => fieldHtml(key, [label(tab.label), label(sec.title)])).join("");
+      return fields ? `<section class="pkh-set-section"><h3>${esc(label(sec.title))}</h3>${fields}</section>` : "";
     }).join("");
     return `
       <div class="pkh-set">
         <nav class="pkh-set-tabs">${nav}</nav>
         <div class="pkh-set-body">
           ${menus ? `<div class="pkh-set-menus">${menus}</div>` : ""}
-          ${sections || `<p class="hint">이 항목에서 바꿀 수 있는 설정이 없습니다.</p>`}
+          ${sections || `<p class="hint">${esc(t("SettingsWindow.Empty"))}</p>`}
         </div>
       </div>
       <footer class="pkh-set-footer">
-        <button type="button" data-act="defaults"><i class="fa-solid fa-rotate-left"></i> 이 항목 기본값으로</button>
+        <button type="button" data-act="defaults"><i class="fa-solid fa-rotate-left"></i> ${esc(t("SettingsWindow.Defaults"))}</button>
         <span class="grow"></span>
-        <button type="button" data-act="close">닫기</button>
-        <button type="button" data-act="save" class="primary"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+        <button type="button" data-act="close">${esc(t("Common.Close"))}</button>
+        <button type="button" data-act="save" class="primary"><i class="fa-solid fa-floppy-disk"></i> ${esc(t("Common.Save"))}</button>
       </footer>`;
   }
 
@@ -286,7 +289,7 @@ export class PkhSettingsWindow extends foundry.applications.api.ApplicationV2 {
       if (cfg.requiresReload) { reload = true; world ||= cfg.scope === "world"; }
     }
     this.changed.clear();
-    ui.notifications.info("설정을 저장했습니다.");
+    ui.notifications.info(t("SettingsWindow.Saved"));
     this.close();
     const SC = foundry.applications?.settings?.SettingsConfig ?? globalThis.SettingsConfig;
     if (reload && typeof SC?.reloadConfirm === "function") SC.reloadConfirm({ world });
@@ -322,8 +325,8 @@ export function registerSettingsWindows() {
   for (const tab of all) {
     const Opener = class extends PkhSettingsWindow { static TAB = tab.id; };
     game.settings.registerMenu(MODULE_ID, `settings-${tab.id}`, {
-      name: `${tab.label} 설정`,
-      label: `${tab.label} 상세 설정`,
+      name: t("SettingsWindow.MenuName", { tab: label(tab.label) }),
+      label: t("SettingsWindow.MenuLabel", { tab: label(tab.label) }),
       icon: tab.icon,
       type: Opener,
       restricted: !!tab.gm

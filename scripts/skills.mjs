@@ -1,4 +1,4 @@
-import { MODULE_ID, esc, localizedDoc, setting, signed } from "./shared.mjs";
+import { MODULE_ID, esc, localizedDoc, setting, signed, t } from "./shared.mjs";
 import { actorLores, rollLore } from "./lore.mjs";
 
 /* ======================================================================== *
@@ -181,7 +181,7 @@ async function rollAction(actor, entry, event, { variant = null, map = 0 } = {})
     if (typeof action === "function") return await action({ ...options, skill: entry.statistic });
   } catch (err) {
     console.warn(`${MODULE_ID} | skill action ${entry.key}`, err);
-    ui.notifications.warn(`PF2e-KR HUD | ${entry.label}: 굴리지 못했습니다 (${err.message ?? err})`);
+    ui.notifications.warn(`PF2e-KR HUD | ${t("Skills.RollFailed", { action: entry.label, error: err.message ?? err })}`);
   }
 }
 
@@ -265,7 +265,7 @@ class SkillsPage {
   async render() {
     const actor = this.actor;
     if (!actor || !this.el) return;
-    if (!groups) this.el.innerHTML = `<div class="pkh-sk-loading"><i class="fa-solid fa-spinner fa-spin"></i> 기술 목록 불러오는 중…</div>`;
+    if (!groups) this.el.innerHTML = `<div class="pkh-sk-loading"><i class="fa-solid fa-spinner fa-spin"></i> ${t("Skills.Loading")}</div>`;
     const list = await prepare();
     const hide = setting("hudSkillsHideUntrained", false) === true;
     const isPC = actor.type === "character";
@@ -283,14 +283,14 @@ class SkillsPage {
         const dim = a.trained && !proficient;
         if (dim && hide) return "";
         const chips = a.map
-          ? [0, 1, 2].map(m => `<button type="button" class="chip" data-map="${m}" data-tooltip="${m ? `${esc(game.i18n.localize("PF2E.MultipleAttackPenalty"))} ${mapValue(m, a.map.agile)} (${m + 1}번째 공격)` : "첫 공격 (페널티 없음)"}">${m ? `${m + 1}회 ${String(mapValue(m, a.map.agile)).replace("-", "−")}` : "보통"}</button>`).join("")
+          ? [0, 1, 2].map(m => `<button type="button" class="chip" data-map="${m}" data-tooltip="${m ? t("Skills.MapTip", { label: esc(game.i18n.localize("PF2E.MultipleAttackPenalty")), value: mapValue(m, a.map.agile), n: m + 1 }) : t("Skills.FirstAttack")}">${m ? t("Skills.MapChip", { n: m + 1, value: String(mapValue(m, a.map.agile)).replace("-", "−") }) : t("Skills.Normal")}</button>`).join("")
           : (a.variants ?? []).map(v => `<button type="button" class="chip" data-variant="${esc(v)}">${esc(variantLabel(a.key, v))}</button>`).join("");
         return `<div class="pkh-sk-act ${dim ? "dim" : ""}" data-stat="${statistic}" data-key="${esc(a.key)}" data-desc="${esc(a.uuid)}">
           <button type="button" class="name" data-use="1">${esc(a.label)} ${glyph(a.cost)}</button>
           ${chips ? `<div class="chips">${chips}</div>` : ""}</div>`;
       }).join("");
       return `<section class="pkh-sk">
-        <h3 data-roll="${statistic}" data-tooltip="${esc(skillLabel(statistic, stat))} 판정 굴림">
+        <h3 data-roll="${statistic}" data-tooltip="${esc(t("Skills.RollTip", { skill: skillLabel(statistic, stat) }))}">
           <span class="mod">${esc(signed(stat?.mod ?? 0))}</span><span class="lbl">${esc(skillLabel(statistic, stat))}</span>
           ${isPC ? `<span class="rank r${rank}">${esc(rankLabel(rank))}</span>` : ""}</h3>
         ${rows}</section>`;
@@ -298,22 +298,22 @@ class SkillsPage {
 
     const loreOptions = actorLores(actor);
     const selectedLore = this.loreSelection.get(actor.uuid);
-    const lores = loreOptions.length ? `<div class="pkh-lore-picker"><select name="lorePick" aria-label="캐릭터의 지식">
+    const lores = loreOptions.length ? `<div class="pkh-lore-picker"><select name="lorePick" aria-label="${esc(t("Skills.LoreLabel"))}">
       ${loreOptions.map(lore => `<option value="${esc(lore.slug)}" ${lore.slug === selectedLore ? "selected" : ""}>${esc(lore.label)} (${lore.mod === null ? "?" : esc(signed(lore.mod))})</option>`).join("")}</select>
-      <button type="button" data-roll-lore="1"><i class="fa-solid fa-dice-d20"></i> 굴리기</button></div>` : "";
+      <button type="button" data-roll-lore="1"><i class="fa-solid fa-dice-d20"></i> ${t("Skills.Roll")}</button></div>` : "";
 
     const follow = this.followDoc ?? fromUuidSync(FOLLOW_THE_EXPERT, { strict: false });
     if (!this.followDoc) localizedDoc(FOLLOW_THE_EXPERT).then(d => { if (d) { this.followDoc = d; this.scheduleRender(); } });
     const following = hasSource(actor, FOLLOW_THE_EXPERT_EFFECT, "effect");
     this.el.innerHTML = `
       <header>
-        <strong>${esc(actor.name)}</strong> <span class="sub">기술</span>
-        <label class="hide"><input type="checkbox" name="hideUntrained" ${hide ? "checked" : ""}> 미훈련 행동 숨기기</label>
+        <strong>${esc(actor.name)}</strong> <span class="sub">${t("Skills.Title")}</span>
+        <label class="hide"><input type="checkbox" name="hideUntrained" ${hide ? "checked" : ""}> ${t("Skills.HideUntrained")}</label>
         ${follow ? `<button type="button" class="follow ${following ? "on" : ""}" data-follow="1" data-desc="${FOLLOW_THE_EXPERT}"
-            data-tooltip="${following ? "켜짐 — 눌러서 끄기" : "탐험 활동: 눌러서 효과 켜기"}"><i class="fa-solid fa-person-walking-arrow-right"></i> ${esc(follow.name)}</button>` : ""}
-        <button type="button" class="close" data-close="1" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+            data-tooltip="${t(following ? "Skills.FollowOn" : "Skills.FollowOff")}"><i class="fa-solid fa-person-walking-arrow-right"></i> ${esc(follow.name)}</button>` : ""}
+        <button type="button" class="close" data-close="1" aria-label="${esc(t("Common.Close"))}"><i class="fa-solid fa-xmark"></i></button>
       </header>
-      <div class="pkh-sk-cols">${sections}${lores ? `<section class="pkh-sk lores"><h4>${esc(game.i18n.localize("PF2E.LoreSkillsHeader") === "PF2E.LoreSkillsHeader" ? "지식 기술" : game.i18n.localize("PF2E.LoreSkillsHeader"))}</h4>${lores}</section>` : ""}</div>`;
+      <div class="pkh-sk-cols">${sections}${lores ? `<section class="pkh-sk lores"><h4>${esc(game.i18n.localize("PF2E.LoreSkillsHeader") === "PF2E.LoreSkillsHeader" ? t("Skills.Lore") : game.i18n.localize("PF2E.LoreSkillsHeader"))}</h4>${lores}</section>` : ""}</div>`;
     this.position();
   }
 
@@ -372,7 +372,7 @@ class SkillsPage {
       const Editor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
       const raw = item?.system?.description?.value ?? "";
       html = raw ? await Editor.enrichHTML(raw, { relativeTo: item, rollData: this.actor?.getRollData?.() ?? {} }).catch(() => raw) : "";
-      html = `<header><img src="${esc(item?.img ?? "")}" alt=""><strong>${esc(item?.name ?? "")}</strong></header>${traitsHtml(item)}<div class="desc">${html || "<p>설명이 없습니다.</p>"}</div>`;
+      html = `<header><img src="${esc(item?.img ?? "")}" alt=""><strong>${esc(item?.name ?? "")}</strong></header>${traitsHtml(item)}<div class="desc">${html || `<p>${t("Common.NoDescription")}</p>`}</div>`;
       this.descCache.set(uuid, html);
     }
     if (!node.isConnected || !this.open) return;
@@ -398,7 +398,7 @@ async function toggleFollow(actor) {
   const existing = (actor.itemTypes?.effect ?? []).find(i => sourceOf(i) === FOLLOW_THE_EXPERT_EFFECT);
   if (existing) return existing.delete();
   const item = await fromUuid(FOLLOW_THE_EXPERT_EFFECT).catch(() => null);
-  if (!item) return ui.notifications.warn("PF2e-KR HUD | '전문가 따르기' 효과를 찾지 못했습니다.");
+  if (!item) return ui.notifications.warn(`PF2e-KR HUD | ${t("Skills.NoFollowEffect")}`);
   const source = item.toObject();
   source._stats = { ...(source._stats ?? {}), compendiumSource: FOLLOW_THE_EXPERT_EFFECT };
   await actor.createEmbeddedDocuments("Item", [source]);

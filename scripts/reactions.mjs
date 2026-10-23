@@ -1,4 +1,4 @@
-import { MODULE_ID, SimpleWindow, esc, setting } from "./shared.mjs";
+import { MODULE_ID, SimpleWindow, esc, setting, t } from "./shared.mjs";
 import { activeConditions } from "./economy.mjs";
 import { canEditSlots } from "./slots.mjs";
 
@@ -15,14 +15,15 @@ import { canEditSlots } from "./slots.mjs";
  *  - Triggers come from a built-in table and can be changed per reaction.
  */
 
+// Getters: the labels are read when drawn (game.i18n is not ready at import time).
 const TRIGGERS = {
-  move: "간격 안의 적이 이동",
-  manipulate: "간격 안의 적이 원거리 공격·조작 행동·주문",
-  targeted: "내가 공격 대상이 됨",
-  "crit-fail": "나를 향한 적의 공격이 대실패",
-  damaged: "내가 피해를 받음",
-  "ally-damaged": "범위 안 아군이 피해를 받음",
-  save: "내가 내성 굴림을 함"
+  get move() { return t("Reactions.Trigger.move"); },
+  get manipulate() { return t("Reactions.Trigger.manipulate"); },
+  get targeted() { return t("Reactions.Trigger.targeted"); },
+  get "crit-fail"() { return t("Reactions.Trigger.critFail"); },
+  get damaged() { return t("Reactions.Trigger.damaged"); },
+  get "ally-damaged"() { return t("Reactions.Trigger.allyDamaged"); },
+  get save() { return t("Reactions.Trigger.save"); }
 };
 
 const STRIKE = { strike: true };
@@ -231,15 +232,15 @@ function rowHtml(row, i, { gm }) {
   const who = row.players.length ? row.players.map(id => game.users.get(id)?.name).filter(Boolean).join(", ") : "NPC";
   const body = row.state === "pending"
     ? `<div class="choices">${row.items.map(it => `<button type="button" data-rx-use="${it.id}" data-row="${i}"><img src="${esc(it.img)}" alt=""> ${esc(it.name)}</button>`).join("")}
-        <button type="button" data-rx-skip="1" data-row="${i}" class="skip">반응 안 함</button></div>`
+        <button type="button" data-rx-skip="1" data-row="${i}" class="skip">${t("Reactions.Skip")}</button></div>`
     : `<p class="done">${{
-      used: `✔ <b>${esc(row.choice)}</b> 사용`,
-      skipped: "✖ 반응하지 않음",
-      spent: "— 남은 리액션 없음",
-      expired: "— 턴이 지나감"
+      used: t("Reactions.State.Used", { choice: esc(row.choice) }),
+      skipped: t("Reactions.State.Skipped"),
+      spent: t("Reactions.State.Spent"),
+      expired: t("Reactions.State.Expired")
     }[row.state] ?? ""}${row.by ? ` <small>(${esc(row.by)})</small>` : ""}</p>`;
   return `<div class="rx-row ${row.state}" data-row="${i}">
-    <div class="rx-who"><img src="${esc(row.img)}" alt=""><b>${esc(row.name)}</b>${gm ? `<small>${esc(who)}</small>` : ""}<span class="budget">리액션 ${row.left}/${row.max}</span></div>
+    <div class="rx-who"><img src="${esc(row.img)}" alt=""><b>${esc(row.name)}</b>${gm ? `<small>${esc(who)}</small>` : ""}<span class="budget">${t("Reactions.Budget", { left: row.left, max: row.max })}</span></div>
     ${body}</div>`;
 }
 
@@ -253,13 +254,13 @@ function groupHtml(flag) {
     html += rowHtml(r, i, { gm: true });
   });
   return `<div class="pkh-reaction group">
-    <header><i class="fa-solid fa-bolt"></i> 반응 기회 <small>${esc(flag.title ?? "")}${pending ? ` · 대기 ${pending}` : ""}</small></header>
+    <header><i class="fa-solid fa-bolt"></i> ${t("Reactions.Opportunity")} <small>${esc(flag.title ?? "")}${pending ? ` · ${t("Reactions.Pending", { n: pending })}` : ""}</small></header>
     ${html}</div>`;
 }
 
 function playerHtml(row) {
   return `<div class="pkh-reaction">
-    <header><i class="fa-solid fa-bolt"></i> <strong>${esc(row.name)}</strong> — 반응 기회</header>
+    <header><i class="fa-solid fa-bolt"></i> <strong>${esc(row.name)}</strong> — ${t("Reactions.Opportunity")}</header>
     <p>${eventLine(row)}</p>
     ${rowHtml(row, 0, { gm: false })}</div>`;
 }
@@ -268,7 +269,7 @@ function turnTitle() {
   const c = game.combat;
   if (!c?.started) return "";
   const name = c.combatant?.token?.name ?? c.combatant?.name ?? "";
-  return `${c.round}라운드${name ? ` · ${name}의 턴` : ""}`;
+  return `${t("Reactions.TurnTitle.Round", { round: c.round })}${name ? ` · ${t("Reactions.TurnTitle.Turn", { name })}` : ""}`;
 }
 
 /** The GM card of a turn (the newest copy). */
@@ -292,7 +293,7 @@ function serial(fn) {
 async function postBoard(turn, rows, old) {
   const flag = { turn, title: old?.flags?.[MODULE_ID]?.reactionGroup?.title || turnTitle(), rows };
   const msg = await ChatMessage.create({
-    speaker: { alias: "반응 기회" },
+    speaker: { alias: t("Reactions.Opportunity") },
     whisper: gmIds(),
     content: groupHtml(flag),
     flags: { [MODULE_ID]: { reactionGroup: flag } }
@@ -503,7 +504,7 @@ async function useReaction(message, rowIndex, itemId, event) {
   try { await spendReaction(actor); } catch (_) { /* responder without ownership: the GM's count still resets each turn */ }
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ token }),
-    content: `<div class="pkh-reaction used"><i class="fa-solid fa-bolt"></i> <b>${esc(token.name)}</b>이(가) 반응 <b>${esc(item.name)}</b>을(를) 사용했습니다.</div>`,
+    content: `<div class="pkh-reaction used"><i class="fa-solid fa-bolt"></i> ${t("Reactions.UsedMsg", { token: esc(token.name), reaction: esc(item.name) })}</div>`,
     flags: { [MODULE_ID]: { reactionResult: { ...ctx, choice: item.name, slug: item.slug ?? "", by: game.user.name } } }
   });
   if (SHIELD_BLOCKS.has(item.slug)) return;        // the GM's client takes the damage back and re-posts it
@@ -515,11 +516,11 @@ async function useReaction(message, rowIndex, itemId, event) {
 async function rollReactionStrike(actor, event) {
   const strikes = (actor.system?.actions ?? []).filter(s => s?.ready !== false && s?.variants?.length
     && !(s.item?.isRanged ?? (s.item?.system?.range ?? 0) > 0));
-  if (!strikes.length) return ui.notifications.warn("PF2e-KR HUD | 반응으로 휘두를 근접 무기가 없습니다.");
+  if (!strikes.length) return ui.notifications.warn(`PF2e-KR HUD | ${t("Reactions.NoMelee")}`);
   if (strikes.length === 1) return strikes[0].variants[0].roll({ event });
   const choice = await foundry.applications.api.DialogV2.wait({
-    window: { title: "반응 공격 — 무기 선택" },
-    content: "<p>어떤 무기로 공격할까요?</p>",
+    window: { title: t("Reactions.StrikeTitle") },
+    content: `<p>${t("Reactions.StrikeQuestion")}</p>`,
     buttons: strikes.map((s, i) => ({ action: String(i), label: s.label, default: i === 0 })),
     rejectClose: false
   }).catch(() => null);
@@ -532,7 +533,7 @@ async function declineReaction(message, rowIndex) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ token }),
     whisper: [...new Set([...(ctx?.responders ?? []), ...gmIds()])],
-    content: `<div class="pkh-reaction skipped"><i class="fa-regular fa-circle-xmark"></i> ${esc(token?.name ?? "")}: 반응하지 않음</div>`,
+    content: `<div class="pkh-reaction skipped"><i class="fa-regular fa-circle-xmark"></i> ${t("Reactions.Declined", { name: esc(token?.name ?? "") })}</div>`,
     flags: { [MODULE_ID]: { reactionResult: { ...ctx, choice: null, by: game.user.name } } }
   });
 }
@@ -609,14 +610,14 @@ async function shieldBlockRedo({ takenId, sourceId }, tokenUuid) {
   }
   const source = sourceId ? game.messages.get(sourceId) : null;
   if (!source) {
-    ui.notifications.info(`${token?.name ?? ""}: 피해를 되돌렸습니다. 원래 피해 카드에서 방패를 켜고 다시 적용하세요.`);
+    ui.notifications.info(t("Reactions.SbReverted", { name: token?.name ?? "" }));
     return;
   }
   const data = source.toObject();
   delete data._id;
   data.timestamp = Date.now();
   data.whisper = gmIds();
-  data.flavor = `<div class="pkh-sb-note"><i class="fa-solid fa-shield-halved"></i> <b>${esc(token?.name ?? "")}</b> 방패 막기 — 피해를 되돌렸습니다. 방패(막기) 버튼을 켜고 다시 적용하세요.</div>${data.flavor ?? ""}`;
+  data.flavor = `<div class="pkh-sb-note"><i class="fa-solid fa-shield-halved"></i> ${t("Reactions.SbNote", { name: esc(token?.name ?? "") })}</div>${data.flavor ?? ""}`;
   foundry.utils.setProperty(data, `flags.${MODULE_ID}.shieldRepost`, true);
   const th = data.flags?.["pf2e-toolbelt"]?.targetHelper;
   if (th) {
@@ -672,35 +673,35 @@ function popup(message) {
 
 export function openReactionConfig(actor) {
   actor ??= canvas?.tokens?.controlled?.[0]?.actor ?? game.pf2eKrHud?.hud?.actor;
-  if (!actor) return ui.notifications.warn("PF2e-KR HUD | 먼저 토큰을 선택하세요.");
-  if (!canEditSlots(actor)) return ui.notifications.warn("PF2e-KR HUD | 이 캐릭터의 반응 설정을 바꿀 권한이 없습니다.");
+  if (!actor) return ui.notifications.warn(`PF2e-KR HUD | ${t("Notify.SelectToken")}`);
+  if (!canEditSlots(actor)) return ui.notifications.warn(`PF2e-KR HUD | ${t("Reactions.NoPermission")}`);
   const base = baseOf(actor);
   const items = reactionItems(actor);
   const responders = base.getFlag(MODULE_ID, "reactionResponders") ?? [];
   const users = game.users.filter(u => !u.isGM);
   const row = item => {
     const cfg = configFor(actor, item);
-    const auto = BUILTIN[item.slug] ? " (자동 인식)" : "";
+    const auto = BUILTIN[item.slug] ? ` (${t("Reactions.Config.Auto")})` : "";
     return `<div class="pkh-rx-row" data-key="${esc(item.slug ?? item.id)}">
       <img src="${esc(item.img)}" alt=""><b>${esc(item.name)}</b><small>${auto}</small>
-      <label><input type="checkbox" name="off" ${cfg.off ? "" : "checked"}> 알림</label>
+      <label><input type="checkbox" name="off" ${cfg.off ? "" : "checked"}> ${t("Reactions.Config.Notify")}</label>
       <select name="trigger" multiple size="3">${Object.entries(TRIGGERS).map(([k, l]) =>
         `<option value="${k}" ${cfg.triggers.includes(k) ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <label>범위 <input type="number" name="range" value="${cfg.range ?? ""}" placeholder="간격" style="width:56px">피트</label>
-      <label><input type="checkbox" name="strike" ${cfg.strike ? "checked" : ""}> 사용하면 공격 굴림</label>
+      <label>${t("Reactions.Config.Range")} <input type="number" name="range" value="${cfg.range ?? ""}" placeholder="${t("Reactions.Config.Reach")}" style="width:56px">${t("Reactions.Config.Feet")}</label>
+      <label><input type="checkbox" name="strike" ${cfg.strike ? "checked" : ""}> ${t("Reactions.Config.Strike")}</label>
     </div>`;
   };
   new SimpleWindow({
-    title: `반응 설정 — ${actor.name}`, width: 640,
+    title: t("Reactions.Config.Title", { name: actor.name }), width: 640,
     html: `<div class="pkh-rx-config">
-      <h3>누구에게 물어볼까요?</h3>
-      <p class="pkh-pick-hint">아무도 고르지 않으면 이 캐릭터를 <b>할당받은 플레이어</b>와 GM에게만 묻습니다 (소유권만 있는 사람에게는 안 감).</p>
+      <h3>${t("Reactions.Config.Who")}</h3>
+      <p class="pkh-pick-hint">${t("Reactions.Config.WhoHint")}</p>
       <div class="users">${users.map(u => `<label><input type="checkbox" value="${u.id}" ${responders.includes(u.id) ? "checked" : ""}> ${esc(u.name)}</label>`).join("")}</div>
-      <p>라운드당 추가 리액션 <input type="number" name="extra" min="0" max="5" value="${Number(base.getFlag(MODULE_ID, "extraReactions")) || 0}" style="width:50px"> 개 (전투 반사신경 등)</p>
-      <h3>반응별 조건</h3>
-      <p class="pkh-pick-hint">자동 인식된 반응은 기본 조건이 채워져 있습니다. 트리거는 Ctrl+클릭으로 여러 개 고를 수 있습니다.</p>
-      ${items.map(row).join("") || "<p>이 캐릭터에게는 반응(리액션) 능력이 없습니다.</p>"}
-      <div class="pkh-seat-buttons"><button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> 저장</button></div>
+      <p>${t("Reactions.Config.Extra")} <input type="number" name="extra" min="0" max="5" value="${Number(base.getFlag(MODULE_ID, "extraReactions")) || 0}" style="width:50px"> ${t("Reactions.Config.ExtraSuffix")}</p>
+      <h3>${t("Reactions.Config.PerReaction")}</h3>
+      <p class="pkh-pick-hint">${t("Reactions.Config.PerHint")}</p>
+      ${items.map(row).join("") || `<p>${t("Reactions.Config.None")}</p>`}
+      <div class="pkh-seat-buttons"><button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> ${t("Common.Save")}</button></div>
     </div>`,
     onRender: (root, app) => root.querySelector("[data-act=save]")?.addEventListener("click", async () => {
       const config = {};
@@ -717,7 +718,7 @@ export function openReactionConfig(actor) {
         [`flags.${MODULE_ID}.reactionResponders`]: [...root.querySelectorAll(".users input:checked")].map(i => i.value),
         [`flags.${MODULE_ID}.extraReactions`]: Number(root.querySelector("[name=extra]").value) || 0
       });
-      ui.notifications.info("PF2e-KR HUD | 반응 설정을 저장했습니다.");
+      ui.notifications.info(`PF2e-KR HUD | ${t("Reactions.Config.Saved")}`);
       app.close();
     })
   }).render({ force: true });
@@ -727,10 +728,10 @@ export function openReactionConfig(actor) {
 
 export function registerReactionSettings() {
   const s = (key, data) => game.settings.register(MODULE_ID, key, data);
-  s("reactionChecker", { name: "반응(리액션) 알림", hint: "적의 이동·공격·피해 등으로 반응을 쓸 수 있을 때, 그 캐릭터를 맡은 플레이어와 GM에게만 채팅 카드로 알립니다. (pf2e-reaction·socketlib 불필요)", scope: "world", config: true, type: Boolean, default: true });
-  s("reactionCombatOnly", { name: "반응 알림은 전투 중에만", scope: "world", config: true, type: Boolean, default: true });
-  s("reactionPopup", { name: "반응 알림 팝업", hint: "채팅 카드와 함께 화면 위쪽에 작은 선택 창을 띄웁니다 (30초 뒤 사라짐).", scope: "client", config: true, type: Boolean, default: true });
-  s("reactionPopupGM", { name: "GM에게도 반응 팝업", hint: "끄면 GM은 채팅 카드로만 받습니다 (NPC 반응이 많을 때 편함).", scope: "client", config: true, type: Boolean, default: false });
+  s("reactionChecker", { name: "PKH.Settings.reactionChecker.Name", hint: "PKH.Settings.reactionChecker.Hint", scope: "world", config: true, type: Boolean, default: true });
+  s("reactionCombatOnly", { name: "PKH.Settings.reactionCombatOnly.Name", scope: "world", config: true, type: Boolean, default: true });
+  s("reactionPopup", { name: "PKH.Settings.reactionPopup.Name", hint: "PKH.Settings.reactionPopup.Hint", scope: "client", config: true, type: Boolean, default: true });
+  s("reactionPopupGM", { name: "PKH.Settings.reactionPopupGM.Name", hint: "PKH.Settings.reactionPopupGM.Hint", scope: "client", config: true, type: Boolean, default: false });
 }
 
 export function initReactions() {

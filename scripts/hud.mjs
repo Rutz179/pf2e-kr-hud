@@ -1,4 +1,4 @@
-import { MAX_ROWS, MODULE_ID, PAGE_COUNT, boardViewportRect, displayName, esc, readDragData, setting, signed, summaryOf } from "./shared.mjs";
+import { MAX_ROWS, MODULE_ID, PAGE_COUNT, boardViewportRect, displayName, esc, readDragData, setting, signed, summaryOf, t } from "./shared.mjs";
 import {
   autoFillSlots, canEditSlots, entryFromDrop, executeSlot, findItem, isLocked, openEditorsDialog, openSlotPicker,
   readSlots, resolveSlot, setSlot, storageActor, strikeForEntry, strikeUnavailable, swapSlots, withIconOverride
@@ -9,7 +9,12 @@ import { openSkills, skillsOpenFor } from "./skills.mjs";
 import { activeConditions, debugEconomy, economyOf, itemActionCost, markNextUse, registerEconomyHooks, registerUseMarking, rollbackOne, setUsed, toggleBonus } from "./economy.mjs";
 
 const BUFF_CONDITIONS = new Set(["quickened", "hidden", "invisible", "concealed", "undetected"]);
-const SAVE_LABELS = { fortitude: "인내", reflex: "반사", will: "의지" };
+// Getters: the labels are read when drawn (game.i18n is not ready at import time).
+const SAVE_LABELS = {
+  get fortitude() { return t("Saves.fortitude"); },
+  get reflex() { return t("Saves.reflex"); },
+  get will() { return t("Saves.will"); }
+};
 
 /* ------------------------------------------------------------------------ *
  * Data helpers
@@ -25,25 +30,25 @@ function hpOf(actor) {
 
 /* ---------------- effect durations ---------------- */
 
-const UNIT_KO = { rounds: "라운드", minutes: "분", hours: "시간", days: "일" };
-const EXPIRY_KO = { "turn-start": "턴 시작에 끝남", "turn-end": "턴 끝에 끝남", "round-end": "라운드 끝에 끝남" };
+const UNITS = new Set(["rounds", "minutes", "hours", "days"]);
+const EXPIRY = { "turn-start": "TurnStart", "turn-end": "TurnEnd", "round-end": "RoundEnd" };
 
 /** Seconds → "7분 24초" / "1시간 5분" / "2일 3시간" (exact, for the hover card). */
 function longTime(sec) {
   sec = Math.max(0, Math.round(sec));
   const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-  if (d) return `${d}일${h ? ` ${h}시간` : ""}`;
-  if (h) return `${h}시간${m ? ` ${m}분` : ""}`;
-  if (m) return `${m}분${s ? ` ${s}초` : ""}`;
-  return `${s}초`;
+  if (d) return `${t("Time.D", { n: d })}${h ? ` ${t("Time.H", { n: h })}` : ""}`;
+  if (h) return `${t("Time.H", { n: h })}${m ? ` ${t("Time.M", { n: m })}` : ""}`;
+  if (m) return `${t("Time.M", { n: m })}${s ? ` ${t("Time.S", { n: s })}` : ""}`;
+  return t("Time.S", { n: s });
 }
 
 /** Seconds → a few characters for the circle: "3R" · "7분" · "2시간" · "3일". */
 function shortTime(sec) {
   if (sec < 60) return `${Math.max(1, Math.ceil(sec / 6))}R`;
-  if (sec < 3600) return `${Math.ceil(sec / 60)}분`;
-  if (sec < 86400) return `${Math.round(sec / 3600)}시간`;
-  return `${Math.round(sec / 86400)}일`;
+  if (sec < 3600) return t("Time.M", { n: Math.ceil(sec / 60) });
+  if (sec < 86400) return t("Time.H", { n: Math.round(sec / 3600) });
+  return t("Time.D", { n: Math.round(sec / 86400) });
 }
 
 /**
@@ -55,25 +60,25 @@ export function durationOf(item) {
   if (!sys || item.type === "condition") return null;
   const unit = sys.unit;
   const sustained = !!sys.sustained;
-  const expiry = EXPIRY_KO[sys.expiry] ?? "";
-  if (unit === "unlimited") return { finite: false, short: "", long: "무제한", sustained, expiry: "" };
-  if (unit === "encounter") return { finite: false, short: "전투", long: "전투가 끝날 때까지", sustained, expiry: "" };
+  const expiry = EXPIRY[sys.expiry] ? t(`Effects.Expiry.${EXPIRY[sys.expiry]}`) : "";
+  if (unit === "unlimited") return { finite: false, short: "", long: t("Effects.Unlimited"), sustained, expiry: "" };
+  if (unit === "encounter") return { finite: false, short: t("Effects.EncounterShort"), long: t("Effects.Encounter"), sustained, expiry: "" };
   let remaining = Number(item.remainingDuration?.remaining);
   const total = Number(item.totalDuration);
   const expired = !!item.remainingDuration?.expired;
   if (!Number.isFinite(remaining)) {
-    if (!Number.isFinite(total)) return { finite: false, short: "", long: "무제한", sustained, expiry };
+    if (!Number.isFinite(total)) return { finite: false, short: "", long: t("Effects.Unlimited"), sustained, expiry };
     remaining = total;
   }
   const rounds = Math.ceil(remaining / 6);
   const fraction = Number.isFinite(total) && total > 0 ? Math.max(0, Math.min(1, remaining / total)) : 1;
-  const totalText = sys.value > 0 && UNIT_KO[unit] ? `${sys.value}${UNIT_KO[unit]}` : (Number.isFinite(total) ? longTime(total) : "");
+  const totalText = sys.value > 0 && UNITS.has(unit) ? t(`Time.Unit.${unit}`, { n: sys.value }) : (Number.isFinite(total) ? longTime(total) : "");
   return {
     finite: true, expired, remaining, fraction, sustained, expiry,
-    short: expired ? "끝" : shortTime(remaining),
-    long: expired ? "시간이 다 됨 (다음 턴 처리 때 사라짐)"
-      : remaining < 60 ? `${rounds}라운드 남음 (${longTime(remaining)})`
-      : `${longTime(remaining)} 남음${remaining <= 600 ? ` · 약 ${rounds}라운드` : ""}`,
+    short: expired ? t("Effects.ExpiredShort") : shortTime(remaining),
+    long: expired ? t("Effects.Expired")
+      : remaining < 60 ? t("Effects.RoundsLeft", { rounds, time: longTime(remaining) })
+      : `${t("Effects.TimeLeft", { time: longTime(remaining) })}${remaining <= 600 ? ` · ${t("Effects.AboutRounds", { rounds })}` : ""}`,
     total: totalText,
     ending: expired || remaining <= 6
   };
@@ -93,7 +98,14 @@ function effectsOf(actor) {
   return out;
 }
 
-const SPEED_LABELS = { land: "", burrow: "굴착", climb: "등반", fly: "비행", swim: "수영", travel: "여행" };
+const SPEED_LABELS = {
+  land: "",
+  get burrow() { return t("Hud.SpeedType.burrow"); },
+  get climb() { return t("Hud.SpeedType.climb"); },
+  get fly() { return t("Hud.SpeedType.fly"); },
+  get swim() { return t("Hud.SpeedType.swim"); },
+  get travel() { return t("Hud.SpeedType.travel"); }
+};
 
 /** All movement speeds: PF2e 7 (system.movement.speeds) or older (attributes.speed + otherSpeeds). */
 function speedsOf(actor) {
@@ -200,19 +212,19 @@ function spellCastOptions(actor, spell) {
   const slotOf = r => slots[`slot${r}`] ?? {};
 
   // Focus cantrips (hexes, compositions …) are free, like any cantrip, but still focus magic.
-  if (spell.isCantrip) return [{ label: "캔트립", rank: base, kind: spell.isFocusSpell ? "focus-cantrip" : "cantrip", ok: true }];
+  if (spell.isCantrip) return [{ label: t("Spell.Cantrip"), rank: base, kind: spell.isFocusSpell ? "focus-cantrip" : "cantrip", ok: true }];
 
   if (spell.isFocusSpell) {
     const focus = actor.system?.resources?.focus ?? {};
     const fp = Number(focus.value ?? 0);
     const max = Number(focus.max ?? 0);
-    return [{ label: max ? `(${fp}/${max})` : `(${fp})`, rank: base, kind: "focus", ok: fp > 0, reason: fp > 0 ? "" : "포커스 점수가 없습니다" }];
+    return [{ label: max ? `(${fp}/${max})` : `(${fp})`, rank: base, kind: "focus", ok: fp > 0, reason: fp > 0 ? "" : t("Spell.NoFocus") }];
   }
 
   if (entry.isInnate) {
     const uses = spell.system?.location?.uses;
     const left = uses && Number(uses.max) ? Number(uses.value) : null;
-    return [{ label: left === null ? "선천" : `선천 (${left}/${Number(uses.max)})`, rank: base, kind: "innate", ok: left === null || left > 0, reason: "오늘 쓸 횟수를 다 썼습니다" }];
+    return [{ label: left === null ? t("Spell.Innate") : t("Spell.InnateUses", { left, max: Number(uses.max) }), rank: base, kind: "innate", ok: left === null || left > 0, reason: t("Spell.NoUsesToday") }];
   }
 
   if (entry.isPrepared && !entry.isFlexible) {
@@ -223,9 +235,9 @@ function spellCastOptions(actor, spell) {
       const mine = list.map((p, slotId) => ({ ...p, slotId })).filter(p => p?.id === spell.id);
       if (!mine.length) continue;
       const free = mine.find(p => !p.expended);
-      options.push({ label: `${r}랭크`, rank: r, kind: "slot", slotId: free?.slotId ?? mine[0].slotId, ok: !!free, reason: "이 랭크에 준비한 것을 이미 썼습니다" });
+      options.push({ label: t("Spell.Rank", { rank: r }), rank: r, kind: "slot", slotId: free?.slotId ?? mine[0].slotId, ok: !!free, reason: t("Spell.PreparedUsed") });
     }
-    return options.length ? options : [{ label: "준비 안 됨", rank: base, kind: "slot", ok: false, reason: "오늘 준비하지 않은 주문입니다" }];
+    return options.length ? options : [{ label: t("Spell.NotPrepared"), rank: base, kind: "slot", ok: false, reason: t("Spell.NotPreparedToday") }];
   }
 
   // Spontaneous or flexible: spend a slot of the chosen rank.
@@ -237,9 +249,9 @@ function spellCastOptions(actor, spell) {
     const max = Number(slot.max) || 0;
     if (!max) continue;
     const value = Number(slot.value) || 0;
-    options.push({ label: `${r}랭크 (${value}/${max})`, rank: r, kind: "slot", ok: value > 0, reason: "이 랭크의 슬롯이 없습니다" });
+    options.push({ label: t("Spell.RankSlots", { rank: r, value, max }), rank: r, kind: "slot", ok: value > 0, reason: t("Spell.NoSlotsRank") });
   }
-  return options.length ? options : [{ label: `${base}랭크`, rank: base, kind: "slot", ok: false, reason: "쓸 수 있는 슬롯이 없습니다" }];
+  return options.length ? options : [{ label: t("Spell.Rank", { rank: base }), rank: base, kind: "slot", ok: false, reason: t("Spell.NoSlots") }];
 }
 
 /** Cast through the spellcasting entry, so slots and focus points are spent like on the sheet. */
@@ -256,8 +268,8 @@ async function postSpellDcRequest(actor, dc) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<div class="pkh-save-request">
-      <header><i class="fa-solid fa-wand-sparkles"></i> <strong>${esc(displayName(actor.name))}</strong> — 주문 DC <b>${dc}</b></header>
-      <p>내성 굴림 요구</p>
+      <header><i class="fa-solid fa-wand-sparkles"></i> <strong>${esc(displayName(actor.name))}</strong> — ${t("Hud.SpellDc")} <b>${dc}</b></header>
+      <p>${t("Hud.SaveRequest")}</p>
       <div class="checks">${checks}</div>
     </div>`
   });
@@ -270,7 +282,7 @@ async function postSaveDc(actor, key, mod) {
     speaker: ChatMessage.getSpeaker({ actor }),
     content: `<div class="pkh-save-request">
       <header><i class="fa-solid fa-shield-halved"></i> <strong>${esc(displayName(actor.name))}</strong> — ${SAVE_LABELS[key]} DC <b>${dc}</b></header>
-      <p>${SAVE_LABELS[key]} 내성 DC (10 ${signed(mod)})</p>
+      <p>${t("Hud.SaveDcLine", { save: SAVE_LABELS[key], mod: signed(mod) })}</p>
       <div class="checks">@Check[${key}|dc:${dc}]</div>
     </div>`
   });
@@ -301,11 +313,11 @@ export class PartyHud {
       document.body.appendChild(el);
       return el;
     };
-    this.root = make("pkh-hud", "캐릭터 HUD");
-    this.inspectEl = make("pkh-inspect", "관찰 중인 캐릭터");
-    this.cardEl = make("pkh-effect-card", "효과 설명");
+    this.root = make("pkh-hud", t("Hud.Aria.Hud"));
+    this.inspectEl = make("pkh-inspect", t("Hud.Aria.Inspect"));
+    this.cardEl = make("pkh-effect-card", t("Hud.Aria.EffectCard"));
     this.cardEl.classList.add("hidden");
-    this.mapEl = make("pkh-map-pop", "공격 선택");
+    this.mapEl = make("pkh-map-pop", t("Hud.Aria.MapPopup"));
     this.mapEl.classList.add("hidden");
     this.mapEl.addEventListener("click", ev => this._onMapChoice(ev));
     document.addEventListener("pointerdown", ev => {
@@ -468,7 +480,7 @@ export class PartyHud {
     const bar = readSlots(a).flat().some(Boolean) ? this._slotsHtml(a, false, true) : "";
     el.innerHTML = `
       <header><span>${esc(displayName(a.name))}</span>
-        <button type="button" data-act="close-inspect" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" data-act="close-inspect" aria-label="${esc(t("Common.Close"))}"><i class="fa-solid fa-xmark"></i></button>
       </header>
       ${this._effectsHtml(a)}
       ${this._hpHtml(a, false)}
@@ -528,15 +540,15 @@ export class PartyHud {
 
   _apHtml() {
     const eco = this.eco;
-    const source = { tracker: "액션 트래커와 연동", chat: "채팅의 굴림으로 자동 계산", manual: "수동" }[eco.source] ?? "수동";
+    const source = t(`Hud.ApSource.${["tracker", "chat", "manual"].includes(eco.source) ? eco.source : "manual"}`);
     const pips = [0, 1, 2, 3].map(i => {
       const bonus = i === 3;
       const available = bonus ? eco.quickened : true;
       const used = i < eco.used;
       const lost = !bonus && i >= 3 - eco.slowed;
       const cls = ["pkh-pip", bonus ? "bonus" : "base", used ? "used" : "", !available ? "idle" : "", lost && !used ? "lost" : ""].join(" ");
-      const tip = (bonus ? (eco.quickened ? "추가 행동 (신속 등)" : "추가 행동 — 지금은 없음") : `${i + 1}번째 행동${lost ? " (감속/기절)" : ""}`)
-        + "<br><small>클릭 행동 사용 · 우클릭 되돌리기 · Shift+클릭 추가 행동 부여/회수</small>";
+      const tip = (bonus ? t(eco.quickened ? "Hud.Pip.Bonus" : "Hud.Pip.BonusNone") : `${t("Hud.Pip.Nth", { n: i + 1 })}${lost ? ` ${t("Hud.Pip.Lost")}` : ""}`)
+        + `<br><small>${t("Hud.Pip.Help")}</small>`;
       return `<button type="button" class="${cls}" data-act="pip" data-index="${i}" data-tooltip="${tip}" aria-label="${tip}"></button>`;
     }).join("");
     const over = eco.used > eco.max;
@@ -545,15 +557,15 @@ export class PartyHud {
       const b = reactionBudget(this.actor);
       rx = `<span class="pkh-rx-sep"></span>` + Array.from({ length: b.max }, (_, i) => {
         const used = i < b.used;
-        const tip = `반응 ${b.left} / ${b.max}${used ? " — 이번 라운드에 사용함" : ""}<br><small>클릭 반응 사용 · 우클릭 되돌리기 · 내 턴이 시작되면 돌아옵니다</small>`;
+        const tip = `${t("Hud.Rx.Count", { left: b.left, max: b.max })}${used ? ` — ${t("Hud.Rx.Used")}` : ""}<br><small>${t("Hud.Rx.Help")}</small>`;
         return `<button type="button" class="pkh-pip reaction ${used ? "used" : ""}" data-act="rx-pip" data-tooltip="${tip}" aria-label="${tip}"><i class="fa-solid fa-reply"></i></button>`;
       }).join("");
     }
     return `
-      <div class="pkh-ap ${over ? "over" : ""}" data-tooltip="행동 ${eco.used} / ${eco.max} · ${source}<br><small>참조용 — 행동을 막지 않습니다</small>">
+      <div class="pkh-ap ${over ? "over" : ""}" data-tooltip="${t("Hud.Ap.Count", { used: eco.used, max: eco.max })} · ${source}<br><small>${t("Hud.Ap.Note")}</small>">
         ${pips}${rx}
         <button type="button" class="pkh-rollback" data-act="rollback" ${eco.used ? "" : "disabled"}
-                data-tooltip="행동 하나 되돌리기<br><small>우클릭: 이번 턴 전부 되돌리기</small>" aria-label="행동 하나 되돌리기"><i class="fa-solid fa-rotate-left"></i></button>
+                data-tooltip="${t("Hud.Ap.Undo")}<br><small>${t("Hud.Ap.UndoAll")}</small>" aria-label="${t("Hud.Ap.Undo")}"><i class="fa-solid fa-rotate-left"></i></button>
       </div>`;
   }
 
@@ -571,14 +583,14 @@ export class PartyHud {
         const v = withIconOverride(resolveSlot(actor, entry, { attacks }));
         const key = keyLabel(offset, c);
         if (!v) {
-          return `<div class="pkh-slot empty" data-row="${r}" data-col="${c}" ${dragOk ? `data-tooltip="클릭: 기술·액션 추가<br>또는 시트에서 끌어다 놓기"` : ""}>
+          return `<div class="pkh-slot empty" data-row="${r}" data-col="${c}" ${dragOk ? `data-tooltip="${t("Hud.Slot.EmptyTip")}"` : ""}>
             <span class="key">${esc(key)}</span></div>`;
         }
         let tip = esc(v.label);
         if (entry.type === "strike" && v.map?.length) {
-          tip += `<br>${v.map.join(" / ")}<br><small>클릭하면 몇 번째 공격인지 고르는 창이 열립니다</small>`;
+          tip += `<br>${v.map.join(" / ")}<br><small>${t("Hud.Slot.StrikeTip")}</small>`;
         }
-        if (v.auto) tip += "<br><small>자동 배치됨 (주입 아이템)</small>";
+        if (v.auto) tip += `<br><small>${t("Hud.Slot.Auto")}</small>`;
         const cls = ["pkh-slot", v.disabled ? "pkh-off" : "", v.broken ? "broken" : "", v.auto ? "auto" : "", v.active ? "active" : "",
           `t-${entry.type}`, entry.type === "strike" ? `map-${v.mapIndex ?? 0}` : ""].join(" ");
         const visual = v.img ? `<img src="${esc(v.img)}" alt="" draggable="false">` : `<i class="${esc(v.icon)}"></i>`;
@@ -594,24 +606,24 @@ export class PartyHud {
     }).join("");
 
     const dots = Array.from({ length: PAGE_COUNT }, (_, p) =>
-      `<button type="button" class="pkh-dot ${p === page ? "active" : ""}" data-act="page" data-page="${p}" aria-label="${p + 1}페이지"></button>`).join("");
+      `<button type="button" class="pkh-dot ${p === page ? "active" : ""}" data-act="page" data-page="${p}" aria-label="${t("Hud.Page", { n: p + 1 })}"></button>`).join("");
 
     return `
       <div class="pkh-slots rows-${rows}">
         <div class="pkh-slots-side">
           <button type="button" class="pkh-icon lock ${locked ? "" : "open"}" data-act="lock" ${editable ? "" : "disabled"}
-                  data-tooltip="${editable ? (locked ? "잠김 — 눌러서 배치 편집" : "편집 중 — 눌러서 잠그기") : "배치를 바꿀 권한이 없습니다"}">
+                  data-tooltip="${t(editable ? (locked ? "Hud.Lock.Locked" : "Hud.Lock.Editing") : "Hud.Lock.NoPermission")}">
             <i class="fa-solid ${locked ? "fa-lock" : "fa-lock-open"}"></i></button>
-          <button type="button" class="pkh-icon" data-act="rows" data-tooltip="줄 수: ${rows}줄 (눌러서 변경)">
+          <button type="button" class="pkh-icon" data-act="rows" data-tooltip="${t("Hud.Rows", { n: rows })}">
             <span class="rows-glyph r${rows}"></span></button>
-          ${game.user.isGM ? `<button type="button" class="pkh-icon" data-act="editors" data-tooltip="편집 권한 (GM)"><i class="fa-solid fa-user-gear"></i></button>` : ""}
+          ${game.user.isGM ? `<button type="button" class="pkh-icon" data-act="editors" data-tooltip="${t("Hud.Editors")}"><i class="fa-solid fa-user-gear"></i></button>` : ""}
           <button type="button" class="pkh-icon pin ${setting("hudPinnedActor", "") ? "open" : ""}" data-act="pin"
-                  data-tooltip="${setting("hudPinnedActor", "") ? "고정됨 — 다른 토큰을 골라도 이 캐릭터 유지 (눌러서 해제)" : "이 캐릭터 고정 (다른 토큰을 골라도 유지)"}">
+                  data-tooltip="${t(setting("hudPinnedActor", "") ? "Hud.Pin.On" : "Hud.Pin.Off")}">
             <i class="fa-solid fa-thumbtack"></i></button>
-          ${game.user.isGM ? `<button type="button" class="pkh-icon" data-act="autofill" data-tooltip="빈칸 자동 채우기<br><small>공격 → 액션 → 주문 순</small>"><i class="fa-solid fa-wand-magic-sparkles"></i></button>` : ""}
+          ${game.user.isGM ? `<button type="button" class="pkh-icon" data-act="autofill" data-tooltip="${t("Hud.AutoFill")}<br><small>${t("Hud.AutoFillOrder")}</small>"><i class="fa-solid fa-wand-magic-sparkles"></i></button>` : ""}
         </div>
         <div class="pkh-grid">${rowHtml}</div>
-        <div class="pkh-pages" data-tooltip="휠로 페이지 넘기기">${dots}</div>
+        <div class="pkh-pages" data-tooltip="${t("Hud.PagesTip")}">${dots}</div>
       </div>`;
   }
 
@@ -620,26 +632,26 @@ export class PartyHud {
     const card = setting("hudSaveCard", true);
     const save = key => (s[key] === null || s[key] === undefined ? "" :
       `<button type="button" class="pkh-chip" data-act="save" data-save="${key}"
-        data-tooltip="${SAVE_LABELS[key]} 내성 굴림${card ? `<br><small>채팅에 ${SAVE_LABELS[key]} DC ${10 + Number(s[key])} 카드도 함께 올립니다</small>` : ""}">
+        data-tooltip="${t("Hud.SaveRoll", { save: SAVE_LABELS[key] })}${card ? `<br><small>${t("Hud.SaveCardTip", { save: SAVE_LABELS[key], dc: 10 + Number(s[key]) })}</small>` : ""}">
         <em>${SAVE_LABELS[key]}</em>${esc(signed(s[key]))}</button>`);
     const perception = s.perception === null || s.perception === undefined ? "" :
-      `<button type="button" class="pkh-chip" data-act="perception" data-tooltip="지각 굴림"><em>지각</em>${esc(signed(s.perception))}</button>`;
-    const ac = s.ac === null ? "" : `<span class="pkh-chip static" data-tooltip="방어도"><em>AC</em>${s.ac}</span>`;
-    const dc = s.spellDC ? `<button type="button" class="pkh-chip dc" data-act="dc" data-tooltip="채팅에 내성 굴림 요구 카드 올리기<br><small>인내·반사·의지 DC ${s.spellDC} 버튼 포함</small>">
-        <em>주문 DC</em>${s.spellDC}</button>` : "";
+      `<button type="button" class="pkh-chip" data-act="perception" data-tooltip="${t("Hud.PerceptionRoll")}"><em>${t("Hud.Perception")}</em>${esc(signed(s.perception))}</button>`;
+    const ac = s.ac === null ? "" : `<span class="pkh-chip static" data-tooltip="${t("Hud.AcTip")}"><em>AC</em>${s.ac}</span>`;
+    const dc = s.spellDC ? `<button type="button" class="pkh-chip dc" data-act="dc" data-tooltip="${t("Hud.DcTip")}<br><small>${t("Hud.DcTipDetail", { dc: s.spellDC })}</small>">
+        <em>${t("Hud.SpellDc")}</em>${s.spellDC}</button>` : "";
     return `
       <div class="pkh-bar">
-        <button type="button" class="pkh-mini ${this.popover === "inventory" ? "active" : ""}" data-act="pop" data-pop="inventory" data-tooltip="인벤토리 훑어보기">
+        <button type="button" class="pkh-mini ${this.popover === "inventory" ? "active" : ""}" data-act="pop" data-pop="inventory" data-tooltip="${t("Hud.Bar.Inventory")}">
           <i class="fa-solid fa-sack"></i></button>
         <div class="pkh-saves">${ac}${save("fortitude")}${save("reflex")}${save("will")}${perception}</div>
         <div class="pkh-bar-right">
-          ${actor.type === "character" ? `<button type="button" class="pkh-mini" data-act="faces" data-tooltip="초상화 표정 (@키워드로 바꾸기)">
+          ${actor.type === "character" ? `<button type="button" class="pkh-mini" data-act="faces" data-tooltip="${t("Hud.Bar.Faces")}">
             <i class="fa-solid fa-masks-theater"></i></button>` : ""}
-          <button type="button" class="pkh-mini ${skillsOpenFor(actor) ? "active" : ""}" data-act="skills" data-tooltip="기술 — 모든 기술과 기술 행동<br><small>클릭해서 굴리기 · 마우스를 올리면 설명</small>">
+          <button type="button" class="pkh-mini ${skillsOpenFor(actor) ? "active" : ""}" data-act="skills" data-tooltip="${t("Hud.Bar.Skills")}<br><small>${t("Hud.Bar.SkillsHelp")}</small>">
             <i class="fa-solid fa-list-check"></i></button>
-          <button type="button" class="pkh-mini" data-act="sheet-actions" data-tooltip="캐릭터 시트 — 액션 탭">
+          <button type="button" class="pkh-mini" data-act="sheet-actions" data-tooltip="${t("Hud.Bar.Sheet")}">
             <i class="fa-solid fa-person-running"></i></button>
-          <button type="button" class="pkh-mini ${this.popover === "grimoire" ? "active" : ""}" data-act="pop" data-pop="grimoire" data-tooltip="주문 · 피트 훑어보기">
+          <button type="button" class="pkh-mini ${this.popover === "grimoire" ? "active" : ""}" data-act="pop" data-pop="grimoire" data-tooltip="${t("Hud.Bar.Grimoire")}">
             <i class="fa-solid fa-book-open"></i></button>
         </div>
       </div>`;
@@ -648,11 +660,11 @@ export class PartyHud {
   _popoverHtml(actor) {
     const itemCell = item => {
       const qty = Number(item.quantity ?? 1);
-      return `<div class="pkh-inv-cell" draggable="true" data-item-id="${item.id}" data-tooltip="${esc(item.name)}<br><small>클릭: 채팅에 올리기 · 우클릭: 자세히 보기</small>">
+      return `<div class="pkh-inv-cell" draggable="true" data-item-id="${item.id}" data-tooltip="${esc(item.name)}<br><small>${t("Hud.Pop.ItemHelp")}</small>">
         <img src="${esc(item.img)}" alt="">${qty > 1 ? `<span class="badge">${qty}</span>` : ""}</div>`;
     };
     const listRow = item => `
-      <div class="pkh-list-row" draggable="true" data-item-id="${item.id}" data-tooltip="클릭: 채팅에 올리기 · 우클릭: 자세히 보기">
+      <div class="pkh-list-row" draggable="true" data-item-id="${item.id}" data-tooltip="${t("Hud.Pop.ItemHelp")}">
         <img src="${esc(item.img)}" alt=""><span>${esc(item.name)}</span></div>`;
 
     if (this.popover === "inventory") {
@@ -660,15 +672,15 @@ export class PartyHud {
       const items = actor.items.filter(i => i.isOfType?.("physical"))
         .sort((a, b) => (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.name.localeCompare(b.name, "ko"));
       return `<div class="pkh-pop inventory">
-        <header>인벤토리 <small>끌어서 퀵슬롯에 올릴 수 있어요</small></header>
-        <div class="pkh-inv-grid">${items.map(itemCell).join("") || "<p>소지품 없음</p>"}</div></div>`;
+        <header>${t("Hud.Pop.Inventory")} <small>${t("Hud.Pop.InventoryHint")}</small></header>
+        <div class="pkh-inv-grid">${items.map(itemCell).join("") || `<p>${t("Hud.Pop.NoItems")}</p>`}</div></div>`;
     }
 
     const spells = (actor.itemTypes?.spell ?? []).slice().sort((a, b) =>
       (a.isCantrip ? 0 : a.rank ?? 0) - (b.isCantrip ? 0 : b.rank ?? 0) || a.name.localeCompare(b.name, "ko"));
     const groups = new Map();
     for (const sp of spells) {
-      const key = sp.isCantrip ? "캔트립" : sp.isFocusSpell ? "집중 주문" : `${sp.rank ?? "?"}랭크`;
+      const key = sp.isCantrip ? t("Hud.Pop.Cantrips") : sp.isFocusSpell ? t("Hud.Pop.Focus") : t("Spell.Rank", { rank: sp.rank ?? "?" });
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(sp);
     }
@@ -676,10 +688,10 @@ export class PartyHud {
     const actions = (actor.itemTypes?.action ?? []).slice().sort((a, b) => a.name.localeCompare(b.name, "ko"));
     const spellHtml = [...groups].map(([k, list]) => `<h4>${esc(k)}</h4>${list.map(listRow).join("")}`).join("");
     return `<div class="pkh-pop grimoire">
-      <header>주문 · 피트 <small>“아 맞다, 이것도 있었지” 용도 — 클릭하면 채팅에 올라갑니다</small></header>
+      <header>${t("Hud.Pop.Grimoire")} <small>${t("Hud.Pop.GrimoireHint")}</small></header>
       <div class="pkh-grim-cols">
-        <div>${spellHtml || "<p>주문 없음</p>"}</div>
-        <div><h4>액션</h4>${actions.map(listRow).join("") || "<p>—</p>"}<h4>피트 · 특성</h4>${feats.map(listRow).join("")}</div>
+        <div>${spellHtml || `<p>${t("Hud.Pop.NoSpells")}</p>`}</div>
+        <div><h4>${t("Hud.Pop.Actions")}</h4>${actions.map(listRow).join("") || "<p>—</p>"}<h4>${t("Hud.Pop.Feats")}</h4>${feats.map(listRow).join("")}</div>
       </div></div>`;
   }
 
@@ -711,13 +723,13 @@ export class PartyHud {
     const rawValue = item.value ?? item.badge?.value;
     // "부상 3" already carries its number — don't print "부상 3 3".
     const value = rawValue && !String(item.name ?? "").trim().endsWith(String(rawValue)) ? rawValue : null;
-    const summary = summaryOf(item) || "설명이 없습니다.";
+    const summary = summaryOf(item) || t("Common.NoDescription");
     const d = durationOf(item);
     const remaining = d ? [
       `<b>${esc(d.long)}</b>`,
-      d.total ? `전체 ${esc(d.total)}` : "",
+      d.total ? t("Effects.Total", { total: esc(d.total) }) : "",
       d.expiry,
-      d.sustained ? `<span class="sus">지속(Sustain) 필요</span>` : ""
+      d.sustained ? `<span class="sus">${t("Effects.NeedsSustain")}</span>` : ""
     ].filter(Boolean).join(" · ") : "";
     this.cardEl.dataset.actorUuid = actor.uuid;
     this.cardEl.dataset.itemId = item.id;
@@ -725,12 +737,12 @@ export class PartyHud {
       <header>
         <img src="${esc(item.img)}" alt="">
         <strong>${esc(item.name)}${value ? ` ${esc(value)}` : ""}</strong>
-        ${actor.isOwner && actor.items.get(item.id) ? `<button type="button" data-act="card-edit" data-tooltip="효과 편집" aria-label="효과 편집"><i class="fa-solid fa-pen"></i></button>` : ""}
-        <button type="button" data-act="card-chat" data-tooltip="채팅에 보내기" aria-label="채팅에 보내기"><i class="fa-solid fa-comment"></i></button>
+        ${actor.isOwner && actor.items.get(item.id) ? `<button type="button" data-act="card-edit" data-tooltip="${t("Effects.Edit")}" aria-label="${t("Effects.Edit")}"><i class="fa-solid fa-pen"></i></button>` : ""}
+        <button type="button" data-act="card-chat" data-tooltip="${t("Effects.ToChat")}" aria-label="${t("Effects.ToChat")}"><i class="fa-solid fa-comment"></i></button>
       </header>
       ${remaining ? `<div class="dur"><i class="fa-regular fa-hourglass-half"></i> ${remaining}</div>` : ""}
       <p>${esc(summary)}</p>
-      ${actor.isOwner ? `<footer>${item.type === "condition" || item.badge?.type === "counter" ? "좌클릭 +1 · 우클릭 −1" : "우클릭 제거"} · Shift+클릭 모두 제거</footer>` : ""}`;
+      ${actor.isOwner ? `<footer>${t(item.type === "condition" || item.badge?.type === "counter" ? "Effects.CounterHelp" : "Effects.RemoveHelp")} · ${t("Effects.RemoveAll")}</footer>` : ""}`;
     this.cardEl.classList.remove("hidden");
     const box = node.getBoundingClientRect();
     const card = this.cardEl.getBoundingClientRect();
@@ -756,11 +768,11 @@ export class PartyHud {
 
   _editGuard(actor) {
     if (!canEditSlots(actor)) {
-      ui.notifications.warn("PF2e-KR HUD | 이 캐릭터의 퀵슬롯 배치를 바꿀 권한이 없습니다.");
+      ui.notifications.warn(`PF2e-KR HUD | ${t("Hud.Notify.NoEdit")}`);
       return false;
     }
     if (isLocked(actor)) {
-      ui.notifications.info("PF2e-KR HUD | 퀵슬롯이 잠겨 있습니다. 왼쪽 자물쇠를 눌러 푼 뒤 편집하세요.");
+      ui.notifications.info(`PF2e-KR HUD | ${t("Hud.Notify.Locked")}`);
       return false;
     }
     return true;
@@ -829,7 +841,7 @@ export class PartyHud {
       }
       case "autofill": {
         const added = await autoFillSlots(actor);
-        return ui.notifications.info(`PF2e-KR HUD | ${added}개를 빈칸에 채웠습니다.`);
+        return ui.notifications.info(`PF2e-KR HUD | ${t("Hud.Notify.AutoFilled", { n: added })}`);
       }
       case "sheet-actions": return openSheetTab(actor, "actions");
       case "skills": openSkills(actor); return this.scheduleRender();
@@ -958,10 +970,10 @@ export class PartyHud {
     this.menuEl ??= Object.assign(document.body.appendChild(document.createElement("section")), { id: "pkh-slot-menu" });
     const menu = this.menuEl;
     menu.innerHTML = `
-      <button type="button" data-m="icon"><i class="fa-solid fa-image"></i> 아이콘 바꾸기 (이 슬롯만)</button>
-      ${entry.icon ? `<button type="button" data-m="reset"><i class="fa-solid fa-rotate-left"></i> 원래 아이콘</button>` : ""}
-      ${entry.type === "item" && findItem(actor, entry) ? `<button type="button" data-m="sheet"><i class="fa-solid fa-file-lines"></i> 자세히 보기</button>` : ""}
-      <button type="button" data-m="clear"><i class="fa-solid fa-trash"></i> 슬롯 비우기</button>`;
+      <button type="button" data-m="icon"><i class="fa-solid fa-image"></i> ${t("Hud.Menu.Icon")}</button>
+      ${entry.icon ? `<button type="button" data-m="reset"><i class="fa-solid fa-rotate-left"></i> ${t("Hud.Menu.ResetIcon")}</button>` : ""}
+      ${entry.type === "item" && findItem(actor, entry) ? `<button type="button" data-m="sheet"><i class="fa-solid fa-file-lines"></i> ${t("Hud.Menu.Details")}</button>` : ""}
+      <button type="button" data-m="clear"><i class="fa-solid fa-trash"></i> ${t("Hud.Menu.Clear")}</button>`;
     menu.style.left = `${Math.min(window.innerWidth - 200, ev.clientX)}px`;
     menu.style.top = `${Math.max(8, ev.clientY - 110)}px`;
     menu.classList.remove("hidden");
@@ -995,7 +1007,7 @@ export class PartyHud {
     const strike = strikeForEntry(actor, entry);
     if (strike) {
       if (!node) {
-        if (strikeUnavailable(strike)) return ui.notifications.warn(`PF2e-KR HUD | ${strike.label}: 지금은 공격할 수 없습니다.`);
+        if (strikeUnavailable(strike)) return ui.notifications.warn(`PF2e-KR HUD | ${t("Hud.Notify.CantStrike", { name: strike.label })}`);
         return executeSlot(actor, { type: "strike", slug: strike.slug }, null, { mapIndex: this._autoMap() });
       }
       return this._openMap(actor, strike, node);
@@ -1006,7 +1018,7 @@ export class PartyHud {
     if (item?.type === "spell" && node) return this._openSpell(actor, item, node);
     const view = resolveSlot(actor, entry, {});
     if (view?.disabled || view?.broken) {
-      ui.notifications.warn(`PF2e-KR HUD | ${view.label}: 지금은 사용할 수 없습니다.`);
+      ui.notifications.warn(`PF2e-KR HUD | ${t("Hud.Notify.CantUse", { name: view.label })}`);
       return;
     }
     return executeSlot(actor, entry, ev, { mapIndex: this._autoMap() });
@@ -1018,7 +1030,7 @@ export class PartyHud {
       list: aux,
       html: aux.length ? `<div class="aux-row">${aux.map((a, i) => `
         <button type="button" data-aux="${i}" data-tooltip="${esc(a.fullLabel ?? a.label ?? "")}">
-          ${a.glyph ? `<span class="glyph">${esc(a.glyph)}</span>` : ""}${esc(a.label ?? a.fullLabel ?? "행동")}</button>`).join("")}</div>` : ""
+          ${a.glyph ? `<span class="glyph">${esc(a.glyph)}</span>` : ""}${esc(a.label ?? a.fullLabel ?? t("Hud.Map.Action"))}</button>`).join("")}</div>` : ""
     };
   }
 
@@ -1028,17 +1040,17 @@ export class PartyHud {
     const v = resolveSlot(actor, entry, { attacks: this.eco?.attacks ?? 0 });
     const off = strikeUnavailable(strike);
     const aux = this._auxButtons(strike);
-    if (!v?.map?.length && !aux.list.length) return ui.notifications.warn(`PF2e-KR HUD | ${strike.label}: 지금은 공격할 수 없습니다.`);
+    if (!v?.map?.length && !aux.list.length) return ui.notifications.warn(`PF2e-KR HUD | ${t("Hud.Notify.CantStrike", { name: strike.label })}`);
     this._mapTarget = { actor, entry };
     this._auxTarget = aux.list;
     this._useTarget = null;
     this._spellTarget = null;
     this.mapEl.innerHTML = `
-      <header>${esc(v?.label ?? strike.label)}${off ? ` <small>— 지금은 공격 불가</small>` : ""}</header>
+      <header>${esc(v?.label ?? strike.label)}${off ? ` <small>— ${t("Hud.Map.Off")}</small>` : ""}</header>
       <div class="choices">${(v?.map ?? []).map((m, i) => `
         <button type="button" data-map="${i}" class="${i === v.mapIndex && !off ? "next" : ""}" ${off ? "disabled" : ""}
-                data-tooltip="${i === 0 ? "첫 공격" : `${i + 1}번째 공격 (다중 공격 페널티)`}">
-          <em>${i + 1}타</em><b>${esc(m)}</b></button>`).join("")}</div>
+                data-tooltip="${i === 0 ? t("Hud.Map.First") : t("Hud.Map.Nth", { n: i + 1 })}">
+          <em>${t("Hud.Map.Hit", { n: i + 1 })}</em><b>${esc(m)}</b></button>`).join("")}</div>
       ${aux.html}`;
     this._placePopup(slotNode);
   }
@@ -1053,11 +1065,11 @@ export class PartyHud {
     this.mapEl.innerHTML = `
       <header>${esc(item.name)}</header>
       <div class="aux-row">
-        <button type="button" data-use="use" class="next"><b>사용</b></button>
-        <button type="button" data-use="chat">채팅에 올리기</button>
-        <button type="button" data-use="sheet" data-tooltip="이 항목의 창을 열어 전체 설명을 봅니다">자세히…</button>
+        <button type="button" data-use="use" class="next"><b>${t("Hud.Use.Use")}</b></button>
+        <button type="button" data-use="chat">${t("Hud.Use.Chat")}</button>
+        <button type="button" data-use="sheet" data-tooltip="${t("Hud.Use.DetailsTip")}">${t("Hud.Use.Details")}</button>
       </div>
-      ${cost === "passive" ? `<footer>지속 효과 — 사용할 행동이 없습니다</footer>` : ""}`;
+      ${cost === "passive" ? `<footer>${t("Hud.Use.Passive")}</footer>` : ""}`;
     this._placePopup(slotNode);
   }
 
@@ -1069,18 +1081,18 @@ export class PartyHud {
     const options = spellCastOptions(actor, spell);
     this._spellTarget = { actor, spell, options };
     const firstOk = options.findIndex(o => o.ok);
-    const head = { "focus": "포커스 시전", "focus-cantrip": "포커스 시전", "cantrip": "시전", "innate": "시전", "slot": "시전" };
+    const head = { "focus": t("Spell.CastFocus"), "focus-cantrip": t("Spell.CastFocus"), "cantrip": t("Spell.Cast"), "innate": t("Spell.Cast"), "slot": t("Spell.Cast") };
     const tip = {
-      "focus": "포커스 점수 1점을 씁니다",
-      "focus-cantrip": "포커스 캔트립 — 점수를 쓰지 않습니다",
-      "cantrip": "캔트립 — 아무것도 쓰지 않습니다",
-      "innate": "선천 주문 — 하루 횟수를 씁니다",
-      "slot": "이 랭크의 주문 슬롯을 씁니다"
+      "focus": t("Spell.Tip.Focus"),
+      "focus-cantrip": t("Spell.Tip.FocusCantrip"),
+      "cantrip": t("Spell.Tip.Cantrip"),
+      "innate": t("Spell.Tip.Innate"),
+      "slot": t("Spell.Tip.Slot")
     };
     const cast = options.map((o, i) => `
       <button type="button" data-cast="${i}" class="cast-${o.kind ?? "slot"} ${i === firstOk ? "next" : ""}" ${o.ok ? "" : "disabled"}
               data-tooltip="${esc(o.ok ? tip[o.kind] ?? "" : o.reason ?? "")}">
-        <em>${head[o.kind] ?? "시전"}</em><b class="small">${esc(o.label)}</b></button>`).join("");
+        <em>${head[o.kind] ?? t("Spell.Cast")}</em><b class="small">${esc(o.label)}</b></button>`).join("");
     // Up to five ranks a row: a signature spell's 6th–10th ranks go on a second line.
     const cols = Math.min(5, Math.max(1, options.length));
     const entryName = spell.spellcasting?.name ?? "";
@@ -1088,10 +1100,10 @@ export class PartyHud {
       <header>${esc(spell.name)}${entryName ? ` <small>— ${esc(entryName)}</small>` : ""}</header>
       ${cast ? `<div class="choices spell" style="--cols:${cols}">${cast}</div>` : ""}
       <div class="aux-row">
-        <button type="button" data-spell="chat" class="${firstOk < 0 ? "next" : ""}" data-tooltip="슬롯이나 집중 점수를 쓰지 않고 주문 카드만 올립니다">채팅으로 보내기</button>
-        <button type="button" data-spell="sheet" data-tooltip="이 주문의 창을 열어 전체 설명을 봅니다">자세히…</button>
+        <button type="button" data-spell="chat" class="${firstOk < 0 ? "next" : ""}" data-tooltip="${t("Spell.ChatTip")}">${t("Spell.ToChat")}</button>
+        <button type="button" data-spell="sheet" data-tooltip="${t("Spell.DetailsTip")}">${t("Hud.Use.Details")}</button>
       </div>
-      ${spell.isRitual ? `<footer>의식 주문은 캐릭터 시트의 주문 탭에서 진행하세요</footer>` : ""}`;
+      ${spell.isRitual ? `<footer>${t("Spell.Ritual")}</footer>` : ""}`;
     this._placePopup(slotNode);
   }
 
@@ -1108,7 +1120,7 @@ export class PartyHud {
 
   _speedHtml(actor) {
     const land = speedsOf(actor).find(v => v.type === "land") ?? speedsOf(actor)[0];
-    return land ? ` <span class="speed" data-tooltip="이동 속도 ${land.value}피트"><i class="fa-solid fa-shoe-prints"></i> ${land.value}</span>` : "";
+    return land ? ` <span class="speed" data-tooltip="${t("Hud.Speed", { n: land.value })}"><i class="fa-solid fa-shoe-prints"></i> ${land.value}</span>` : "";
   }
 
   _closeMap() {
@@ -1196,49 +1208,49 @@ export function registerHudSettings() {
   const rerender = () => game.pf2eKrHud?.hud?.scheduleRender();
   registerSlotCardSettings();
   game.settings.register(MODULE_ID, "hudEnabled", {
-    name: "캐릭터 HUD 표시", hint: "마지막으로 선택한 내 토큰의 퀵슬롯 HUD를 화면 아래에 계속 띄웁니다.",
+    name: "PKH.Settings.hudEnabled.Name", hint: "PKH.Settings.hudEnabled.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudScale", {
-    name: "HUD 크기", hint: "HUD 전체 배율입니다. 칸 크기는 화면 너비에 맞춰 자동으로 정해지고, 여기에 이 배율이 곱해집니다.",
+    name: "PKH.Settings.hudScale.Name", hint: "PKH.Settings.hudScale.Hint",
     scope: "client", config: true, type: Number, default: 1.1, range: { min: 0.7, max: 1.6, step: 0.05 }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudEffectSize", {
-    name: "상태·효과 아이콘 크기 (px)", hint: "HP 막대 위에 뜨는 동그란 상태·효과 아이콘의 지름입니다.",
+    name: "PKH.Settings.hudEffectSize.Name", hint: "PKH.Settings.hudEffectSize.Hint",
     scope: "client", config: true, type: Number, default: 42, range: { min: 24, max: 64, step: 2 }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudEffectDurations", {
-    name: "효과 남은 시간 표시",
-    hint: "효과 아이콘 둘레에 남은 시간만큼 테두리를 그리고 작은 글자(3R · 7분 · 1시간)를 붙입니다. 마우스를 올리면 정확한 남은 시간·전체 시간·끝나는 시점을 보여 줍니다.",
+    name: "PKH.Settings.hudEffectDurations.Name",
+    hint: "PKH.Settings.hudEffectDurations.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: () => game.pf2eKrHud?.hud?.scheduleRender?.()
   });
   game.settings.register(MODULE_ID, "hudReactionPip", {
-    name: "행동 칸 옆에 반응 표시",
-    hint: "전투 중 행동 점 옆에 반응(↩) 점을 보여 줍니다. 반응 확인 창에서 '사용'을 고르면 자동으로 채워지고, 직접 클릭/우클릭으로도 고칠 수 있습니다. 내 턴이 시작되면 돌아옵니다.",
+    name: "PKH.Settings.hudReactionPip.Name",
+    hint: "PKH.Settings.hudReactionPip.Hint",
     scope: "client", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "hudSaveCard", {
-    name: "내성 굴림 시 DC 카드도 올리기", hint: "HUD에서 인내·반사·의지를 누르면 굴림과 함께 '인내 DC 26'(10+수정치) 카드를 채팅에 올립니다.",
+    name: "PKH.Settings.hudSaveCard.Name", hint: "PKH.Settings.hudSaveCard.Hint",
     scope: "client", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "hudRows", {
-    name: "퀵슬롯 줄 수", scope: "client", config: true, type: Number, default: 1,
-    choices: { 1: "1줄", 2: "2줄", 3: "3줄" }, onChange: rerender
+    name: "PKH.Settings.hudRows.Name", scope: "client", config: true, type: Number, default: 1,
+    choices: { 1: "PKH.Settings.hudRows.Choices.R1", 2: "PKH.Settings.hudRows.Choices.R2", 3: "PKH.Settings.hudRows.Choices.R3" }, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudHideCoreHotbar", {
-    name: "Foundry 기본 매크로 바 끄기", hint: "모듈의 퀵슬롯만 사용합니다. 숫자키도 모듈 퀵슬롯에만 반응합니다.",
+    name: "PKH.Settings.hudHideCoreHotbar.Name", hint: "PKH.Settings.hudHideCoreHotbar.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudHideEffectsPanel", {
-    name: "PF2e 기본 효과 패널 숨기기", hint: "오른쪽 위에 세로로 늘어서는 PF2e 효과 아이콘을 숨깁니다. 효과는 HUD의 HP 막대 위에 표시됩니다.",
+    name: "PKH.Settings.hudHideEffectsPanel.Name", hint: "PKH.Settings.hudHideEffectsPanel.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: rerender
   });
   game.settings.register(MODULE_ID, "hudAutoInfused", {
-    name: "주입(Infused) 아이템 자동 배치", hint: "연금술사 등이 만든 주입 아이템을 퀵슬롯 빈칸에 자동으로 올리고, 사라지면 자동으로 치웁니다.",
+    name: "PKH.Settings.hudAutoInfused.Name", hint: "PKH.Settings.hudAutoInfused.Hint",
     scope: "client", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "hudNpcAutoFill", {
-    name: "NPC 퀵슬롯 자동 채우기", hint: "GM이 퀵슬롯이 비어 있는 NPC를 처음 선택하면 공격 → 액션 → 주문 순으로 자동으로 채웁니다.",
+    name: "PKH.Settings.hudNpcAutoFill.Name", hint: "PKH.Settings.hudNpcAutoFill.Hint",
     scope: "world", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "hudLastActor", { scope: "client", config: false, type: String, default: "" });

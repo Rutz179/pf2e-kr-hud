@@ -1,4 +1,4 @@
-import { MODULE_ID, SimpleWindow, esc, localizeMaybe, readDragData, setting } from "./shared.mjs";
+import { MODULE_ID, SimpleWindow, esc, localizeMaybe, readDragData, setting, t } from "./shared.mjs";
 import { loreCheckLink, loreSlug, partyLores } from "./lore.mjs";
 
 /* ======================================================================== *
@@ -13,11 +13,11 @@ function timeOfDay() {
 }
 
 function phaseOf(h, m) {
-  const t = h + m / 60;
-  if (t >= 7 && t < 18) return { name: "낮", icon: "fa-sun" };
-  if (t >= 5 && t < 7) return { name: "새벽", icon: "fa-cloud-sun" };
-  if (t >= 18 && t < 20) return { name: "황혼", icon: "fa-cloud-moon" };
-  return { name: "밤", icon: "fa-moon" };
+  const hour = h + m / 60;
+  if (hour >= 7 && hour < 18) return { name: t("Clock.Phase.Day"), icon: "fa-sun" };
+  if (hour >= 5 && hour < 7) return { name: t("Clock.Phase.Dawn"), icon: "fa-cloud-sun" };
+  if (hour >= 18 && hour < 20) return { name: t("Clock.Phase.Dusk"), icon: "fa-cloud-moon" };
+  return { name: t("Clock.Phase.Night"), icon: "fa-moon" };
 }
 
 /** 0 = full daylight, 1 = full night, with 2-hour dawn and dusk. */
@@ -83,17 +83,31 @@ function phaseEmoji(h, m) {
  * offset, 2700 for Absalom Reckoning), the day, and the Golarion weekday.
  * ------------------------------------------------------------------------ */
 
-const GOLARION_WEEKDAYS = ["문데이", "토일데이", "윌데이", "오스데이", "파이어데이", "스타데이", "선데이"];
-const GOLARION_MONTHS = ["아바디우스", "칼리스트릴", "파라스트", "고즈란", "데스누스", "사레니스",
-  "에라스투스", "아로두스", "로바", "라마샨", "네스", "쿠토나"];
-const EARTH_WEEKDAYS = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"];
+// Lang keys (Calendar.Golarion.* / Calendar.Earth.* / Calendar.Era.*), read when the date is drawn.
+const GOLARION_WEEKDAYS = ["Moonday", "Toilday", "Wealday", "Oathday", "Fireday", "Starday", "Sunday"].map(n => `Calendar.Golarion.${n}`);
+const GOLARION_MONTHS = ["Abadius", "Calistril", "Pharast", "Gozran", "Desnus", "Sarenith",
+  "Erastus", "Arodus", "Rova", "Lamashan", "Neth", "Kuthona"].map(n => `Calendar.Golarion.${n}`);
+const EARTH_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(n => `Calendar.Earth.${n}`);
 
 const ERAS = {
-  AR: { label: "골라리온력", offset: 2700, golarion: true },
-  IC: { label: "제국력", offset: 5200, golarion: true },
-  AD: { label: "서기", offset: 0, golarion: false },
-  CE: { label: "서기", offset: 0, golarion: false }
+  AR: { label: "Calendar.Era.AR", offset: 2700, golarion: true },
+  IC: { label: "Calendar.Era.IC", offset: 5200, golarion: true },
+  AD: { label: "Calendar.Era.AD", offset: 0, golarion: false },
+  CE: { label: "Calendar.Era.CE", offset: 0, golarion: false }
 };
+
+/** Earth month name in the user's language ("5월", "May"). */
+function earthMonth(n) {
+  try {
+    return new Intl.DateTimeFormat(game.i18n.lang, { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(2000, n - 1, 1)));
+  } catch (_) {
+    return String(n);
+  }
+}
+
+function monthName(era, month) {
+  return era.golarion ? t(GOLARION_MONTHS[month - 1]) : t("Calendar.EarthMonth", { month, name: earthMonth(month) });
+}
 
 function dateTheme() {
   const wc = game.pf2e?.worldClock;
@@ -119,22 +133,25 @@ function gameMoment() {
 /** "골라리온력 4726년 5월 11일 문데이" */
 export function formatGameDate(m, theme = dateTheme(), systemYear = null) {
   const { year, day } = formatGameDateParts(m, theme, systemYear);
-  return `${year} ${day}`;
+  return t("Calendar.Full", { year, day });
 }
 
 /** The same date in two lines: "골라리온력 4726년" / "3월 15일 문데이". */
 export function formatGameDateParts(m, theme = dateTheme(), systemYear = null) {
   const era = ERAS[theme] ?? ERAS.AR;
   const year = Number.isFinite(systemYear) ? systemYear : m.year + era.offset;
-  const weekday = (era.golarion ? GOLARION_WEEKDAYS : EARTH_WEEKDAYS)[(m.weekday - 1 + 7) % 7];
-  return { year: `${era.label} ${year}년`, day: `${m.month}월 ${m.day}일 ${weekday}` };
+  const weekday = t((era.golarion ? GOLARION_WEEKDAYS : EARTH_WEEKDAYS)[(m.weekday - 1 + 7) % 7]);
+  return {
+    year: t("Calendar.Year", { era: t(era.label), year }),
+    day: t("Calendar.Day", { month: m.month, day: m.day, weekday, monthName: era.golarion ? t(GOLARION_MONTHS[m.month - 1]) : earthMonth(m.month) })
+  };
 }
 
 /** "오후 3:05" — or "15:05" when the 24-hour clock is chosen. */
 export function formatGameTime(h, min, twelveHour = true) {
   const mm = String(min).padStart(2, "0");
   if (!twelveHour) return `${String(h).padStart(2, "0")}:${mm}`;
-  return `${h < 12 ? "오전" : "오후"} ${h % 12 || 12}:${mm}`;
+  return t("Calendar.Time12", { ampm: t(h < 12 ? "Calendar.Am" : "Calendar.Pm"), h: h % 12 || 12, mm });
 }
 
 function calendarText() {
@@ -144,19 +161,20 @@ function calendarText() {
   const era = ERAS[theme];
   const parts = formatGameDateParts(m, theme, Number.isFinite(wcYear) ? wcYear : null);
   return {
-    date: `${parts.year} ${parts.day}`,
+    date: t("Calendar.Full", { year: parts.year, day: parts.day }),
     year: parts.year,
     day: parts.day,
-    month: era.golarion ? GOLARION_MONTHS[m.month - 1] : `${m.month}월`,
+    month: monthName(era, m.month),
     time: formatGameTime(m.hour, m.minute, setting("clock12h", true) !== false),
     emoji: phaseEmoji(m.hour, m.minute),
     phase: phaseOf(m.hour, m.minute).name
   };
 }
 
+// [seconds, unit key under Time.*, amount]
 const TIME_STEPS = [
-  [-86400, "−1일"], [-3600, "−1시간"], [-600, "−10분"],
-  [600, "+10분"], [3600, "+1시간"], [86400, "+1일"]
+  [-86400, "D", 1], [-3600, "H", 1], [-600, "M", 10],
+  [600, "M", 10], [3600, "H", 1], [86400, "D", 1]
 ];
 
 /*
@@ -168,8 +186,10 @@ const TIME_STEPS = [
  */
 function clockSkeleton() {
   const steps = game.user.isGM
-    ? `<div class="steps">${TIME_STEPS.map(([s, l]) =>
-        `<button type="button" data-adv="${s}" class="${s < 0 ? "back" : "fwd"}" data-tooltip="${s < 0 ? "되돌리기" : "앞으로"} ${l.slice(1)}">${l}</button>`).join("")}</div>`
+    ? `<div class="steps">${TIME_STEPS.map(([s, unit, n]) => {
+        const amount = t(`Time.${unit}`, { n });
+        return `<button type="button" data-adv="${s}" class="${s < 0 ? "back" : "fwd"}" data-tooltip="${t(s < 0 ? "Clock.Back" : "Clock.Forward", { amount })}">${s < 0 ? "−" : "+"}${amount}</button>`;
+      }).join("")}</div>`
     : "";
   return `<div class="main"><span class="emoji"></span><span class="date"><span class="year"></span><span class="day"></span></span><b class="time"></b></div>${steps}`;
 }
@@ -182,7 +202,7 @@ function updateClockText(clock) {
   set(".day", c.day);
   set(".time", c.time);
   const main = clock.querySelector(".main");
-  if (main) main.dataset.tooltip = `${esc(c.month)} · ${esc(c.phase)}${game.user.isGM ? "<br><small>눌러서 시각 지정 · 조명 설정</small>" : ""}`;
+  if (main) main.dataset.tooltip = `${esc(c.month)} · ${esc(c.phase)}${game.user.isGM ? `<br><small>${t("Clock.GmHint")}</small>` : ""}`;
 }
 
 function mountClock() {
@@ -212,10 +232,10 @@ function mountDice() {
     bar = document.createElement("section");
     bar.id = "pkh-dice";
     bar.innerHTML = `<div class="pkh-dock-typing" aria-live="polite"></div>
-      ${DICE.map(d => `<button type="button" data-die="${d.n}" data-tooltip="1d${d.n}<br><small>Shift: 2개</small>">
+      ${DICE.map(d => `<button type="button" data-die="${d.n}" data-tooltip="1d${d.n}<br><small>${t("Dice.ShiftTwo")}</small>">
         <i class="fa-solid ${d.icon}"></i>${d.label ? `<b>${d.label}</b>` : ""}</button>`).join("")}
       <span class="sep"></span>
-      ${[5, 11].map(dc => `<button type="button" class="flat" data-flat="${dc}" data-tooltip="플랫 체크 DC ${dc}${dc === 5 ? "<br><small>숨겨짐·집중 방해 등</small>" : "<br><small>은폐·감지 등</small>"}" aria-label="플랫 체크 DC ${dc}">
+      ${[5, 11].map(dc => `<button type="button" class="flat" data-flat="${dc}" data-tooltip="${t("Dice.Flat", { dc })}<br><small>${t(dc === 5 ? "Dice.Flat5" : "Dice.Flat11")}</small>" aria-label="${t("Dice.Flat", { dc })}">
         <i class="fa-solid fa-dice-d20"></i><span class="dc">${dc}</span></button>`).join("")}`;
     bar.addEventListener("click", onDiceClick);
     document.body.appendChild(bar);
@@ -302,7 +322,7 @@ async function onDiceClick(ev) {
     const ok = roll.total >= dc;
     return roll.toMessage({
       speaker: ChatMessage.getSpeaker(),
-      flavor: `플랫 체크 DC ${dc} — <b style="color:${ok ? "#3f7f2f" : "#a83a2f"}">${ok ? "성공" : "실패"}</b>`
+      flavor: `${t("Dice.Flat", { dc })} — <b style="color:${ok ? "#3f7f2f" : "#a83a2f"}">${t(ok ? "Dice.Success" : "Dice.Failure")}</b>`
     });
   }
 }
@@ -314,11 +334,11 @@ function openClock(anchor) {
   const { h, m } = timeOfDay();
   const noSync = !!canvas?.scene?.getFlag(MODULE_ID, "noTimeSync");
   pop.innerHTML = `
-    <div class="row">${[["6:00", "아침"], ["12:00", "정오"], ["18:00", "저녁"], ["0:00", "자정"]]
-      .map(([t, l]) => `<button type="button" data-set="${t}">${l}</button>`).join("")}
-      <input type="time" value="${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}"><button type="button" data-act="go">이동</button></div>
-    <label class="row"><input type="checkbox" ${noSync ? "" : "checked"} data-act="sync"> 이 장면 조명을 시간에 맞추기</label>
-    ${pf2eSyncsDarkness() ? `<p class="hint">PF2e 월드 시계의 '장면 어둠 동기화'가 켜져 있어 그쪽이 조명을 맞춥니다.</p>` : ""}`;
+    <div class="row">${[["6:00", "Clock.Morning"], ["12:00", "Clock.Noon"], ["18:00", "Clock.Evening"], ["0:00", "Clock.Midnight"]]
+      .map(([time, key]) => `<button type="button" data-set="${time}">${t(key)}</button>`).join("")}
+      <input type="time" value="${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}"><button type="button" data-act="go">${t("Clock.Go")}</button></div>
+    <label class="row"><input type="checkbox" ${noSync ? "" : "checked"} data-act="sync"> ${t("Clock.SyncScene")}</label>
+    ${pf2eSyncsDarkness() ? `<p class="hint">${t("Clock.Pf2eSyncs")}</p>` : ""}`;
   document.body.appendChild(pop);
   const box = anchor.getBoundingClientRect();
   pop.style.left = `${Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, box.left))}px`;
@@ -347,14 +367,19 @@ function openClock(anchor) {
 
 // PF2e level-based DCs (GM Core table 10-5) and difficulty adjustments.
 const LEVEL_DC = [14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28, 30, 31, 32, 34, 35, 36, 38, 39, 40, 42, 44, 46, 48, 50];
-const ADJUST = { "-10": "믿기 힘들 만큼 쉬움", "-5": "매우 쉬움", "-2": "쉬움", "0": "보통", "2": "어려움", "5": "매우 어려움", "10": "믿기 힘들 만큼 어려움" };
-const SAVES = { fortitude: "인내", reflex: "반사", will: "의지" };
+// Difficulty labels are lang keys (Request.Adjust.*); save labels are read when drawn.
+const ADJUST = { "-10": "IncrediblyEasy", "-5": "VeryEasy", "-2": "Easy", "0": "Normal", "2": "Hard", "5": "VeryHard", "10": "IncrediblyHard" };
+const SAVES = {
+  get fortitude() { return t("Saves.fortitude"); },
+  get reflex() { return t("Saves.reflex"); },
+  get will() { return t("Saves.will"); }
+};
 
 function checkOptions() {
   const skills = Object.entries(CONFIG.PF2E?.skills ?? {})
     .map(([slug, v]) => ({ slug, label: localizeMaybe(v?.label ?? v) || slug }))
     .sort((a, b) => a.label.localeCompare(b.label, "ko"));
-  return [{ slug: "perception", label: "지각" }, ...Object.entries(SAVES).map(([slug, label]) => ({ slug, label, save: true })), ...skills];
+  return [{ slug: "perception", label: t("Hud.Perception") }, ...Object.entries(SAVES).map(([slug, label]) => ({ slug, label, save: true })), ...skills];
 }
 
 export function requestContent({ checks, dc, secret, note }) {
@@ -368,7 +393,7 @@ export function requestContent({ checks, dc, secret, note }) {
     return `@Check[${params.join("|")}]`;
   });
   const dcs = [...new Set(checks.map(c => c.dc ?? dc).filter(Boolean))];
-  return `<div class="pkh-save-request"><header><i class="fa-solid fa-dice-d20"></i> <strong>굴림 요청</strong>${dcs.length === 1 ? ` — DC <b>${dcs[0]}</b>` : ""}${secret ? " <em>(비밀)</em>" : ""}</header>
+  return `<div class="pkh-save-request"><header><i class="fa-solid fa-dice-d20"></i> <strong>${t("Request.Title")}</strong>${dcs.length === 1 ? ` — DC <b>${dcs[0]}</b>` : ""}${secret ? ` <em>(${t("Request.SecretTag")})</em>` : ""}</header>
     ${note ? `<p>${esc(note)}</p>` : ""}<div class="checks">${parts.join(" ")}</div></div>`;
 }
 
@@ -385,32 +410,32 @@ export function openRollRequest() {
   const picked = [];
   let tab = "save";
   const optionList = () => tab === "lore"
-    ? `<option value="">시트의 지식 선택…</option>` + lores.map(o => `<option value="${esc(o.slug)}">${esc(o.label)} (${esc(o.actors.join(", "))})</option>`).join("")
+    ? `<option value="">${t("Request.PickLore")}</option>` + lores.map(o => `<option value="${esc(o.slug)}">${esc(o.label)} (${esc(o.actors.join(", "))})</option>`).join("")
     : opts.filter(o => (tab === "save" ? o.save : !o.save))
       .map(o => `<option value="${esc(o.slug)}">${esc(o.label)}</option>`).join("");
   const rowsHtml = () => picked.length ? picked.map((c, i) => `<div class="pkh-req-pick" data-i="${i}">
       <b>${esc(c.label)}</b>
-      <input type="number" data-f="dc" min="0" max="60" value="${c.dc ?? ""}" placeholder="기본 DC" title="이 굴림만의 DC (비우면 아래 기본 DC)">
-      ${c.save ? `<label title="기본 내성"><input type="checkbox" data-f="basic" ${c.basic ? "checked" : ""}> 기본</label>` : "<span></span>"}
-      <button type="button" data-act="del" data-i="${i}" aria-label="빼기"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
-    : `<p class="hint">위에서 굴림을 고르세요. 여러 개를 고를 수 있습니다.</p>`;
+      <input type="number" data-f="dc" min="0" max="60" value="${c.dc ?? ""}" placeholder="${t("Request.DefaultDc")}" title="${t("Request.RowDcTip")}">
+      ${c.save ? `<label title="${t("Request.BasicSave")}"><input type="checkbox" data-f="basic" ${c.basic ? "checked" : ""}> ${t("Request.Basic")}</label>` : "<span></span>"}
+      <button type="button" data-act="del" data-i="${i}" aria-label="${t("Request.Remove")}"><i class="fa-solid fa-xmark"></i></button></div>`).join("")
+    : `<p class="hint">${t("Request.PickHint")}</p>`;
   const html = `<div class="pkh-request small">
-    <div class="pkh-req-tabs"><button type="button" data-tab="save" class="on">내성 굴림</button><button type="button" data-tab="skill">기술 · 지각</button><button type="button" data-tab="lore">지식</button></div>
-    <div class="pkh-req-row"><select name="pick" aria-label="요청할 굴림">${optionList()}</select><button type="button" data-act="add" class="primary"><i class="fa-solid fa-plus"></i> 추가</button></div>
-    <div class="pkh-req-lore" hidden><label>지식 이름 직접 입력<input type="text" name="loreName" maxlength="120" placeholder="예: 선원 지식, Sailing Lore"></label><p class="hint">시트에서 선택하거나 직접 입력한 뒤 ‘추가’와 ‘보내기’를 누르세요.</p></div>
+    <div class="pkh-req-tabs"><button type="button" data-tab="save" class="on">${t("Request.Tab.Saves")}</button><button type="button" data-tab="skill">${t("Request.Tab.Skills")}</button><button type="button" data-tab="lore">${t("Request.Tab.Lore")}</button></div>
+    <div class="pkh-req-row"><select name="pick" aria-label="${t("Request.PickAria")}">${optionList()}</select><button type="button" data-act="add" class="primary"><i class="fa-solid fa-plus"></i> ${t("Request.Add")}</button></div>
+    <div class="pkh-req-lore" hidden><label>${t("Request.LoreName")}<input type="text" name="loreName" maxlength="120" placeholder="${t("Request.LorePlaceholder")}"></label><p class="hint">${t("Request.LoreHint")}</p></div>
     <div class="pkh-req-picks">${rowsHtml()}</div>
-    <div class="pkh-req-row">기본 DC <input type="number" name="dc" min="0" max="60" style="width:62px" placeholder="없음">
-      <select name="lv" title="레벨">${LEVEL_DC.map((d, i) => `<option value="${i}">Lv ${i}</option>`).join("")}</select>
-      <select name="adj">${Object.entries(ADJUST).map(([v, l]) => `<option value="${v}" ${v === "0" ? "selected" : ""}>${l}</option>`).join("")}</select>
-      <button type="button" data-act="lvdc" title="레벨 DC 넣기"><i class="fa-solid fa-arrow-left"></i></button></div>
-    <div class="pkh-req-row"><label><input type="checkbox" name="secret"> 비밀</label>
-      <input type="text" name="note" placeholder="설명 (선택)" style="flex:1"></div>
-    <div class="pkh-req-row"><input type="text" name="mname" placeholder="매크로 이름 (선택)" style="flex:1">
-      <button type="button" data-act="macro" title="매크로로 저장"><i class="fa-solid fa-scroll"></i></button>
-      <button type="button" data-act="send" class="primary"><i class="fa-solid fa-paper-plane"></i> 보내기</button></div>
+    <div class="pkh-req-row">${t("Request.DefaultDc")} <input type="number" name="dc" min="0" max="60" style="width:62px" placeholder="${t("Request.None")}">
+      <select name="lv" title="${t("Request.Level")}">${LEVEL_DC.map((d, i) => `<option value="${i}">Lv ${i}</option>`).join("")}</select>
+      <select name="adj">${Object.entries(ADJUST).map(([v, l]) => `<option value="${v}" ${v === "0" ? "selected" : ""}>${t(`Request.Adjust.${l}`)}</option>`).join("")}</select>
+      <button type="button" data-act="lvdc" title="${t("Request.LevelDc")}"><i class="fa-solid fa-arrow-left"></i></button></div>
+    <div class="pkh-req-row"><label><input type="checkbox" name="secret"> ${t("Request.SecretLabel")}</label>
+      <input type="text" name="note" placeholder="${t("Request.Note")}" style="flex:1"></div>
+    <div class="pkh-req-row"><input type="text" name="mname" placeholder="${t("Request.MacroName")}" style="flex:1">
+      <button type="button" data-act="macro" title="${t("Request.SaveMacro")}"><i class="fa-solid fa-scroll"></i></button>
+      <button type="button" data-act="send" class="primary"><i class="fa-solid fa-paper-plane"></i> ${t("Request.Send")}</button></div>
   </div>`;
   new SimpleWindow({
-    id: `${MODULE_ID}-roll-request`, title: "굴림 요청", width: 460, html,
+    id: `${MODULE_ID}-roll-request`, title: t("Request.Title"), width: 460, html,
     onRender: (root) => {
       const redraw = () => { root.querySelector(".pkh-req-picks").innerHTML = rowsHtml(); };
       const read = () => ({
@@ -451,7 +476,7 @@ export function openRollRequest() {
           if (tab === "lore" && !o) {
             const label = root.querySelector("[name=loreName]").value.trim();
             const slug = loreSlug(label);
-            if (!label || !slug) return ui.notifications.warn("PF2e-KR HUD | 지식을 선택하거나 이름을 입력하세요.");
+            if (!label || !slug) return ui.notifications.warn(`PF2e-KR HUD | ${t("Request.NeedLore")}`);
             o = lores.find(l => l.label === label || l.slug === slug) ?? { slug, label, lore: true };
           }
           if (o && !picked.some(c => c.slug === o.slug)) { picked.push({ ...o, dc: null, basic: false }); redraw(); }
@@ -465,11 +490,11 @@ export function openRollRequest() {
         }
         if (act !== "send" && act !== "macro") return;
         const data = read();
-        if (!data.checks.length) return ui.notifications.warn("PF2e-KR HUD | 굴림을 하나 이상 추가하세요.");
+        if (!data.checks.length) return ui.notifications.warn(`PF2e-KR HUD | ${t("Request.NeedCheck")}`);
         const content = requestContent(data);
         if (act === "send") {
           await ChatMessage.create({ speaker: ChatMessage.getSpeaker({ alias: "GM" }), content });
-          ui.notifications.info("PF2e-KR HUD | 굴림 요청을 보냈습니다.");
+          ui.notifications.info(`PF2e-KR HUD | ${t("Request.Sent")}`);
           return;
         }
         const name = root.querySelector("[name=mname]").value.trim()
@@ -479,7 +504,7 @@ export function openRollRequest() {
           command: `ChatMessage.create({ speaker: ChatMessage.getSpeaker({ alias: "GM" }), content: ${JSON.stringify(content)} });`
         });
         const placed = await game.pkhPalette?.addEntry({ type: "macro", uuid: macro.uuid });
-        ui.notifications.info(`PF2e-KR HUD | 매크로 "${name}"을 만들었습니다${placed ? " — GM 팔레트에 넣었습니다" : ""}.`);
+        ui.notifications.info(`PF2e-KR HUD | ${t(placed ? "Request.MacroMadePlaced" : "Request.MacroMade", { name })}`);
       });
     }
   }).render({ force: true });
@@ -542,7 +567,7 @@ class GmPalette {
       const doc = e.uuid ? fromUuidSync(e.uuid) : null;
       const name = e.name ?? doc?.name ?? "?";
       const img = e.img ?? doc?.img ?? "icons/svg/mystery-man.svg";
-      return `<div class="cell t-${e.type}" data-i="${i}" data-tooltip="${esc(name)}<br><small>${e.type === "condition" ? "클릭 +1 · 우클릭 −1" : e.type === "effect" ? "클릭: 넣기/빼기" : "클릭: 실행"} · 선택한 토큰에</small>">
+      return `<div class="cell t-${e.type}" data-i="${i}" data-tooltip="${esc(name)}<br><small>${t(e.type === "condition" ? "Palette.CondHelp" : e.type === "effect" ? "Palette.EffectHelp" : "Palette.MacroHelp")} · ${t("Palette.OnSelected")}</small>">
         <img src="${esc(img)}" alt=""></div>`;
     }).join("");
     this.el.classList.toggle("unlocked", !d.locked);
@@ -550,9 +575,9 @@ class GmPalette {
     this.el.style.setProperty("--pal-opacity", String(setting("paletteOpacity", 0.75)));
     this.el.innerHTML = `
       <header data-drag>
-        <span>GM 팔레트</span>
-        <button type="button" data-act="lock" data-tooltip="${d.locked ? "잠김 — 눌러서 편집(이동·추가·제거)" : "편집 중 — 끌어서 이동, 끌어다 놓아 추가, 우클릭 제거"}"><i class="fa-solid ${d.locked ? "fa-lock" : "fa-lock-open"}"></i></button>
-        <button type="button" data-act="close" data-tooltip="닫기"><i class="fa-solid fa-xmark"></i></button>
+        <span>${t("Palette.Title")}</span>
+        <button type="button" data-act="lock" data-tooltip="${t(d.locked ? "Palette.Locked" : "Palette.Editing")}"><i class="fa-solid ${d.locked ? "fa-lock" : "fa-lock-open"}"></i></button>
+        <button type="button" data-act="close" data-tooltip="${t("Common.Close")}"><i class="fa-solid fa-xmark"></i></button>
       </header>
       <div class="grid">${cells}</div>`;
     const x = d.x ?? window.innerWidth - 360;
@@ -574,7 +599,7 @@ class GmPalette {
     const e = this.data().slots[Number(cell.dataset.i)];
     if (e.type === "macro") return (await fromUuid(e.uuid))?.execute();
     const targets = this.targets();
-    if (!targets.length) return ui.notifications.warn("PF2e-KR HUD | 먼저 토큰을 선택하세요.");
+    if (!targets.length) return ui.notifications.warn(`PF2e-KR HUD | ${t("Notify.SelectToken")}`);
     if (e.type === "condition") for (const a of targets) await a.increaseCondition?.(e.slug);
     if (e.type === "effect") await toggleEffect(targets, e.uuid);
   }
@@ -610,11 +635,11 @@ class GmPalette {
       if (doc?.type === "condition") entry = { type: "condition", slug: doc.slug, name: doc.name, img: doc.img };
       else if (doc?.type === "effect") entry = { type: "effect", uuid: doc.parent ? (doc._stats?.compendiumSource ?? doc.uuid) : doc.uuid };
     }
-    if (!entry) return ui.notifications.warn("PF2e-KR HUD | 매크로, 효과, 상태만 올릴 수 있습니다.");
+    if (!entry) return ui.notifications.warn(`PF2e-KR HUD | ${t("Palette.OnlyTypes")}`);
     const [c, r] = SIZES[setting("paletteSize", "3x2")] ?? [3, 2];
     const slots = Array.from({ length: c * r }, (_, i) => d.slots[i] ?? null);
     const at = cell ? Number(cell.dataset.i) : slots.findIndex(s => !s);
-    if (at < 0) return ui.notifications.warn("PF2e-KR HUD | 빈칸이 없습니다.");
+    if (at < 0) return ui.notifications.warn(`PF2e-KR HUD | ${t("Palette.Full")}`);
     slots[at] = entry;
     await this.save({ slots });
     this.render();
@@ -656,8 +681,22 @@ async function toggleEffect(targets, uuid, { removeOnly = false } = {}) {
  * Health estimate on hover (for tokens you can't see the HP of)
  * ======================================================================== */
 
+/*
+ * Default health labels. These Korean strings are the settings' stored default
+ * VALUES (data, kept as they were); while a world still has them, the labels
+ * are shown in the user's language instead. Edited labels are shown as typed.
+ */
+const HEALTH_FULL_DEFAULT = "건강함";
+const HEALTH_ZERO_DEFAULT = "쓰러짐";
+const HEALTH_LEVELS_DEFAULT = "75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱";
+
+function healthText(key, storedDefault, langKey) {
+  const value = String(setting(key, "") || "");
+  return !value || value === storedDefault ? t(langKey) : value;
+}
+
 function healthLevels() {
-  const text = String(setting("healthLevels", "") || "75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱");
+  const text = healthText("healthLevels", HEALTH_LEVELS_DEFAULT, "Health.DefaultLevels");
   return text.split("|").map(p => p.split(":")).map(([pct, label]) => ({ pct: Number(pct), label: (label ?? "").trim() }))
     .filter(l => Number.isFinite(l.pct) && l.label).sort((a, b) => b.pct - a.pct);
 }
@@ -667,8 +706,8 @@ export function healthEstimate(actor) {
   if (!hp || !Number(hp.max)) return null;
   const pct = Math.max(0, Number(hp.value)) / Number(hp.max) * 100;
   const levels = healthLevels();
-  if (pct <= 0) return { label: setting("healthZero", "쓰러짐") || "쓰러짐", pct, depth: 1, top: 0, floor: 0, rank: levels.length + 1 };
-  if (pct >= 100) return { label: setting("healthFull", "건강함") || "건강함", pct, depth: 0, top: 100, floor: 100, rank: 0 };
+  if (pct <= 0) return { label: healthText("healthZero", HEALTH_ZERO_DEFAULT, "Health.Zero"), pct, depth: 1, top: 0, floor: 0, rank: levels.length + 1 };
+  if (pct >= 100) return { label: healthText("healthFull", HEALTH_FULL_DEFAULT, "Health.Full"), pct, depth: 0, top: 100, floor: 100, rank: 0 };
   let index = levels.findIndex(l => pct >= l.pct);
   if (index < 0) index = levels.length - 1;
   const hit = levels[index];
@@ -848,19 +887,19 @@ function applyDistanceOwnership() {
 export function registerGmToolSettings() {
   const redock = () => { document.getElementById("pkh-clock")?.remove(); mountClock(); mountDice(); };
   const s = (key, data) => game.settings.register(MODULE_ID, key, data);
-  s("chatDock", { name: "채팅창 시계와 주사위", hint: "채팅창 맨 위에 날짜·시간, 입력칸 위에 주사위와 플랫 체크(5·11) 버튼을 띄웁니다.", scope: "client", config: true, type: Boolean, default: true, onChange: redock });
-  s("clock12h", { name: "채팅창 시계: 오전/오후 12시간제", hint: "끄면 24시간제(15:05)로 표시합니다.", scope: "client", config: true, type: Boolean, default: true, onChange: () => mountClock() });
-  s("timeDarknessSync", { name: "시간에 맞춰 장면 조명 조절", hint: "게임 시간이 바뀌면 현재 장면의 어둠을 낮·새벽·황혼·밤에 맞춥니다 (장면별로 끌 수 있음). PF2e 월드 시계의 동기화가 켜져 있으면 그쪽이 우선합니다.", scope: "world", config: true, type: Boolean, default: true });
-  s("timeDarknessMax", { name: "한밤중 어둠 정도", scope: "world", config: true, type: Number, default: 0.85, range: { min: 0.3, max: 1, step: 0.05 } });
-  s("paletteSize", { name: "GM 팔레트 크기", scope: "client", config: true, type: String, default: "3x2", choices: Object.fromEntries(Object.keys(SIZES).map(k => [k, `${k.replace("x", " × ")}칸`])), onChange: () => game.pkhPalette?.render() });
-  s("paletteOpacity", { name: "GM 팔레트 투명도", hint: "마우스를 올리면 불투명해집니다.", scope: "client", config: true, type: Number, default: 0.75, range: { min: 0.2, max: 1, step: 0.05 }, onChange: () => game.pkhPalette?.render() });
-  s("healthOnHover", { name: "토큰에 마우스를 올리면 체력 상태 표시", hint: "HP를 볼 권한이 없는 토큰(보통 NPC)에 '가벼운 부상' 같은 대략적인 상태만 보여줍니다.", scope: "world", config: true, type: Boolean, default: true });
-  s("healthShowGM", { name: "GM에게도 체력 상태 표시", scope: "client", config: true, type: Boolean, default: false });
-  s("tokenTipDistance", { name: "토큰에 마우스를 올리면 거리 표시", hint: "선택한 내 토큰(없으면 내 캐릭터)에서 그 토큰까지의 거리를 체력 상태 위에 쌓아 보여줍니다. 켜 두면 PF2e 기본 거리 표시는 겹치지 않도록 숨깁니다. '표시 안 함'이면 PF2e 기본 표시를 그대로 씁니다.", scope: "client", config: true, type: String, default: "always", choices: { always: "항상", encounters: "전투 중에만", never: "표시 안 함 (PF2e 기본 표시 사용)" }, onChange: () => applyDistanceOwnership() });
-  s("healthFull", { name: "체력 상태: 최대일 때", scope: "world", config: true, type: String, default: "건강함" });
-  s("healthFullShow", { name: "'건강함' 표시", hint: "HP가 가득 찬 상태는 가장 흔해서 평소에는 숨기고 전투 중에만 보여주는 것이 기본입니다.", scope: "world", config: true, type: String, default: "combat", choices: { combat: "전투 중에만", always: "항상", never: "표시 안 함" } });
-  s("healthLevels", { name: "체력 상태 단계", hint: "\"퍼센트:이름\"을 |로 구분. 그 퍼센트 이상이면 그 이름. 예) 75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱", scope: "world", config: true, type: String, default: "75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱" });
-  s("healthZero", { name: "체력 상태: 0일 때", scope: "world", config: true, type: String, default: "쓰러짐" });
+  s("chatDock", { name: "PKH.Settings.chatDock.Name", hint: "PKH.Settings.chatDock.Hint", scope: "client", config: true, type: Boolean, default: true, onChange: redock });
+  s("clock12h", { name: "PKH.Settings.clock12h.Name", hint: "PKH.Settings.clock12h.Hint", scope: "client", config: true, type: Boolean, default: true, onChange: () => mountClock() });
+  s("timeDarknessSync", { name: "PKH.Settings.timeDarknessSync.Name", hint: "PKH.Settings.timeDarknessSync.Hint", scope: "world", config: true, type: Boolean, default: true });
+  s("timeDarknessMax", { name: "PKH.Settings.timeDarknessMax.Name", scope: "world", config: true, type: Number, default: 0.85, range: { min: 0.3, max: 1, step: 0.05 } });
+  s("paletteSize", { name: "PKH.Settings.paletteSize.Name", scope: "client", config: true, type: String, default: "3x2", choices: Object.fromEntries(Object.keys(SIZES).map(k => [k, `PKH.Settings.paletteSize.Choices.S${k}`])), onChange: () => game.pkhPalette?.render() });
+  s("paletteOpacity", { name: "PKH.Settings.paletteOpacity.Name", hint: "PKH.Settings.paletteOpacity.Hint", scope: "client", config: true, type: Number, default: 0.75, range: { min: 0.2, max: 1, step: 0.05 }, onChange: () => game.pkhPalette?.render() });
+  s("healthOnHover", { name: "PKH.Settings.healthOnHover.Name", hint: "PKH.Settings.healthOnHover.Hint", scope: "world", config: true, type: Boolean, default: true });
+  s("healthShowGM", { name: "PKH.Settings.healthShowGM.Name", scope: "client", config: true, type: Boolean, default: false });
+  s("tokenTipDistance", { name: "PKH.Settings.tokenTipDistance.Name", hint: "PKH.Settings.tokenTipDistance.Hint", scope: "client", config: true, type: String, default: "always", choices: { always: "PKH.Settings.tokenTipDistance.Choices.always", encounters: "PKH.Settings.tokenTipDistance.Choices.encounters", never: "PKH.Settings.tokenTipDistance.Choices.never" }, onChange: () => applyDistanceOwnership() });
+  s("healthFull", { name: "PKH.Settings.healthFull.Name", scope: "world", config: true, type: String, default: HEALTH_FULL_DEFAULT });
+  s("healthFullShow", { name: "PKH.Settings.healthFullShow.Name", hint: "PKH.Settings.healthFullShow.Hint", scope: "world", config: true, type: String, default: "combat", choices: { combat: "PKH.Settings.healthFullShow.Choices.combat", always: "PKH.Settings.healthFullShow.Choices.always", never: "PKH.Settings.healthFullShow.Choices.never" } });
+  s("healthLevels", { name: "PKH.Settings.healthLevels.Name", hint: "PKH.Settings.healthLevels.Hint", scope: "world", config: true, type: String, default: HEALTH_LEVELS_DEFAULT });
+  s("healthZero", { name: "PKH.Settings.healthZero.Name", scope: "world", config: true, type: String, default: HEALTH_ZERO_DEFAULT });
 }
 
 /** The label used to be "멀쩡함"; worlds that kept the old default get the new one. */

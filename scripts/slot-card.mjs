@@ -1,4 +1,4 @@
-import { MODULE_ID, esc, localizeMaybe, setting, signed } from "./shared.mjs";
+import { MODULE_ID, esc, localizeMaybe, setting, signed, t } from "./shared.mjs";
 import { findItem, resolveSlot, strikeForEntry } from "./slots.mjs";
 
 /* ======================================================================== *
@@ -49,34 +49,36 @@ function glyph(char, title) {
   return `<span class="action-glyph" data-tooltip="${esc(title)}">${char}</span>`;
 }
 
+const actionsText = n => t(Number(n) === 1 ? "Card.OneAction" : "Card.Actions", { n });
+
 export function costHtml(item) {
   if (!item) return "";
   if (item.type === "spell") {
-    const t = String(item.system?.time?.value ?? "").trim();
-    if (/^[123]$/.test(t)) return glyph(t, `${t}행동`);
-    if (/^[123] to [123]$/.test(t)) return glyph(t[0], `${t[0]}~${t.at(-1)}행동`) + "–" + glyph(t.at(-1), "");
-    if (t === "reaction") return glyph("R", "반응");
-    if (t === "free") return glyph("F", "자유 행동");
-    return t ? `<span class="cost-text">${esc(t)}</span>` : "";
+    const time = String(item.system?.time?.value ?? "").trim();
+    if (/^[123]$/.test(time)) return glyph(time, actionsText(time));
+    if (/^[123] to [123]$/.test(time)) return glyph(time[0], t("Card.ActionRange", { from: time[0], to: time.at(-1) })) + "–" + glyph(time.at(-1), "");
+    if (time === "reaction") return glyph("R", t("Card.Reaction"));
+    if (time === "free") return glyph("F", t("Card.Free"));
+    return time ? `<span class="cost-text">${esc(time)}</span>` : "";
   }
   const type = item.system?.actionType?.value;
   const n = Number(item.system?.actions?.value) || 1;
-  if (type === "action") return glyph(String(Math.min(3, n)), `${n}행동`);
-  if (type === "reaction") return glyph("R", "반응");
-  if (type === "free") return glyph("F", "자유 행동");
+  if (type === "action") return glyph(String(Math.min(3, n)), actionsText(n));
+  if (type === "reaction") return glyph("R", t("Card.Reaction"));
+  if (type === "free") return glyph("F", t("Card.Free"));
   return "";
 }
 
 function rankText(item) {
   if (!item) return "";
   if (item.type === "spell") {
-    if (item.isCantrip) return `캔트립 ${item.rank ?? ""}`.trim();
-    if (item.isFocusSpell) return `포커스 ${item.rank ?? ""}`.trim();
-    if (item.isRitual) return `의식 ${item.rank ?? ""}`.trim();
-    return `주문 ${item.rank ?? ""}랭크`;
+    if (item.isCantrip) return t("Card.CantripRank", { rank: item.rank ?? "" }).trim();
+    if (item.isFocusSpell) return t("Card.FocusRank", { rank: item.rank ?? "" }).trim();
+    if (item.isRitual) return t("Card.RitualRank", { rank: item.rank ?? "" }).trim();
+    return t("Card.SpellRank", { rank: item.rank ?? "" });
   }
   const level = item.level ?? item.system?.level?.value;
-  return Number.isFinite(Number(level)) && item.type !== "action" ? `레벨 ${level}` : "";
+  return Number.isFinite(Number(level)) && item.type !== "action" ? t("Card.Level", { level }) : "";
 }
 
 function traitsHtml(item) {
@@ -93,12 +95,12 @@ function spellFactsHtml(item) {
   const sys = item.system ?? {};
   const facts = [];
   const add = (label, value) => { if (value) facts.push(`<span><em>${label}</em> ${esc(value)}</span>`); };
-  add("사거리", sys.range?.value);
-  add("대상", sys.target?.value);
-  if (sys.area?.value) add("범위", `${sys.area.value}피트 ${sys.area.type ?? ""}`.trim());
-  add("지속", sys.duration?.value);
+  add(t("Card.Range"), sys.range?.value);
+  add(t("Card.Targets"), sys.target?.value);
+  if (sys.area?.value) add(t("Card.Area"), t("Card.AreaValue", { value: sys.area.value, type: sys.area.type ?? "" }).trim());
+  add(t("Card.Duration"), sys.duration?.value);
   const save = sys.defense?.save;
-  if (save?.statistic) add("방어", `${save.basic ? "기본 " : ""}${game.i18n.localize(CONFIG.PF2E?.saves?.[save.statistic] ?? save.statistic)}`);
+  if (save?.statistic) add(t("Card.Defense"), `${save.basic ? `${t("Card.Basic")} ` : ""}${game.i18n.localize(CONFIG.PF2E?.saves?.[save.statistic] ?? save.statistic)}`);
   return facts.length ? `<div class="facts">${facts.join("")}</div>` : "";
 }
 
@@ -189,10 +191,10 @@ export class SlotCard {
     this.el.setAttribute("role", "dialog");
     if (!this.el.querySelector("[data-act=unpin]")) {
       this.el.querySelector("header")?.insertAdjacentHTML("beforeend",
-        `<button type="button" class="unpin" data-act="unpin" data-tooltip="닫기 (Esc)" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>`);
+        `<button type="button" class="unpin" data-act="unpin" data-tooltip="${esc(t("Card.CloseEsc"))}" aria-label="${esc(t("Common.Close"))}"><i class="fa-solid fa-xmark"></i></button>`);
     }
     const hint = this.el.querySelector(".hint-pin");
-    if (hint) hint.innerHTML = `<i class="fa-solid fa-thumbtack"></i> 고정됨 · 휠로 스크롤 · Esc로 닫기`;
+    if (hint) hint.innerHTML = `<i class="fa-solid fa-thumbtack"></i> ${t("Card.Pinned")}`;
     // Taller now that the description scrolls: keep it on screen.
     const card = this.el.getBoundingClientRect();
     if (card.bottom > window.innerHeight - 8) this.el.style.top = `${Math.max(8, Math.round(window.innerHeight - card.height - 8))}px`;
@@ -268,7 +270,7 @@ export class SlotCard {
     if (mine !== this.token || !slot.isConnected || !html) return;
 
     const key = pinKeyLabel();
-    this.el.innerHTML = html.replace(/<\/footer>\s*$/, key ? ` · <span class="hint-pin"><kbd>${esc(key)}</kbd> 고정</span></footer>` : "</footer>");
+    this.el.innerHTML = html.replace(/<\/footer>\s*$/, key ? ` · <span class="hint-pin"><kbd>${esc(key)}</kbd> ${t("Card.Pin")}</span></footer>` : "</footer>");
     this.el.classList.remove("hidden");
     const box = slot.getBoundingClientRect();
     const card = this.el.getBoundingClientRect();
@@ -291,21 +293,21 @@ export class SlotCard {
     const strike = strikeForEntry(actor, entry);
     if (strike) {
       const item = strike.item;
-      const map = view?.map?.length ? `<div class="facts"><span><em>공격</em> ${view.map.map(esc).join(" / ")}</span></div>` : "";
+      const map = view?.map?.length ? `<div class="facts"><span><em>${t("Card.Attacks")}</em> ${view.map.map(esc).join(" / ")}</span></div>` : "";
       return `${head(item?.img ?? view?.img, strike.label ?? item?.name ?? "")}
         ${traitsHtml(item)}${map}
         ${await this._body(item)}
-        <footer>클릭: 몇 번째 공격인지 고르기 · 가운데 클릭: 3번째 공격</footer>`;
+        <footer>${t("Card.StrikeHelp")}</footer>`;
     }
 
     if (entry.type === "item") {
       const item = findItem(actor, entry);
-      if (!item) return head(entry.img, view?.label ?? "아이템") + `<p class="muted">지금 가지고 있지 않습니다.</p>`;
-      const meta = [rankText(item), item.type === "consumable" && view?.badge !== null && view?.badge !== undefined ? `남은 ${view.badge}` : ""]
+      if (!item) return head(entry.img, view?.label ?? t("Card.Item")) + `<p class="muted">${t("Card.NotCarried")}</p>`;
+      const meta = [rankText(item), item.type === "consumable" && view?.badge !== null && view?.badge !== undefined ? t("Card.Left", { n: view.badge }) : ""]
         .filter(Boolean).map(esc).join(" · ");
-      const hint = item.type === "spell" ? "클릭: 시전 / 채팅으로 보내기"
-        : ["action", "feat"].includes(item.type) ? "클릭: 사용 / 채팅에 올리기"
-        : item.type === "consumable" ? "클릭: 카드 올리기 · Shift+클릭: 사용" : "클릭: 채팅에 올리기";
+      const hint = item.type === "spell" ? t("Card.Help.Spell")
+        : ["action", "feat"].includes(item.type) ? t("Card.Help.Action")
+        : item.type === "consumable" ? t("Card.Help.Consumable") : t("Card.Help.Item");
       return `${head(item.img, item.name, `<span class="cost">${costHtml(item)}</span>`)}
         ${meta ? `<div class="meta">${meta}</div>` : ""}
         ${traitsHtml(item)}${spellFactsHtml(item)}
@@ -322,22 +324,22 @@ export class SlotCard {
         try { body = await Editor.enrichHTML(description, { async: true }); } catch { body = esc(description); }
       }
       return `${head(action?.img ?? view?.img, view?.label ?? entry.slug)}
-        ${body ? `<div class="desc">${body}</div>` : ""}<footer>클릭: 사용</footer>`;
+        ${body ? `<div class="desc">${body}</div>` : ""}<footer>${t("Card.Help.Use")}</footer>`;
     }
 
     if (entry.type === "skill") {
       return `${head(null, view?.label ?? entry.slug, view?.badge ? `<span class="cost">${esc(view.badge)}</span>` : "")}
-        <footer>클릭: 굴리기</footer>`;
+        <footer>${t("Card.Help.Roll")}</footer>`;
     }
 
     if (entry.type === "effect") {
       const source = entry.uuid ? fromUuidSync(entry.uuid) : null;
-      return `${head(source?.img, source?.name ?? view?.label ?? "효과")}
-        ${await this._body(source)}<footer>클릭: 선택한 토큰에 켜기 / 끄기</footer>`;
+      return `${head(source?.img, source?.name ?? view?.label ?? t("Card.Effect"))}
+        ${await this._body(source)}<footer>${t("Card.Help.Effect")}</footer>`;
     }
 
     if (entry.type === "macro") {
-      return `${head(view?.img, view?.label ?? "매크로")}<footer>매크로 · 클릭: 실행</footer>`;
+      return `${head(view?.img, view?.label ?? t("Card.Macro"))}<footer>${t("Card.Help.Macro")}</footer>`;
     }
     return "";
   }
@@ -350,14 +352,14 @@ export class SlotCard {
 
 export function registerSlotCardSettings() {
   game.settings.register(MODULE_ID, "hudSlotCard", {
-    name: "퀵슬롯 설명 카드",
-    hint: "퀵슬롯에 마우스를 잠시 올려두면 그 능력의 비용·특성·설명을 카드로 보여줍니다. 시트를 열지 않아도 됩니다.",
+    name: "PKH.Settings.hudSlotCard.Name",
+    hint: "PKH.Settings.hudSlotCard.Hint",
     scope: "client", config: true, type: Boolean, default: true,
     onChange: () => game.pf2eKrHud?.hud?.scheduleRender()
   });
   game.settings.register(MODULE_ID, "hudSlotCardDelay", {
-    name: "퀵슬롯 설명 카드: 뜨기까지 (초)",
-    hint: "마우스를 올리고 이만큼 지나야 카드가 뜹니다. 짧을수록 빨리 뜨지만 지나가며 스칠 때도 뜹니다.",
+    name: "PKH.Settings.hudSlotCardDelay.Name",
+    hint: "PKH.Settings.hudSlotCardDelay.Hint",
     scope: "client", config: true, type: Number, default: 0.8, range: { min: 0.5, max: 1.5, step: 0.1 }
   });
 }

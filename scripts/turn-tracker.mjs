@@ -1,4 +1,4 @@
-import { MODULE_ID, boardViewportRect, esc, setting } from "./shared.mjs";
+import { MODULE_ID, boardViewportRect, esc, setting, t } from "./shared.mjs";
 
 /* ======================================================================== *
  * Turn tracker — a light, Baldur's-Gate-3-style strip at the top of the screen
@@ -190,7 +190,7 @@ export class TurnTracker {
     this.el = document.createElement("section");
     this.el.id = "pkh-turns";
     this.el.className = "hidden";
-    this.el.setAttribute("aria-label", "턴 순서");
+    this.el.setAttribute("aria-label", t("Turns.Aria"));
     const part = (tag, cls) => Object.assign(document.createElement(tag), { className: cls });
     this.leftEl = part("div", "side left");
     this.roundEl = part("div", "round");
@@ -260,8 +260,8 @@ export class TurnTracker {
 
     // Controls first: their width decides how many portraits fit.
     this.roundEl.innerHTML = combat.started
-      ? `<em>라운드</em><b>${combat.round}</b>`
-      : `<em>전투</em><b class="small">준비</b>`;
+      ? `<em>${t("Turns.Round")}</em><b>${combat.round}</b>`
+      : `<em>${t("Turns.Combat")}</em><b class="small">${t("Turns.Ready")}</b>`;
     this._renderControls(combat);
 
     // Up next: the first one after the active combatant who will really act.
@@ -289,7 +289,7 @@ export class TurnTracker {
         const li = this.dividerEl ??= Object.assign(document.createElement("li"), { className: "divider" });
         li.dataset.id = "divider";
         li.innerHTML = `<span>R${step.divider}</span>`;
-        li.setAttribute("aria-label", `${step.divider}라운드 시작`);
+        li.setAttribute("aria-label", t("Turns.RoundStart", { n: step.divider }));
         fragment.appendChild(li);
         continue;
       }
@@ -326,15 +326,15 @@ export class TurnTracker {
     li.dataset.id = "more";
     if (this.expanded) {
       li.innerHTML = `<span><i class="fa-solid fa-angles-left"></i></span>`;
-      li.dataset.tooltip = "접기";
-      li.setAttribute("aria-label", "접기");
+      li.dataset.tooltip = t("Turns.Collapse");
+      li.setAttribute("aria-label", t("Turns.Collapse"));
       return li;
     }
     const names = hidden.slice(0, 12).map(c => esc(nameOf(c)));
-    if (hidden.length > 12) names.push(`… 외 ${hidden.length - 12}`);
+    if (hidden.length > 12) names.push(t("Turns.AndMore", { n: hidden.length - 12 }));
     li.innerHTML = `<span>+${hidden.length}</span>`;
-    li.dataset.tooltip = `<b>뒤에 ${hidden.length}명</b><br>${names.join("<br>")}<br><em>클릭: 모두 펼치기 (휠로 넘기기)</em>`;
-    li.setAttribute("aria-label", `뒤에 ${hidden.length}명 더 있음. 클릭하면 모두 펼칩니다.`);
+    li.dataset.tooltip = `<b>${t("Turns.MoreCount", { n: hidden.length })}</b><br>${names.join("<br>")}<br><em>${t("Turns.MoreHelp")}</em>`;
+    li.setAttribute("aria-label", t("Turns.MoreAria", { n: hidden.length }));
     return li;
   }
 
@@ -380,7 +380,7 @@ export class TurnTracker {
     li._init = Object.assign(document.createElement("span"), { className: "init" });
     li._count = Object.assign(document.createElement("span"), { className: "count" });
     li._end = Object.assign(document.createElement("span"), { className: "end-hint" });
-    li._end.innerHTML = `<i class="fa-solid fa-forward-step"></i><b>턴 종료</b>`;
+    li._end.innerHTML = `<i class="fa-solid fa-forward-step"></i><b>${t("Turns.EndTurn")}</b>`;
     frame.append(img, li._init, li._count, li._end);
     li._img = img;
     li._name = Object.assign(document.createElement("span"), { className: "name" });
@@ -414,11 +414,11 @@ export class TurnTracker {
     let tip;
     if (members.length > 1) {
       const lines = members.map(m => `${esc(nameOf(m))}${initiativeText(m.initiative) ? ` · ${initiativeText(m.initiative)}` : ""}`);
-      tip = `<b>${esc(name)} ×${members.length}</b><br>${lines.join("<br>")}<br><em>클릭할 때마다 다음 개체로 이동</em>`;
+      tip = `<b>${esc(name)} ×${members.length}</b><br>${lines.join("<br>")}<br><em>${t("Turns.GroupHelp")}</em>`;
     } else {
-      tip = `${esc(name)}${init ? ` · 우선권 ${init}` : ""}${life === "dead" ? " · 쓰러짐" : life === "down" ? " · 의식 불명" : ""}`;
-      if (canEnd) tip += `<br><em>클릭: 턴 종료 · Shift+클릭: 토큰 보기</em>`;
-      if (game.user.isGM) tip += `<br><em>우클릭: 우선권 조정</em>`;
+      tip = `${esc(name)}${init ? ` · ${t("Turns.Initiative", { n: init })}` : ""}${life === "dead" ? ` · ${t("Turns.Dead")}` : life === "down" ? ` · ${t("Turns.Down")}` : ""}`;
+      if (canEnd) tip += `<br><em>${t("Turns.EndHelp")}</em>`;
+      if (game.user.isGM) tip += `<br><em>${t("Turns.GmHelp")}</em>`;
     }
     li.dataset.tooltip = tip;
     li.setAttribute("aria-label", tip.replace(/<br>/g, ", ").replace(/<[^>]+>/g, ""));
@@ -437,20 +437,20 @@ export class TurnTracker {
     const mine = combat.started && combat.combatant?.isOwner;
 
     // Previous turn sits left of the portraits, next turn right of them.
-    this.prevEl.innerHTML = gm && combat.started ? btn("prev", "fa-chevron-left", "이전 차례") : "";
+    this.prevEl.innerHTML = gm && combat.started ? btn("prev", "fa-chevron-left", t("Turns.Prev")) : "";
     this.nextEl.innerHTML = combat.started && (gm || mine)
-      ? btn(gm ? "next" : "end-turn", "fa-chevron-right", gm ? "다음 차례" : "내 차례 끝내기")
+      ? btn(gm ? "next" : "end-turn", "fa-chevron-right", t(gm ? "Turns.Next" : "Turns.EndMine"))
       : "";
 
     if (gm) {
       // Initiative is rolled before the fight; once it has started these only get in the way.
       this.leftEl.innerHTML = combat.started ? ""
-        : btn("roll-all", "fa-users", "우선권 모두 굴리기 (창 없이 바로)") + btn("roll-npc", "fa-user-gear", "NPC 우선권만 굴리기 (창 없이 바로)") + btn("start", "fa-play", "전투 시작");
-      this.rightEl.innerHTML = btn("end", "fa-flag-checkered", "전투 종료");
+        : btn("roll-all", "fa-users", t("Turns.RollAll")) + btn("roll-npc", "fa-user-gear", t("Turns.RollNpc")) + btn("start", "fa-play", t("Turns.Start"));
+      this.rightEl.innerHTML = btn("end", "fa-flag-checkered", t("Turns.End"));
       return;
     }
     const unrolled = combat.combatants.some(c => c.isOwner && (c.initiative === null || c.initiative === undefined));
-    this.leftEl.innerHTML = unrolled ? btn("roll-mine", "fa-dice-d20", "내 우선권 굴리기") : "";
+    this.leftEl.innerHTML = unrolled ? btn("roll-mine", "fa-dice-d20", t("Turns.RollMine")) : "";
     this.rightEl.innerHTML = "";
   }
 
@@ -556,16 +556,16 @@ export function openInitiativeEditor(combat, c, anchor) {
     <header><img src="${esc(portraitOf(c))}" alt=""><strong>${esc(c.name)}</strong></header>
     <div class="row value">
       <button type="button" data-d="-1">−1</button><button type="button" data-d="-0.1">−0.1</button>
-      <input type="number" step="0.1" value="${current}" aria-label="우선권">
+      <input type="number" step="0.1" value="${current}" aria-label="${esc(t("Turns.Edit.Initiative"))}">
       <button type="button" data-d="0.1">+0.1</button><button type="button" data-d="1">+1</button>
     </div>
     ${after !== null ? `<button type="button" class="wide" data-act="after" data-value="${after}">
-      <i class="fa-solid fa-arrow-turn-down"></i> 지금 차례(${esc(active.name)}) 바로 다음으로</button>` : ""}
+      <i class="fa-solid fa-arrow-turn-down"></i> ${t("Turns.Edit.After", { name: esc(active.name) })}</button>` : ""}
     <div class="row">
-      <button type="button" data-act="defeated">${lifeState(c) === "dead" ? "쓰러짐 해제" : "쓰러짐 표시"}</button>
-      <button type="button" data-act="hidden">${c.hidden ? "플레이어에게 보이기" : "플레이어에게 숨기기"}</button>
+      <button type="button" data-act="defeated">${t(lifeState(c) === "dead" ? "Turns.Edit.Undefeat" : "Turns.Edit.Defeat")}</button>
+      <button type="button" data-act="hidden">${t(c.hidden ? "Turns.Edit.Show" : "Turns.Edit.Hide")}</button>
     </div>
-    <div class="row end"><button type="button" data-act="close">닫기</button><button type="button" class="primary" data-act="apply">적용</button></div>`;
+    <div class="row end"><button type="button" data-act="close">${t("Common.Close")}</button><button type="button" class="primary" data-act="apply">${t("Common.Apply")}</button></div>`;
   document.body.appendChild(pop);
 
   const box = anchor.getBoundingClientRect();
@@ -584,7 +584,7 @@ export function openInitiativeEditor(combat, c, anchor) {
 
   const apply = async (value, exact = false) => {
     const v = exact ? Number(value) : round1(value);
-    if (!Number.isFinite(v)) return ui.notifications.warn("우선권 숫자를 입력하세요.");
+    if (!Number.isFinite(v)) return ui.notifications.warn(t("Turns.Edit.NeedNumber"));
     close();
     await combat.setInitiative(c.id, v);
   };
@@ -618,39 +618,42 @@ export function openInitiativeEditor(combat, c, anchor) {
 export function registerTurnTrackerSettings() {
   const redraw = () => game.pf2eKrHud?.turns?.schedule();
   game.settings.register(MODULE_ID, "turnTracker", {
-    name: "턴 트래커 (화면 위)",
-    hint: "전투 중 화면 위쪽에 차례 순서·라운드·우선권만 보여주는 가벼운 트래커입니다. Carousel Combat Tracker가 켜져 있으면 표시하지 않습니다.",
+    name: "PKH.Settings.turnTracker.Name",
+    hint: "PKH.Settings.turnTracker.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: redraw
   });
   game.settings.register(MODULE_ID, "turnTrackerDefeated", {
-    name: "턴 트래커: 쓰러진 전투원",
-    hint: "죽거나 패배한 전투원을 숨길지 회색으로 남길지 정합니다. 그 전투원의 차례인 동안은 숨기지 않습니다. HP 0이지만 죽지 않은(빈사·의식 불명) 전투원은 언제나 절반만 회색으로 보이고, HP를 회복하면 원래대로 돌아옵니다.",
+    name: "PKH.Settings.turnTrackerDefeated.Name",
+    hint: "PKH.Settings.turnTrackerDefeated.Hint",
     scope: "world", config: true, type: String, default: "hide",
-    choices: { hide: "숨기기", grey: "회색으로 표시" }, onChange: redraw
+    choices: { hide: "PKH.Settings.turnTrackerDefeated.Choices.hide", grey: "PKH.Settings.turnTrackerDefeated.Choices.grey" }, onChange: redraw
   });
   game.settings.register(MODULE_ID, "turnTrackerWidth", {
-    name: "턴 트래커: 초상화 너비 (px)",
-    hint: "현재 차례인 초상화는 이보다 1.2배 크게 보입니다. 초상화는 전투원이 많아도 줄어들지 않고, 넘치는 인원은 '+n'으로 묶입니다.",
+    name: "PKH.Settings.turnTrackerWidth.Name",
+    hint: "PKH.Settings.turnTrackerWidth.Hint",
     scope: "client", config: true, type: Number, default: 70, range: { min: 40, max: 150, step: 2 }, onChange: redraw
   });
   game.settings.register(MODULE_ID, "turnTrackerAspect", {
-    name: "턴 트래커: 초상화 비율",
+    name: "PKH.Settings.turnTrackerAspect.Name",
     scope: "client", config: true, type: Number, default: 1.5,
-    choices: { 1: "정사각형 (1:1)", 1.25: "약간 긴 (4:5)", 1.5: "초상화 (2:3)", 2: "길쭉한 (1:2)" }, onChange: redraw
+    choices: {
+      1: "PKH.Settings.turnTrackerAspect.Choices.Square", 1.25: "PKH.Settings.turnTrackerAspect.Choices.Slight",
+      1.5: "PKH.Settings.turnTrackerAspect.Choices.Portrait", 2: "PKH.Settings.turnTrackerAspect.Choices.Tall"
+    }, onChange: redraw
   });
   game.settings.register(MODULE_ID, "turnTrackerGroup", {
-    name: "턴 트래커: 같은 적 묶기",
-    hint: "차례가 연달아 붙은 같은 종류의 적(같은 이름·그림)을 초상화 하나로 묶고 ×n으로 표시합니다. 지금 차례와 다음 차례는 묶지 않습니다.",
+    name: "PKH.Settings.turnTrackerGroup.Name",
+    hint: "PKH.Settings.turnTrackerGroup.Hint",
     scope: "client", config: true, type: Boolean, default: true, onChange: redraw
   });
   game.settings.register(MODULE_ID, "turnSkipDead", {
-    name: "턴 트래커: 쓰러진 적 차례 자동으로 넘기기",
-    hint: "HP 0이거나 사망 상태인 적(플레이어 캐릭터 제외)의 차례가 오면 GM 화면에서 한 번 자동으로 넘깁니다. 죽은 적에게 차례가 가서 다음 버튼을 두 번 누르다 1번 캐릭터를 건너뛰는 일을 막습니다.",
+    name: "PKH.Settings.turnSkipDead.Name",
+    hint: "PKH.Settings.turnSkipDead.Hint",
     scope: "world", config: true, type: Boolean, default: true
   });
   game.settings.register(MODULE_ID, "turnTrackerTop", {
-    name: "턴 트래커: 화면 위에서 띄울 거리 (px)",
-    hint: "장면 탐색 막대 등과 겹치면 늘리세요.",
+    name: "PKH.Settings.turnTrackerTop.Name",
+    hint: "PKH.Settings.turnTrackerTop.Hint",
     scope: "client", config: true, type: Number, default: 10, range: { min: 0, max: 200, step: 2 }, onChange: redraw
   });
 }

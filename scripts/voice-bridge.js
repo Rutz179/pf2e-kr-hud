@@ -21,6 +21,8 @@
  * subscribes to or decodes anyone's audio.
  * ========================================================================== */
 
+import { t } from "./shared.mjs";
+
 const MODULE_ID = "pf2e-kr-hud";
 
 let socket = null;
@@ -53,7 +55,7 @@ let voiceStatus = { joined: false, guildId: null, channelId: null, guildName: nu
 
 function sendBridgeCommand(command) {
   if (socket?.readyState !== WebSocket.OPEN) {
-    ui.notifications.warn("PF2e-KR HUD | 브리지에 연결되어 있지 않습니다.");
+    ui.notifications.warn(`PF2e-KR HUD | ${t("Voice.NotConnected")}`);
     return false;
   }
   socket.send(JSON.stringify(command));
@@ -234,7 +236,7 @@ function connect({ manual = false } = {}) {
     }
 
     if (payload?.type === "error") {
-      ui.notifications.warn(`PF2e-KR HUD | 브리지: ${payload.message}`);
+      ui.notifications.warn(`PF2e-KR HUD | ${t("Voice.BridgeError", { message: payload.message })}`);
       return;
     }
 
@@ -268,7 +270,7 @@ function connect({ manual = false } = {}) {
       setStatus("gaveup");
       console.warn(
         `${MODULE_ID} | voice bridge unreachable after ${failedAttempts} attempts; ` +
-        "stopped retrying. Use 다시 연결 once the bridge is running."
+        `stopped retrying. Use ${t("Voice.Reconnect")} once the bridge is running.`
       );
       return;
     }
@@ -289,15 +291,16 @@ function connect({ manual = false } = {}) {
 
 /* --- mapping editor -------------------------------------------------------- */
 
+// [icon, lang key, class]; the label is read when drawn.
 const STATUS_TEXT = {
-  off: ["fa-circle", "연결 안 됨", "off"],
-  connecting: ["fa-circle-notch fa-spin", "연결 중...", "busy"],
-  retrying: ["fa-rotate fa-spin", "재연결 대기 중...", "busy"],
-  on: ["fa-circle", "연결됨", "on"],
-  standby: ["fa-circle-pause", "대기 (다른 GM이 중계 중)", "off"],
-  disabled: ["fa-power-off", "사용 안 함 (모듈 설정에서 켤 수 있습니다)", "off"],
-  gaveup: ["fa-circle-stop", "브리지를 찾지 못해 재시도를 멈췄습니다", "error"],
-  error: ["fa-triangle-exclamation", "주소 오류", "error"]
+  off: ["fa-circle", "Voice.Status.off", "off"],
+  connecting: ["fa-circle-notch fa-spin", "Voice.Status.connecting", "busy"],
+  retrying: ["fa-rotate fa-spin", "Voice.Status.retrying", "busy"],
+  on: ["fa-circle", "Voice.Status.on", "on"],
+  standby: ["fa-circle-pause", "Voice.Status.standby", "off"],
+  disabled: ["fa-power-off", "Voice.Status.disabled", "off"],
+  gaveup: ["fa-circle-stop", "Voice.Status.gaveup", "error"],
+  error: ["fa-triangle-exclamation", "Voice.Status.error", "error"]
 };
 
 function escapeHtml(value) {
@@ -311,7 +314,7 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
     id: "pkh-voice-mapping",
     tag: "section",
     window: {
-      title: "디스코드 음성 연결",
+      title: "PKH.Voice.Mapping.Title",
       icon: "fa-brands fa-discord",
       resizable: true
     },
@@ -344,16 +347,16 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
 
     const rows = this.rows.map((row, index) => `
       <div class="vmap-row" data-index="${index}" data-discord-id="${escapeHtml(row.discordId)}">
-        <span class="vmap-live" title="말하는 중이면 초록색으로 켜집니다"></span>
+        <span class="vmap-live" title="${escapeHtml(t("Voice.Mapping.LiveTip"))}"></span>
         <select name="userId">
-          <option value="">— Foundry 사용자 —</option>
+          <option value="">${escapeHtml(t("Voice.Mapping.PickUser"))}</option>
           ${userOptions(row.userId)}
         </select>
         <input type="text" name="discordId" value="${escapeHtml(row.discordId)}"
-               placeholder="디스코드 사용자 ID" inputmode="numeric">
+               placeholder="${escapeHtml(t("Voice.Mapping.DiscordId"))}" inputmode="numeric">
         <input type="text" name="note" value="${escapeHtml(row.note ?? "")}"
-               placeholder="메모 (선택)">
-        <button type="button" data-action="remove" title="삭제">
+               placeholder="${escapeHtml(t("Voice.Mapping.NoteOpt"))}">
+        <button type="button" data-action="remove" title="${escapeHtml(t("Common.Delete"))}">
           <i class="fa-solid fa-trash"></i>
         </button>
       </div>
@@ -364,31 +367,30 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
         <div class="vmap-status"></div>
 
         <div class="vmap-head">
-          <span></span><span>Foundry 사용자</span><span>디스코드 ID</span><span>메모</span><span></span>
+          <span></span><span>${t("Voice.Mapping.ColUser")}</span><span>${t("Voice.Mapping.ColDiscord")}</span><span>${t("Voice.Mapping.ColNote")}</span><span></span>
         </div>
 
         <div class="vmap-rows">
-          ${rows || `<p class="hint vmap-empty">아직 연결된 사용자가 없습니다. 아래 버튼으로 추가하세요.</p>`}
+          ${rows || `<p class="hint vmap-empty">${t("Voice.Mapping.Empty")}</p>`}
         </div>
 
         <div class="vmap-actions">
-          <button type="button" data-action="add"><i class="fa-solid fa-plus"></i> 사용자 추가</button>
+          <button type="button" data-action="add"><i class="fa-solid fa-plus"></i> ${t("Voice.Mapping.Add")}</button>
         </div>
 
         <div class="vmap-heard">
           ${this._channelSection()}
 
-          <h4>최근 음성 신호</h4>
+          <h4>${t("Voice.Mapping.Heard")}</h4>
           <p class="hint">
-            브리지가 연결된 상태에서 음성 채널에 말해 보세요. 들린 디스코드 ID가 여기 나타나며,
-            <b>+</b>를 누르면 바로 줄이 추가됩니다. ID를 직접 찾을 필요가 없습니다.
+            ${t("Voice.Mapping.HeardHint")}
           </p>
           <div class="vmap-heard-list"></div>
         </div>
 
         <footer class="vmap-footer">
-          <button type="button" data-action="reconnect"><i class="fa-solid fa-plug"></i> 다시 연결</button>
-          <button type="button" data-action="save" class="primary"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+          <button type="button" data-action="reconnect"><i class="fa-solid fa-plug"></i> ${t("Voice.Reconnect")}</button>
+          <button type="button" data-action="save" class="primary"><i class="fa-solid fa-floppy-disk"></i> ${t("Common.Save")}</button>
         </footer>
       </div>
     `;
@@ -412,11 +414,11 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
     ).join("");
 
     const where = voiceStatus.joined
-      ? `<b>${foundry.utils.escapeHTML(voiceStatus.guildName ?? "")} / ${foundry.utils.escapeHTML(voiceStatus.channelName ?? "")}</b> 에서 듣는 중`
-      : "지금은 어느 음성 채널에도 들어가 있지 않습니다.";
+      ? t("Voice.Mapping.Listening", { where: `${foundry.utils.escapeHTML(voiceStatus.guildName ?? "")} / ${foundry.utils.escapeHTML(voiceStatus.channelName ?? "")}` })
+      : t("Voice.Mapping.NotIn");
 
     return `
-      <h4>음성 채널</h4>
+      <h4>${t("Voice.Mapping.Channel")}</h4>
       <p class="hint">${where}</p>
 
       ${voiceGuilds.length ? `
@@ -426,20 +428,19 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
         </div>
         <div class="vmap-channel-actions">
           <button type="button" data-action="joinVoice" class="primary">
-            <i class="fa-solid fa-headphones"></i> ${voiceStatus.joined ? "이 방으로 옮기기" : "이 방에서 듣기"}
+            <i class="fa-solid fa-headphones"></i> ${t(voiceStatus.joined ? "Voice.Mapping.Move" : "Voice.Mapping.Join")}
           </button>
           <button type="button" data-action="leaveVoice" ${voiceStatus.joined ? "" : "disabled"}>
-            <i class="fa-solid fa-right-from-bracket"></i> 나가기
+            <i class="fa-solid fa-right-from-bracket"></i> ${t("Voice.Mapping.Leave")}
           </button>
-          <button type="button" data-action="refreshChannels" title="채널 목록 새로 고침">
+          <button type="button" data-action="refreshChannels" title="${escapeHtml(t("Voice.Mapping.RefreshChannels"))}">
             <i class="fa-solid fa-rotate"></i>
           </button>
         </div>
         <p class="hint">
-          세션을 안 할 때는 <b>나가기</b>를 눌러 두세요. 봇이 음성 채널에서 빠지고, 다음에 다시
-          누르면 그 자리로 돌아옵니다. 서버에서 프로그램을 껐다 켤 필요가 없습니다.
+          ${t("Voice.Mapping.LeaveHint")}
         </p>
-      ` : `<p class="hint">연결되면 봇이 볼 수 있는 음성 채널 목록이 여기 나타납니다.</p>`}
+      ` : `<p class="hint">${t("Voice.Mapping.ChannelsLater")}</p>`}
     `;
   }
 
@@ -493,7 +494,7 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
       if (action === "joinVoice") {
         const guildId = content.querySelector("select[name='guildId']")?.value;
         const channelId = content.querySelector("select[name='channelId']")?.value;
-        if (!guildId || !channelId) return ui.notifications.warn("PF2e-KR HUD | 음성 채널을 고르세요.");
+        if (!guildId || !channelId) return ui.notifications.warn(`PF2e-KR HUD | ${t("Voice.Mapping.PickChannel")}`);
         return sendBridgeCommand({ type: "join", guildId, channelId });
       }
 
@@ -533,7 +534,7 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
     const invalid = complete.filter(row => !/^\d{15,21}$/.test(row.discordId));
     if (invalid.length) {
       return ui.notifications.warn(
-        `PF2e-KR HUD | 디스코드 ID는 15~21자리 숫자입니다: ${invalid.map(r => r.discordId).join(", ")}`
+        `PF2e-KR HUD | ${t("Voice.Mapping.BadId", { ids: invalid.map(r => r.discordId).join(", ") })}`
       );
     }
 
@@ -541,7 +542,7 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
       .map(row => row.discordId)
       .filter((id, index, all) => all.indexOf(id) !== index);
     if (duplicates.length) {
-      return ui.notifications.warn(`PF2e-KR HUD | 같은 디스코드 ID가 두 번 들어 있습니다: ${[...new Set(duplicates)].join(", ")}`);
+      return ui.notifications.warn(`PF2e-KR HUD | ${t("Voice.Mapping.DupId", { ids: [...new Set(duplicates)].join(", ") })}`);
     }
 
     await game.settings.set(MODULE_ID, "voiceBridgeUsers", complete);
@@ -549,8 +550,8 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
 
     ui.notifications.info(
       incomplete
-        ? `PF2e-KR HUD | ${complete.length}명 저장했습니다. 칸이 비어 있는 ${incomplete}줄은 제외했습니다.`
-        : `PF2e-KR HUD | ${complete.length}명 저장했습니다.`
+        ? `PF2e-KR HUD | ${t("Voice.Mapping.SavedPartial", { n: complete.length, skipped: incomplete })}`
+        : `PF2e-KR HUD | ${t("Voice.Mapping.Saved", { n: complete.length })}`
     );
 
     this.rows = complete.map(row => ({ ...row }));
@@ -566,8 +567,8 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
     const url = String(setting("voiceBridgeUrl", "")).trim();
 
     content.querySelector(".vmap-status").innerHTML = `
-      <span class="vmap-state ${cls}"><i class="fa-solid ${icon}"></i> ${label}</span>
-      <span class="vmap-url">${url ? escapeHtml(url.replace(/key=[^&]+/, "key=•••")) : "브리지 주소가 설정되지 않았습니다 (모듈 설정)"}</span>
+      <span class="vmap-state ${cls}"><i class="fa-solid ${icon}"></i> ${t(label)}</span>
+      <span class="vmap-url">${url ? escapeHtml(url.replace(/key=[^&]+/, "key=•••")) : t("Voice.Mapping.NoUrl")}</span>
     `;
 
     const now = Date.now();
@@ -590,9 +591,9 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
           <div class="vmap-heard-row ${live ? "speaking" : ""}">
             <span class="vmap-live"></span>
             <code>${escapeHtml(discordId)}</code>
-            <span class="who">${who ? `→ ${escapeHtml(who)}` : "<i>연결 안 됨</i>"}</span>
+            <span class="who">${who ? `→ ${escapeHtml(who)}` : `<i>${t("Voice.Mapping.Unlinked")}</i>`}</span>
             ${mapped.has(discordId) ? "" : `
-              <button type="button" data-action="adopt" data-discord-id="${escapeHtml(discordId)}" title="이 ID로 줄 추가">
+              <button type="button" data-action="adopt" data-discord-id="${escapeHtml(discordId)}" title="${escapeHtml(t("Voice.Mapping.Adopt"))}">
                 <i class="fa-solid fa-plus"></i>
               </button>`}
           </div>
@@ -600,7 +601,7 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
       }).join("");
 
     content.querySelector(".vmap-heard-list").innerHTML =
-      heardRows || `<p class="hint">아직 들어온 신호가 없습니다.</p>`;
+      heardRows || `<p class="hint">${t("Voice.Mapping.NoSignals")}</p>`;
   }
 
   _onClose(options) {
@@ -613,8 +614,8 @@ class PkhVoiceMappingApp extends foundry.applications.api.ApplicationV2 {
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, "voiceBridgeEnabled", {
-    name: "디스코드 음성 연동 사용",
-    hint: "끄면 브리지에 전혀 접속하지 않으며, 접속 실패 로그도 남지 않습니다. 디스코드 연동을 쓰지 않는 테이블은 꺼 두세요. 설정 도우미에서 연결하면 자동으로 켜집니다.",
+    name: "PKH.Settings.voiceBridgeEnabled.Name",
+    hint: "PKH.Settings.voiceBridgeEnabled.Hint",
     scope: "world",
     config: true,
     type: Boolean,
@@ -623,8 +624,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "voiceBridgeUrl", {
-    name: "디스코드 음성 브리지 주소",
-    hint: "브리지 봇 주소입니다. GM 한 명만 접속해 모두에게 중계하므로 플레이어는 이 주소에 닿을 필요가 없습니다. 설정 도우미를 쓰면 자동으로 채워집니다.",
+    name: "PKH.Settings.voiceBridgeUrl.Name",
+    hint: "PKH.Settings.voiceBridgeUrl.Hint",
     scope: "world",
     config: true,
     type: String,
@@ -633,9 +634,9 @@ Hooks.once("init", () => {
   });
 
   game.settings.registerMenu(MODULE_ID, "voiceBridgeMenu", {
-    name: "디스코드 ↔ Foundry 사용자 연결",
-    label: "연결 관리",
-    hint: "디스코드 사용자와 Foundry 사용자를 한 명씩 연결합니다. 연결 상태와 최근 음성 신호도 여기서 확인할 수 있습니다.",
+    name: "PKH.Settings.voiceBridgeMenu.Name",
+    label: "PKH.Settings.voiceBridgeMenu.Label",
+    hint: "PKH.Settings.voiceBridgeMenu.Hint",
     icon: "fa-brands fa-discord",
     type: PkhVoiceMappingApp,
     restricted: true

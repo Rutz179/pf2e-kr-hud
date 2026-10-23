@@ -1,10 +1,11 @@
-import { MODULE_ID, SimpleWindow, displayName, esc, setting } from "./shared.mjs";
+import { MODULE_ID, SimpleWindow, displayName, esc, setting, t } from "./shared.mjs";
 import { PC_SLOTS, setFace, stageActors } from "./portraits.mjs";
 import { canEditSlots } from "./slots.mjs";
 
 const MAX_TOKEN_IMAGES = 5;
 
 const MAX_FACES = 5;
+// The "@기본" keyword is data (typed in chat, matched in portraits.mjs too): it stays as is.
 const DEFAULT_FACE = "기본";
 
 /* ------------------------------------------------------------------------ *
@@ -20,21 +21,21 @@ function registerToolkitTab() {
     };
     // A plain (non-button) tool is the group's resting tool, so opening the tab
     // never fires one of the buttons by itself.
-    tools.pkhHome = { name: "pkhHome", title: "러츠 툴킷", icon: "fa-solid fa-toolbox", order: order++, onChange: () => {} };
-    add("pkhPortraits", "초상화 관리", "fa-solid fa-users-rectangle", () => openPortraitManager(), game.user.isGM);
-    add("pkhFaces", "내 초상화 표정", "fa-solid fa-masks-theater", () => openFaces(), !game.user.isGM);
-    add("pkhRequest", "굴림 요청 · 매크로 만들기", "fa-solid fa-bullhorn", () => game.pf2eKrHud?.openRollRequest?.(), game.user.isGM);
-    add("pkhPalette", "GM 팔레트 켜기/끄기", "fa-solid fa-table-cells", () => game.pkhPalette?.toggle?.(), game.user.isGM);
-    add("pkhReactions", "반응(리액션) 설정 — 선택한 캐릭터", "fa-solid fa-bolt", () => game.pf2eKrHud?.openReactionConfig?.());
-    add("pkhWhisper", "귓속말 창", "fa-solid fa-user-secret", () => game.pkhPanels?.whisper?.());
-    add("pkhNotes", "공유 노트 창", "fa-solid fa-book", () => game.pkhPanels?.notes?.());
+    tools.pkhHome = { name: "pkhHome", title: t("Toolkit.Title"), icon: "fa-solid fa-toolbox", order: order++, onChange: () => {} };
+    add("pkhPortraits", t("Toolkit.Portraits"), "fa-solid fa-users-rectangle", () => openPortraitManager(), game.user.isGM);
+    add("pkhFaces", t("Toolkit.Faces"), "fa-solid fa-masks-theater", () => openFaces(), !game.user.isGM);
+    add("pkhRequest", t("Toolkit.Request"), "fa-solid fa-bullhorn", () => game.pf2eKrHud?.openRollRequest?.(), game.user.isGM);
+    add("pkhPalette", t("Toolkit.Palette"), "fa-solid fa-table-cells", () => game.pkhPalette?.toggle?.(), game.user.isGM);
+    add("pkhReactions", t("Toolkit.Reactions"), "fa-solid fa-bolt", () => game.pf2eKrHud?.openReactionConfig?.());
+    add("pkhWhisper", t("Toolkit.Whisper"), "fa-solid fa-user-secret", () => game.pkhPanels?.whisper?.());
+    add("pkhNotes", t("Toolkit.Notes"), "fa-solid fa-book", () => game.pkhPanels?.notes?.());
     // Brand icons (fa-brands) can't render in scene controls — Foundry forces the solid face there.
-    add("pkhVoice", "디스코드 음성 연동", "fa-solid fa-headset", () => game.pf2eKrVoiceBridge?.openSetup?.(), game.user.isGM);
+    add("pkhVoice", t("Toolkit.Voice"), "fa-solid fa-headset", () => game.pf2eKrVoiceBridge?.openSetup?.(), game.user.isGM);
 
     // Another Rutz module may already have put its buttons in here; keep them.
     controls.rutzToolkit = {
       name: "rutzToolkit",
-      title: "러츠 툴킷",
+      title: t("Toolkit.Title"),
       icon: "fa-solid fa-toolbox",
       order: controls.rutzToolkit?.order ?? Object.keys(controls).length,
       visible: true,
@@ -53,38 +54,38 @@ export function openPortraitManager() {
   const stored = setting("portraitSlots", {}) ?? {};
   const actors = stageActors();
   const characters = game.actors.filter(a => a.type === "character").sort((a, b) => a.name.localeCompare(b.name, "ko"));
-  const labels = { pc1: "왼쪽 위", pc2: "오른쪽 위", pc3: "왼쪽 가운데", pc4: "오른쪽 가운데", pc5: "왼쪽 아래", pc6: "오른쪽 아래" };
+  const labels = Object.fromEntries(PC_SLOTS.map(k => [k, t(`Portraits.Seat.${k}`)]));
   const editing = !!game.pf2eKrStage?.overlay?.editing;
 
   const seat = (key, i) => `
     <div class="pkh-seat-row">
       <span>${key.toUpperCase()} · ${labels[key]}</span>
       <select name="${key}">
-        <option value="">— 자동 / 비움 —</option>
+        <option value="">${t("Portraits.Manager.Auto")}</option>
         ${characters.map(a => `<option value="${a.id}" ${stored[key] === a.id ? "selected" : ""}>${esc(displayName(a.name))}</option>`).join("")}
       </select>
       <button type="button" data-act="faces" data-actor="${actors[i]?.id ?? ""}" ${actors[i] ? "" : "disabled"}
-              data-tooltip="표정 설정"><i class="fa-solid fa-masks-theater"></i></button>
+              data-tooltip="${t("Portraits.Manager.FacesTip")}"><i class="fa-solid fa-masks-theater"></i></button>
     </div>`;
 
   new SimpleWindow({
     id: `${MODULE_ID}-portrait-manager`,
-    title: "초상화 관리",
+    title: t("Toolkit.Portraits"),
     width: 480,
     html: `<div class="pkh-manager">
-      <label class="pkh-check"><input type="checkbox" name="shown" ${setting("portraitsShown", true) ? "checked" : ""}> 모든 참가자에게 파티 초상화 표시</label>
-      <label class="pkh-check"><input type="checkbox" name="bubbles" ${setting("portraitChatBubbles", true) ? "checked" : ""}> 채팅 말풍선</label>
-      <h3>자리 배정</h3>
-      <p class="pkh-pick-hint">비워 두면 플레이어의 <b>할당된 캐릭터</b>가 유저 목록 순서대로 들어갑니다.</p>
+      <label class="pkh-check"><input type="checkbox" name="shown" ${setting("portraitsShown", true) ? "checked" : ""}> ${t("Portraits.Manager.ShowAll")}</label>
+      <label class="pkh-check"><input type="checkbox" name="bubbles" ${setting("portraitChatBubbles", true) ? "checked" : ""}> ${t("Portraits.Manager.Bubbles")}</label>
+      <h3>${t("Portraits.Manager.Seats")}</h3>
+      <p class="pkh-pick-hint">${t("Portraits.Manager.SeatsHint")}</p>
       ${PC_SLOTS.map(seat).join("")}
-      <h3>배치</h3>
+      <h3>${t("Portraits.Manager.Layout")}</h3>
       <div class="pkh-seat-buttons">
-        <button type="button" data-act="layout"><i class="fa-solid fa-arrows-up-down-left-right"></i> ${editing ? "배치 잠그기" : "배치 편집 (끌기 · 휠 크기)"}</button>
-        <button type="button" data-act="reset"><i class="fa-solid fa-border-all"></i> 기본 자리로</button>
+        <button type="button" data-act="layout"><i class="fa-solid fa-arrows-up-down-left-right"></i> ${t(editing ? "Portraits.Manager.LockLayout" : "Portraits.Manager.EditLayout")}</button>
+        <button type="button" data-act="reset"><i class="fa-solid fa-border-all"></i> ${t("Portraits.Manager.Reset")}</button>
       </div>
       <div class="pkh-seat-buttons">
-        <button type="button" data-act="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> 자리 전부 자동</button>
-        <button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> 저장</button>
+        <button type="button" data-act="auto"><i class="fa-solid fa-wand-magic-sparkles"></i> ${t("Portraits.Manager.AllAuto")}</button>
+        <button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> ${t("Common.Save")}</button>
       </div>
     </div>`,
     onRender: (root, app) => {
@@ -128,50 +129,50 @@ function pickImage(input) {
       input.dispatchEvent(new Event("change", { bubbles: true }));
     } }).render(true);
   } catch (err) {
-    ui.notifications.warn("PF2e-KR HUD | 파일 선택 창을 열 권한이 없습니다. 이미지 주소를 직접 붙여 넣으세요.");
+    ui.notifications.warn(`PF2e-KR HUD | ${t("Faces.NoPicker")}`);
   }
 }
 
 export function openFaces(actor) {
   actor ??= game.pf2eKrHud?.hud?.actor ?? game.user.character;
-  if (!actor) return ui.notifications.warn("PF2e-KR HUD | 표정을 설정할 캐릭터를 먼저 선택하세요.");
+  if (!actor) return ui.notifications.warn(`PF2e-KR HUD | ${t("Faces.NoActor")}`);
   // Same rule as the quickbar: GM, the assigned player, or users the GM allowed.
-  if (!canEditSlots(actor)) return ui.notifications.warn("PF2e-KR HUD | 이 캐릭터의 표정·토큰 이미지를 바꿀 권한이 없습니다.");
+  if (!canEditSlots(actor)) return ui.notifications.warn(`PF2e-KR HUD | ${t("Faces.NoPermission")}`);
   const faces = actor.getFlag(MODULE_ID, "faces") ?? [];
   const tokenImages = actor.getFlag(MODULE_ID, "tokenImages") ?? [];
   const tokenRow = i => {
-    const t = tokenImages[i] ?? {};
+    const preset = tokenImages[i] ?? {};
     return `<div class="pkh-face-row pkh-token-row" data-i="${i}">
-      <img class="preview" src="${esc(t.img || actor.prototypeToken?.texture?.src || actor.img)}" alt="">
-      <input type="text" name="tname" placeholder="이름 (예: 변장)" value="${esc(t.name ?? "")}" maxlength="20">
-      <input type="text" name="img" placeholder="토큰 이미지 경로" value="${esc(t.img ?? "")}">
-      <select name="size" data-tooltip="토큰 크기 (칸)">
-        ${[["", "크기 유지"], ["0.5", "0.5칸"], ["1", "1칸"], ["2", "2칸"], ["3", "3칸"], ["4", "4칸"]]
-          .map(([v, l]) => `<option value="${v}" ${String(t.size ?? "") === v ? "selected" : ""}>${l}</option>`).join("")}
+      <img class="preview" src="${esc(preset.img || actor.prototypeToken?.texture?.src || actor.img)}" alt="">
+      <input type="text" name="tname" placeholder="${esc(t("Faces.PresetName"))}" value="${esc(preset.name ?? "")}" maxlength="20">
+      <input type="text" name="img" placeholder="${esc(t("Faces.TokenPath"))}" value="${esc(preset.img ?? "")}">
+      <select name="size" data-tooltip="${esc(t("Faces.TokenSize"))}">
+        ${[["", t("Faces.KeepSize")], ...["0.5", "1", "2", "3", "4"].map(v => [v, t("Faces.Squares", { n: v })])]
+          .map(([v, l]) => `<option value="${v}" ${String(preset.size ?? "") === v ? "selected" : ""}>${l}</option>`).join("")}
       </select>
-      <button type="button" data-act="browse" data-tooltip="이미지 고르기"><i class="fa-solid fa-folder-open"></i></button>
+      <button type="button" data-act="browse" data-tooltip="${esc(t("Faces.Browse"))}"><i class="fa-solid fa-folder-open"></i></button>
     </div>`;
   };
   const row = i => {
     const f = faces[i] ?? {};
     return `<div class="pkh-face-row" data-i="${i}">
       <img class="preview" src="${esc(f.img || actor.img)}" alt="">
-      <input type="text" name="key" placeholder="키워드 (예: 웃음)" value="${esc(f.key ?? "")}" maxlength="20">
-      <input type="text" name="img" placeholder="이미지 경로" value="${esc(f.img ?? "")}">
-      <button type="button" data-act="browse" data-tooltip="이미지 고르기"><i class="fa-solid fa-folder-open"></i></button>
+      <input type="text" name="key" placeholder="${esc(t("Faces.Keyword"))}" value="${esc(f.key ?? "")}" maxlength="20">
+      <input type="text" name="img" placeholder="${esc(t("Faces.ImagePath"))}" value="${esc(f.img ?? "")}">
+      <button type="button" data-act="browse" data-tooltip="${esc(t("Faces.Browse"))}"><i class="fa-solid fa-folder-open"></i></button>
     </div>`;
   };
   new SimpleWindow({
-    title: `표정 · 토큰 이미지 — ${displayName(actor.name)}`,
+    title: t("Faces.Title", { name: displayName(actor.name) }),
     width: 560,
     html: `<div class="pkh-faces">
-      <p class="pkh-pick-hint">채팅에 <b>@키워드</b>를 넣으면 초상화가 그 표정으로 바뀝니다. 키워드는 메시지에서 지워집니다.
-        <b>@${DEFAULT_FACE}</b>은 원래 초상화로 되돌립니다. 키워드만 보내면 메시지 없이 표정만 바뀝니다.</p>
+      <p class="pkh-pick-hint">${t("Faces.Hint1")}
+        ${t("Faces.Hint2", { face: game.i18n.lang === "ko" ? DEFAULT_FACE : "default" })}</p>
       ${Array.from({ length: MAX_FACES }, (_, i) => row(i)).join("")}
-      <h3 class="pkh-sub">토큰 이미지 프리셋</h3>
-      <p class="pkh-pick-hint">토큰을 우클릭하면 나오는 <b><i class="fa-solid fa-images"></i></b> 버튼에서 바로 바꿀 수 있습니다. '원래 이미지'도 항상 함께 나옵니다.</p>
+      <h3 class="pkh-sub">${t("Faces.Presets")}</h3>
+      <p class="pkh-pick-hint">${t("Faces.PresetsHint", { icon: '<i class="fa-solid fa-images"></i>' })}</p>
       ${Array.from({ length: MAX_TOKEN_IMAGES }, (_, i) => tokenRow(i)).join("")}
-      <div class="pkh-seat-buttons"><button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> 저장</button></div>
+      <div class="pkh-seat-buttons"><button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> ${t("Common.Save")}</button></div>
     </div>`,
     onRender: (root, app) => {
       root.addEventListener("change", ev => {
@@ -192,9 +193,9 @@ export function openFaces(actor) {
           const list = [...root.querySelectorAll(".pkh-face-row:not(.pkh-token-row)")].map(r => ({
             key: r.querySelector("input[name=key]").value.trim().replace(/^@/, "").replace(/\s+/g, ""),
             img: r.querySelector("input[name=img]").value.trim()
-          })).filter(f => f.key && f.img && f.key !== DEFAULT_FACE);
+          })).filter(f => f.key && f.img && f.key !== DEFAULT_FACE && f.key !== "default");
           await actor.setFlag(MODULE_ID, "faces", list);
-          ui.notifications.info(`PF2e-KR HUD | 표정 ${list.length}개, 토큰 이미지 ${images.length}개를 저장했습니다.`);
+          ui.notifications.info(`PF2e-KR HUD | ${t("Faces.Saved", { faces: list.length, images: images.length })}`);
           app.close();
         }
       });
@@ -237,6 +238,7 @@ function registerFaceKeywords() {
     if (!actor) return;
     const keys = new Set((actor.getFlag(MODULE_ID, "faces") ?? []).map(f => f?.key).filter(Boolean));
     keys.add(DEFAULT_FACE);
+    keys.add("default"); // English alias of "@기본"
 
     let found = null;
     const stripped = content.replace(FACE_RE, (m, pre, key) => {
@@ -304,7 +306,7 @@ function syncPlayersList() {
   }
   const online = game.users.filter(u => u.active).length;
   btn.innerHTML = `<i class="fa-solid fa-users"></i><span>${online}</span>`;
-  btn.dataset.tooltip = `접속 중 ${online}명 — 눌러서 잠깐 보기`;
+  btn.dataset.tooltip = t("Players.Online", { n: online });
   btn.setAttribute("aria-label", btn.dataset.tooltip);
 }
 
@@ -327,13 +329,13 @@ function registerTokenPresets() {
     const shown = doc => (doc?.ring?.enabled && doc.ring.subject?.texture) || doc?.texture?.src;
     const original = shown(proto);
     const baseSize = proto?.width ?? null;
-    const choices = [{ name: "원래 이미지", img: original, size: baseSize, original: true }, ...presets].filter(c => c.img);
+    const choices = [{ name: t("Faces.Original"), img: original, size: baseSize, original: true }, ...presets].filter(c => c.img);
     const sizes = [0.5, 1, 2, 3, 4];
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = "control-icon pkh-token-presets";
-    button.dataset.tooltip = "토큰 이미지·크기 바꾸기";
+    button.dataset.tooltip = t("Faces.HudButton");
     button.innerHTML = `<i class="fa-solid fa-images"></i>`;
     const palette = document.createElement("div");
     palette.className = "pkh-token-palette hidden";
@@ -342,9 +344,9 @@ function registerTokenPresets() {
     palette.innerHTML = `
       <div class="imgs">${choices.map((c, i) => `
         <button type="button" data-i="${i}" class="${current === c.img ? "current" : ""}"
-                data-tooltip="${esc(c.name || "")}${c.size ? ` · ${c.size}칸` : ""}"><img src="${esc(c.img)}" alt=""></button>`).join("")}</div>
+                data-tooltip="${esc(c.name || "")}${c.size ? ` · ${t("Faces.Squares", { n: c.size })}` : ""}"><img src="${esc(c.img)}" alt=""></button>`).join("")}</div>
       <div class="sizes">${sizes.map(n => `<button type="button" data-size="${n}" class="${width === n ? "current" : ""}">${n}</button>`).join("")}
-        <span>칸</span></div>`;
+        <span>${t("Faces.SquaresUnit")}</span></div>`;
     button.addEventListener("click", ev => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -389,9 +391,9 @@ function registerTokenPresets() {
 
 export function registerToolkitSettings() {
   game.settings.register(MODULE_ID, "playersListMode", {
-    name: "접속자 목록 표시", hint: "왼쪽 아래 접속자 목록이 초상화를 가리면 작은 아이콘으로 접어 두세요. 아이콘을 누르면 잠깐 펼쳐집니다.",
+    name: "PKH.Settings.playersListMode.Name", hint: "PKH.Settings.playersListMode.Hint",
     scope: "client", config: true, type: String, default: "icon",
-    choices: { normal: "그대로 보이기", icon: "작은 아이콘으로 접기" }, onChange: syncPlayersList
+    choices: { normal: "PKH.Settings.playersListMode.Choices.normal", icon: "PKH.Settings.playersListMode.Choices.icon" }, onChange: syncPlayersList
   });
   registerToolkitTab();
   registerTokenPresets();

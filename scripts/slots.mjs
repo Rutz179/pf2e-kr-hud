@@ -1,4 +1,4 @@
-import { MODULE_ID, SLOTS_PER_ROW, TOTAL_ROWS, SimpleWindow, esc, localizeMaybe, setting, signed } from "./shared.mjs";
+import { MODULE_ID, SLOTS_PER_ROW, TOTAL_ROWS, SimpleWindow, esc, localizeMaybe, setting, signed, t } from "./shared.mjs";
 import { itemActionCost, markNextUse } from "./economy.mjs";
 
 /* ------------------------------------------------------------------------ *
@@ -154,7 +154,7 @@ export function resolveSlot(actor, entry, opts = {}) {
   switch (entry.type) {
     case "macro": {
       const macro = entry.uuid ? fromUuidSync(entry.uuid) : null;
-      if (!macro) return { ...view, broken: true, label: "삭제된 매크로", icon: TYPE_ICONS.macro };
+      if (!macro) return { ...view, broken: true, label: t("Slots.DeletedMacro"), icon: TYPE_ICONS.macro };
       return { ...view, label: macro.name, img: macro.img, icon: macro.img ? null : TYPE_ICONS.macro };
     }
     case "item": {
@@ -166,7 +166,7 @@ export function resolveSlot(actor, entry, opts = {}) {
           return { ...view, disabled: true, label: entry.name ?? entry.slug, img: entry.img ?? null,
             icon: entry.img ? null : "fa-solid fa-flask", badge: 0 };
         }
-        return { ...view, broken: true, label: "없는 아이템" };
+        return { ...view, broken: true, label: t("Slots.MissingItem") };
       }
       view.label = item.name;
       view.img = item.img;
@@ -213,7 +213,7 @@ export function resolveSlot(actor, entry, opts = {}) {
     }
     case "effect": {
       const source = entry.uuid ? fromUuidSync(entry.uuid) : null;
-      if (!source) return { ...view, broken: true, label: entry.name ?? "효과", icon: "fa-solid fa-sparkles" };
+      if (!source) return { ...view, broken: true, label: entry.name ?? t("Card.Effect"), icon: "fa-solid fa-sparkles" };
       const has = actor?.itemTypes?.effect?.some(e => effectMatches(e, entry.uuid, source.slug ?? source.system?.slug));
       return { ...view, label: source.name, img: source.img, active: !!has };
     }
@@ -286,7 +286,7 @@ export async function executeSlot(actor, entry, event = null, opts = {}) {
       case "item": {
         const item = findItem(actor, entry);
         if (!item) {
-          ui.notifications.info(`PF2e-KR HUD | ${entry.name ?? "아이템"}: 지금 가지고 있지 않습니다.`);
+          ui.notifications.info(`PF2e-KR HUD | ${t("Slots.NotCarried", { name: entry.name ?? t("Card.Item") })}`);
           return false;
         }
         if (item.type === "consumable" && event?.shiftKey && typeof item.consume === "function") {
@@ -328,7 +328,7 @@ export async function executeSlot(actor, entry, event = null, opts = {}) {
         const strike = findStrike(actor, entry.slug);
         if (!strike?.variants?.length) return false;
         if (strikeUnavailable(strike)) {
-          ui.notifications.warn(`PF2e-KR HUD | ${strike.label}: 지금은 공격할 수 없습니다 (들고 있지 않거나 남은 수량이 없음).`);
+          ui.notifications.warn(`PF2e-KR HUD | ${t("Slots.CantStrikeWhy", { name: strike.label })}`);
           return false;
         }
         // The caller decides which attack this is (auto MAP, right/middle click).
@@ -360,7 +360,7 @@ export async function executeSlot(actor, entry, event = null, opts = {}) {
     }
   } catch (err) {
     console.error(`${MODULE_ID} | slot execution failed`, entry, err);
-    ui.notifications.warn(`PF2e-KR HUD | 실행 중 오류가 발생했습니다: ${err.message ?? err}`);
+    ui.notifications.warn(`PF2e-KR HUD | ${t("Slots.Error", { error: err.message ?? err })}`);
   }
   return false;
 }
@@ -386,7 +386,7 @@ export function entryFromDrop(actor, data) {
     const owner = item?.parent;
     const sameActor = owner && (owner === actor || owner.id === actor.id);
     if (!sameActor) {
-      ui.notifications.warn("PF2e-KR HUD | 이 캐릭터가 가진 아이템만 슬롯에 올릴 수 있습니다.");
+      ui.notifications.warn(`PF2e-KR HUD | ${t("Slots.OwnItemsOnly")}`);
       return null;
     }
     const strike = (actor.system?.actions ?? []).find(s => s?.item?.id === item.id);
@@ -405,7 +405,7 @@ export function entryFromDrop(actor, data) {
     return { type: "skill", slug: skillSlug };
   }
 
-  ui.notifications.warn("PF2e-KR HUD | 이 항목은 슬롯에 올릴 수 없습니다. 빈 슬롯을 우클릭해 목록에서 골라 보세요.");
+  ui.notifications.warn(`PF2e-KR HUD | ${t("Slots.CantDrop")}`);
   return null;
 }
 
@@ -434,7 +434,7 @@ function listActions() {
 
 function listSkills(actor) {
   const out = [];
-  if (actor.perception) out.push({ slug: "perception", name: actor.perception.label ?? "지각", mod: actor.perception.mod });
+  if (actor.perception) out.push({ slug: "perception", name: actor.perception.label ?? t("Hud.Perception"), mod: actor.perception.mod });
   for (const [slug, stat] of Object.entries(actor.skills ?? {})) {
     out.push({ slug, name: stat.label ?? slug, mod: stat.mod });
   }
@@ -452,21 +452,21 @@ export function openSlotPicker(actor, row, col) {
 
   const html = `
     <div class="pkh-picker">
-      <input type="search" class="pkh-pick-filter" placeholder="이름으로 찾기…" autocomplete="off">
-      ${section("공격", strikes.map(s => `
+      <input type="search" class="pkh-pick-filter" placeholder="${esc(t("Slots.Picker.Filter"))}" autocomplete="off">
+      ${section(t("Slots.Picker.Strikes"), strikes.map(s => `
         <button type="button" class="pkh-pick" data-type="strike" data-slug="${esc(s.slug)}">
           <i class="${TYPE_ICONS.strike}"></i><span>${esc(s.label)}</span></button>`))}
-      ${section("기술 굴림", skills.map(s => `
+      ${section(t("Slots.Picker.Skills"), skills.map(s => `
         <button type="button" class="pkh-pick" data-type="skill" data-slug="${esc(s.slug)}">
           <i class="${TYPE_ICONS.skill}"></i><span>${esc(s.name)}</span><em>${esc(signed(s.mod))}</em></button>`))}
-      ${section("액션 (자주 쓰는 순)", actions.map(a => `
+      ${section(t("Slots.Picker.Actions"), actions.map(a => `
         <button type="button" class="pkh-pick ${a.common >= 0 ? "common" : ""}" data-type="action" data-slug="${esc(a.slug)}">
           <i class="${TYPE_ICONS.action}"></i><span>${esc(a.name)}</span></button>`))}
-      <p class="pkh-pick-hint">아이템·주문·피트·매크로는 시트나 매크로 목록에서 슬롯으로 끌어다 놓으면 됩니다.</p>
+      <p class="pkh-pick-hint">${t("Slots.Picker.Hint")}</p>
     </div>`;
 
   new SimpleWindow({
-    title: `슬롯에 추가 — ${actor.name}`,
+    title: t("Slots.Picker.Title", { name: actor.name }),
     width: 520,
     html,
     onRender: (root, app) => {
@@ -500,17 +500,17 @@ export function openEditorsDialog(actor) {
     const assigned = u.character?.id === base.id;
     return `<label class="pkh-editor-row">
       <input type="checkbox" name="${u.id}" ${assigned || current.has(u.id) ? "checked" : ""} ${assigned ? "disabled" : ""}>
-      <span>${esc(u.name)}</span>${assigned ? `<em>할당된 캐릭터 — 항상 가능</em>` : ""}
+      <span>${esc(u.name)}</span>${assigned ? `<em>${t("Slots.Editors.Assigned")}</em>` : ""}
     </label>`;
-  }).join("") || `<p>이 액터를 소유한 플레이어가 없습니다.</p>`;
+  }).join("") || `<p>${t("Slots.Editors.None")}</p>`;
 
   new SimpleWindow({
-    title: `퀵슬롯 편집 권한 — ${base.name}`,
+    title: t("Slots.Editors.Title", { name: base.name }),
     width: 380,
     html: `<div class="pkh-editors">
-      <p class="pkh-pick-hint">소유 권한이 있어도 여기 체크된 사람(과 GM)만 슬롯 배치를 바꿀 수 있습니다. 사용은 소유자 모두 가능합니다.</p>
+      <p class="pkh-pick-hint">${t("Slots.Editors.Hint")}</p>
       ${rows}
-      <button type="button" class="pkh-save"><i class="fa-solid fa-check"></i> 저장</button>
+      <button type="button" class="pkh-save"><i class="fa-solid fa-check"></i> ${t("Common.Save")}</button>
     </div>`,
     onRender: (root, app) => {
       root.querySelector(".pkh-save")?.addEventListener("click", async () => {

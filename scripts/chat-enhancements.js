@@ -11,6 +11,8 @@
  * modified, so turning the module off leaves the chat log untouched.
  * ========================================================================== */
 
+import { t } from "./shared.mjs";
+
 const MODULE_ID = "pf2e-kr-hud";
 
 const CHAT_ROOT_SELECTORS = [
@@ -49,58 +51,59 @@ function googleFont(family) {
  */
 const FONT_PRESETS = {
   pretendard: {
-    label: "Pretendard — 현대적인 고딕 (OFL)",
+    label: "PKH.Fonts.pretendard",
     href: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css",
     stack: `Pretendard, "Pretendard Variable", ${FALLBACK_SANS}`
   },
   plex: {
-    label: "IBM Plex Sans KR — 또렷한 본문 고딕 (OFL)",
+    label: "PKH.Fonts.plex",
     href: googleFont("IBM+Plex+Sans+KR:wght@300;400;500;600;700"),
     stack: `"IBM Plex Sans KR", ${FALLBACK_SANS}`
   },
   gowunDodum: {
-    label: "고운돋움 — 부드럽고 눈이 편한 고딕 (OFL)",
+    label: "PKH.Fonts.gowunDodum",
     href: googleFont("Gowun+Dodum"),
     stack: `"Gowun Dodum", ${FALLBACK_SANS}`
   },
   kopubBatang: {
-    label: "KoPubWorld 바탕 — 출판 본문용 명조 (CDN 불안정)",
+    label: "PKH.Fonts.kopubBatang",
     href: "https://cdn.jsdelivr.net/npm/font-kopubworld@1.0/batang.min.css",
     stack: `"KoPubWorld Batang", ${FALLBACK_SERIF}`
   },
   ridiBatang: {
-    label: "리디바탕 — 소설 본문체, 조선신명조 대체 (OFL)",
+    label: "PKH.Fonts.ridiBatang",
     href: "https://unpkg.com/@kfonts/ridi-batang/index.css",
     stack: `RIDIBatang, "리디바탕", ${FALLBACK_SERIF}`
   },
   gowunBatang: {
-    label: "고운바탕 — 차분한 명조 (OFL)",
+    label: "PKH.Fonts.gowunBatang",
     href: googleFont("Gowun+Batang:wght@400;700"),
     stack: `"Gowun Batang", ${FALLBACK_SERIF}`
   },
   nanumMyeongjo: {
-    label: "나눔명조 — 고전적인 명조 (OFL)",
+    label: "PKH.Fonts.nanumMyeongjo",
     href: googleFont("Nanum+Myeongjo:wght@400;700;800"),
     stack: `"Nanum Myeongjo", ${FALLBACK_SERIF}`
   },
   songMyung: {
-    label: "송명 — 가늘고 서늘한 명조 (OFL)",
+    label: "PKH.Fonts.songMyung",
     href: googleFont("Song+Myung"),
     stack: `"Song Myung", ${FALLBACK_SERIF}`
   },
   hahmlet: {
-    label: "Hahmlet — 묵직하고 개성 있는 명조 (OFL)",
+    label: "PKH.Fonts.hahmlet",
     href: googleFont("Hahmlet:wght@300;400;500;700"),
     stack: `Hahmlet, ${FALLBACK_SERIF}`
   },
   system: {
-    label: "시스템 기본 글꼴 (내려받기 없음)",
+    label: "PKH.Fonts.system",
     stack: FALLBACK_SANS
   }
 };
 
+// Labels are lang keys; Foundry (and the settings window) localize choices when drawn.
 const FONT_CHOICES = {
-  inherit: "기본 (변경 안 함)",
+  inherit: "PKH.Fonts.inherit",
   ...Object.fromEntries(Object.entries(FONT_PRESETS).map(([key, value]) => [key, value.label]))
 };
 
@@ -493,8 +496,8 @@ Hooks.once("init", () => {
   };
 
   game.settings.register(MODULE_ID, "chatGrouping", {
-    name: "채팅 메시지 묶기",
-    hint: "같은 화자가 연속으로 말하면 하나의 말풍선 블록으로 합칩니다.",
+    name: "PKH.Settings.chatGrouping.Name",
+    hint: "PKH.Settings.chatGrouping.Hint",
     scope: "client",
     config: true,
     type: Boolean,
@@ -503,8 +506,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatGroupWindow", {
-    name: "묶기 허용 간격(분)",
-    hint: "이 시간 안에 이어진 같은 화자의 발언만 하나로 묶습니다.",
+    name: "PKH.Settings.chatGroupWindow.Name",
+    hint: "PKH.Settings.chatGroupWindow.Hint",
     scope: "client",
     config: true,
     type: Number,
@@ -514,8 +517,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatShowUser", {
-    name: "발언자(플레이어) 이름 표시",
-    hint: "캐릭터 이름 아래에 실제 플레이어 이름을 작게 표시합니다.",
+    name: "PKH.Settings.chatShowUser.Name",
+    hint: "PKH.Settings.chatShowUser.Hint",
     scope: "client",
     config: false,
     type: Boolean,
@@ -524,8 +527,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatAvatars", {
-    name: "채팅 초상화 표시",
-    hint: "발언자의 토큰/캐릭터 이미지를 채팅 카드 왼쪽에 표시합니다.",
+    name: "PKH.Settings.chatAvatars.Name",
+    hint: "PKH.Settings.chatAvatars.Hint",
     scope: "client",
     config: false,
     type: Boolean,
@@ -534,22 +537,22 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatCardTheme", {
-    name: "채팅 카드 톤",
-    hint: "밝은 카드는 첨부한 예시와 같은 모양입니다. 어두운 카드는 Foundry 기본 테마에 가깝습니다.",
+    name: "PKH.Settings.chatCardTheme.Name",
+    hint: "PKH.Settings.chatCardTheme.Hint",
     scope: "client",
     config: false,
     type: String,
     choices: {
-      light: "밝은 카드",
-      dark: "어두운 카드"
+      light: "PKH.Settings.chatCardTheme.Choices.light",
+      dark: "PKH.Settings.chatCardTheme.Choices.dark"
     },
     default: "light",
     onChange: applyStyleVariables
   });
 
   game.settings.register(MODULE_ID, "chatHeadingFont", {
-    name: "이름 / 판정줄 글꼴",
-    hint: "캐릭터 이름과 판정 설명줄에 쓰는 글꼴입니다.",
+    name: "PKH.Settings.chatHeadingFont.Name",
+    hint: "PKH.Settings.chatHeadingFont.Hint",
     scope: "client",
     config: false,
     type: String,
@@ -559,8 +562,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatBodyFont", {
-    name: "채팅 글꼴",
-    hint: "채팅 메시지 본문에만 적용됩니다. 시트·창·카드 제목은 그대로입니다. '기본'이면 PF2e-KR 글꼴을 따릅니다.",
+    name: "PKH.Settings.chatBodyFont.Name",
+    hint: "PKH.Settings.chatBodyFont.Hint",
     scope: "client",
     config: true,
     type: String,
@@ -570,8 +573,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatFontFamily", {
-    name: "채팅 글꼴 직접 지정(고급)",
-    hint: "비워두면 위에서 고른 글꼴을 씁니다. CSS font-family 값을 그대로 넣으세요.",
+    name: "PKH.Settings.chatFontFamily.Name",
+    hint: "PKH.Settings.chatFontFamily.Hint",
     scope: "client",
     config: false,
     type: String,
@@ -580,8 +583,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatFontSize", {
-    name: "채팅 글자 크기 (px)",
-    hint: "0이면 기본 크기. 채팅 메시지 본문에만 적용됩니다.",
+    name: "PKH.Settings.chatFontSize.Name",
+    hint: "PKH.Settings.chatFontSize.Hint",
     scope: "client",
     config: true,
     type: Number,
@@ -591,8 +594,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatSidebarWidth", {
-    name: "채팅창 너비 (px)",
-    hint: "0이면 Foundry 기본값. Foundry의 사이드바는 글꼴 크기 설정에 따라 너비가 바뀌므로, 고정하고 싶을 때 쓰세요. (권장 340~420)",
+    name: "PKH.Settings.chatSidebarWidth.Name",
+    hint: "PKH.Settings.chatSidebarWidth.Hint",
     scope: "client",
     config: true,
     type: Number,
@@ -602,8 +605,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "chatHideEditorMenu", {
-    name: "채팅 입력창 서식 도구 숨기기",
-    hint: "Foundry v13/v14 채팅 입력창 위의 '문단 · 기울임 · HTML' 도구 줄을 숨깁니다. Ctrl+B, Ctrl+I 같은 단축키는 그대로 됩니다. 빈 자리에는 말하는 캐릭터 바(Rutz's Cinematic Stage)가 들어갑니다.",
+    name: "PKH.Settings.chatHideEditorMenu.Name",
+    hint: "PKH.Settings.chatHideEditorMenu.Hint",
     scope: "client",
     config: true,
     type: Boolean,
@@ -612,8 +615,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "typingIndicator", {
-    name: "입력 중 표시",
-    hint: "누군가 채팅창에 글을 쓰는 동안 입력창 위에 '…님이 입력 중입니다'를 보여줍니다. 귓속말(/w)을 쓰는 중에는 표시하지 않습니다. Cautious Gamemaster's Pack의 같은 기능을 대신합니다.",
+    name: "PKH.Settings.typingIndicator.Name",
+    hint: "PKH.Settings.typingIndicator.Hint",
     scope: "world",
     config: true,
     type: Boolean,
@@ -626,8 +629,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "typingShowKeeper", {
-    name: "GM의 입력 중 표시도 보이기",
-    hint: "GM이 글을 쓰는 동안에도 플레이어에게 '입력 중'을 보여줍니다. 끄면 GM의 입력은 표시되지 않습니다.",
+    name: "PKH.Settings.typingShowKeeper.Name",
+    hint: "PKH.Settings.typingShowKeeper.Hint",
     scope: "world",
     config: true,
     type: Boolean,
@@ -635,8 +638,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "typingReserveHeight", {
-    name: "입력 표시 예약 높이(px)",
-    hint: "'…님이 입력 중입니다'가 표시되는 줄의 높이입니다. 이 공간은 늘 비워두므로 표시가 나타나고 사라져도 채팅 카드가 움직이지 않습니다. 0이면 입력 중 표시도 보이지 않습니다.",
+    name: "PKH.Settings.typingReserveHeight.Name",
+    hint: "PKH.Settings.typingReserveHeight.Hint",
     scope: "client",
     config: true,
     type: Number,
@@ -646,8 +649,8 @@ Hooks.once("init", () => {
   });
 
   game.settings.register(MODULE_ID, "typingSelector", {
-    name: "입력 표시 선택자(고급)",
-    hint: "예약 공간으로 옮길 타이핑 표시 요소의 CSS 선택자입니다. 비워두면 이동시키지 않습니다.",
+    name: "PKH.Settings.typingSelector.Name",
+    hint: "PKH.Settings.typingSelector.Hint",
     scope: "client",
     config: true,
     type: String,
@@ -681,7 +684,7 @@ Hooks.once("ready", () => {
       await game.settings.set(MODULE_ID, "typingReserveHeight", 0);
       await game.settings.set(MODULE_ID, "typingSelector", "");
       this.reset();
-      ui.notifications.warn("PF2e-KR HUD | 안전 모드: 채팅 DOM 수정을 모두 껐습니다.");
+      ui.notifications.warn(`PF2e-KR HUD | ${t("Chat.SafeMode")}`);
     }
   };
 
@@ -765,8 +768,8 @@ let lastTypingSent = 0;
 /** "A님이", "A, B님이", "여러 명이" — kept pure so it can be tested. */
 function typingText(names) {
   if (!names.length) return "";
-  if (names.length > 3) return "여러 명이 입력 중입니다";
-  return `${names.join(", ")}님이 입력 중입니다`;
+  if (names.length > 3) return t("Chat.TypingMany");
+  return t(names.length > 1 ? "Chat.TypingSome" : "Chat.TypingOne", { names: names.join(", ") });
 }
 
 /*
@@ -805,7 +808,7 @@ function renderTyping() {
   // Your own name first, then the others in the order they started.
   const ids = [...typingUsers.keys()].sort((a, b) => (a === game.user.id ? -1 : b === game.user.id ? 1 : 0));
   const names = ids
-    .map(id => (id === "__coc7ko_test__" ? "테스트" : game.users.get(id)?.name))
+    .map(id => (id === "__coc7ko_test__" ? t("Chat.TestName") : game.users.get(id)?.name))
     .filter(Boolean);
   const text = typingText(names);
   const html = text ? `<span class="dots"><i></i><i></i><i></i></span><span>${foundry.utils.escapeHTML(text)}</span>` : "";
@@ -953,7 +956,7 @@ Hooks.once("ready", () => {
       clearTimeout(typingUsers.get(id));
       typingUsers.set(id, setTimeout(() => { typingUsers.delete(id); renderTyping(); }, 4000));
       renderTyping();
-      return "입력창 위에 '테스트님이 입력 중입니다'가 4초간 보이면 표시 쪽은 정상입니다.";
+      return t("Chat.TestResult");
     },
     status() {
       return {

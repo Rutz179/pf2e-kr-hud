@@ -1,4 +1,4 @@
-import { MODULE_ID, esc, setting } from "./shared.mjs";
+import { MODULE_ID, esc, setting, t } from "./shared.mjs";
 import { economyOf, setUsed } from "./economy.mjs";
 
 /* ======================================================================== *
@@ -58,13 +58,13 @@ async function onCast(message) {
   const duration = parseDuration(spell.system.duration.value);
   await actor.createEmbeddedDocuments("Item", [{
     type: "effect",
-    name: `지속: ${spell.name}`,
+    name: t("Sustain.EffectName", { spell: spell.name }),
     img: spell.img,
     system: {
       slug,
       tokenIcon: { show: true },
       duration: { ...duration, sustained: true, expiry: duration.unit === "unlimited" ? null : "turn-end" },
-      description: { value: `<p>지속하는 주문: <b>${esc(spell.name)}</b>. 내 턴이 시작될 때 지속할지 묻습니다.</p>${spell.system.description?.value ?? ""}` },
+      description: { value: `<p>${t("Sustain.EffectDesc", { spell: esc(spell.name) })}</p>${spell.system.description?.value ?? ""}` },
       level: { value: spell.rank ?? spell.level ?? 1 },
       unidentified: false
     },
@@ -82,7 +82,7 @@ async function onTurn(combat, changed) {
   const list = sustainEffects(actor);
   if (!list.length) return;
   const token = combatant.token;
-  const rows = list.map(e => ({ effectId: e.id, name: e.getFlag(MODULE_ID, FLAG)?.spellName ?? e.name.replace(/^지속:\s*/, ""), img: e.img, state: "pending" }));
+  const rows = list.map(e => ({ effectId: e.id, name: e.getFlag(MODULE_ID, FLAG)?.spellName ?? e.name.replace(/^(?:지속|Sustain):\s*/, ""), img: e.img, state: "pending" }));
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ token, actor }),
     whisper: [...new Set([...playersOf(actor), ...gmIds()])],
@@ -93,13 +93,13 @@ async function onTurn(combat, changed) {
 
 function cardHtml(actor, rows) {
   return `<div class="pkh-sustain">
-    <header><i class="fa-solid fa-hourglass-half"></i> <b>${esc(actor?.name ?? "")}</b> — 지속하는 주문</header>
+    <header><i class="fa-solid fa-hourglass-half"></i> <b>${esc(actor?.name ?? "")}</b> — ${t("Sustain.CardTitle")}</header>
     ${rows.map((r, i) => `<div class="sus-row ${r.state}" data-i="${i}">
       <img src="${esc(r.img)}" alt=""><b>${esc(r.name)}</b>
       ${r.state === "pending"
-        ? `<span class="btns"><button type="button" data-sus="keep" data-i="${i}"><i class="fa-solid fa-rotate"></i> 지속 <small>1행동</small></button>
-           <button type="button" data-sus="end" data-i="${i}" class="end"><i class="fa-solid fa-xmark"></i> 끝내기</button></span>`
-        : `<span class="done">${r.state === "kept" ? "✔ 지속함" : "✖ 끝냄"}${r.by ? ` <small>(${esc(r.by)})</small>` : ""}</span>`}
+        ? `<span class="btns"><button type="button" data-sus="keep" data-i="${i}"><i class="fa-solid fa-rotate"></i> ${t("Sustain.Keep")} <small>${t("Sustain.OneAction")}</small></button>
+           <button type="button" data-sus="end" data-i="${i}" class="end"><i class="fa-solid fa-xmark"></i> ${t("Sustain.End")}</button></span>`
+        : `<span class="done">${t(r.state === "kept" ? "Sustain.Kept" : "Sustain.Ended")}${r.by ? ` <small>(${esc(r.by)})</small>` : ""}</span>`}
     </div>`).join("")}
   </div>`;
 }
@@ -120,7 +120,7 @@ async function answer(message, index, choice) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     whisper: [...new Set([...playersOf(actor), ...gmIds()])],
-    content: `<div class="pkh-sustain note">${choice === "keep" ? `<i class="fa-solid fa-rotate"></i> <b>${esc(row.name)}</b> 지속 (1행동)` : `<i class="fa-solid fa-xmark"></i> <b>${esc(row.name)}</b> 끝냄`}</div>`,
+    content: `<div class="pkh-sustain note">${choice === "keep" ? `<i class="fa-solid fa-rotate"></i> ${t("Sustain.NoteKept", { spell: esc(row.name) })}` : `<i class="fa-solid fa-xmark"></i> ${t("Sustain.NoteEnded", { spell: esc(row.name) })}`}</div>`,
     flags: { [MODULE_ID]: { sustainResult: { cardId: message.id, index, choice, by: game.user.name } } }
   });
 }
@@ -165,8 +165,8 @@ function wire(message, html) {
 
 export function registerSustainSettings() {
   game.settings.register(MODULE_ID, "sustainChecker", {
-    name: "지속 주문 확인",
-    hint: "지속(Sustain) 주문을 쓰면 시전자에게 '지속: 주문' 효과를 붙이고, 그 캐릭터의 턴이 시작될 때 플레이어와 GM에게 귓속말 카드로 '지속(1행동) / 끝내기'를 묻습니다. 끝내기를 고르면 그 주문이 건 효과도 사라집니다. pf2e-sustain-reminder 대신 씁니다.",
+    name: "PKH.Settings.sustainChecker.Name",
+    hint: "PKH.Settings.sustainChecker.Hint",
     scope: "world", config: true, type: Boolean, default: true
   });
 }

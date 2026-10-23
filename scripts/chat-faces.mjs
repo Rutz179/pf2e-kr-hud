@@ -187,8 +187,8 @@ export function patchChatPortraits() {
 
 export function registerChatFaceSettings() {
   game.settings.register(MODULE_ID, "chatFaceZoom", {
-    name: "채팅 초상화 정리 (NPC는 원형 토큰)",
-    hint: "NPC: 토큰 링을 쓰는 토큰(아트 모듈의 NPC 등)이 채팅 카드 위로 크게 넘치지 않도록, 맵에서처럼 링 안에 들어간 원형 토큰으로 바꿉니다. PC: PF2e가 보여 주는 원래 그림 그대로 둡니다.",
+    name: "PKH.Settings.chatFaceZoom.Name",
+    hint: "PKH.Settings.chatFaceZoom.Hint",
     scope: "client", config: true, type: Boolean, default: true,
     onChange: () => ui.chat?.render?.()
   });

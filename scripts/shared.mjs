@@ -18,6 +18,15 @@ export function esc(value) {
   return foundry.utils.escapeHTML(String(value ?? ""));
 }
 
+/**
+ * Text from lang/en.json · lang/ko.json (namespace "PKH"), following Foundry's
+ * language setting: t("Saves.fortitude"), t("Hud.Notify.AutoFilled", { n: 3 }).
+ */
+export function t(key, data) {
+  const id = `PKH.${key}`;
+  return data ? game.i18n.format(id, data) : game.i18n.localize(id);
+}
+
 export function localizeMaybe(value) {
   if (!value) return "";
   const text = String(value);

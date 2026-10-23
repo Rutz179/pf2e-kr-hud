@@ -1,4 +1,4 @@
-import { MAX_ROWS, MODULE_ID, SLOTS_PER_ROW } from "./shared.mjs";
+import { MAX_ROWS, MODULE_ID, SLOTS_PER_ROW, t } from "./shared.mjs";
 import { initPortraits, registerPortraitSettings } from "./portraits.mjs";
 import { initToolkit, registerToolkitSettings } from "./toolkit.mjs";
 import { initGmTools, registerGmToolSettings } from "./gm-tools.mjs";
@@ -29,13 +29,14 @@ function registerKeybindings() {
     ?? globalThis.KeyboardManager?.MODIFIER_KEYS
     ?? { SHIFT: "Shift", ALT: "Alt" };
   const rowMods = [[], [MOD.SHIFT], [MOD.ALT]];
-  const rowNames = ["1줄", "2줄", "3줄"];
+  // Names are filled in at i18nInit: translations are not loaded yet during init.
+  const slotName = (row, digit) => t("Keys.Slot", { row: t("Keys.RowShort", { n: row + 1 }), digit });
 
   for (let row = 0; row < MAX_ROWS; row++) {
     for (let col = 0; col < SLOTS_PER_ROW; col++) {
       const digit = (col + 1) % 10;
       game.keybindings.register(MODULE_ID, `slot-${row + 1}-${digit}`, {
-        name: `퀵슬롯 ${rowNames[row]} ${digit}번`,
+        name: "PKH.Keys.Slot",
         editable: [{ key: `Digit${digit}`, modifiers: rowMods[row] }],
         precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
         onDown: () => game.pf2eKrHud?.hud?.executeHotkey(row, col) ?? false
@@ -43,8 +44,18 @@ function registerKeybindings() {
     }
   }
 
+  Hooks.once("i18nInit", () => {
+    for (let row = 0; row < MAX_ROWS; row++) {
+      for (let col = 0; col < SLOTS_PER_ROW; col++) {
+        const digit = (col + 1) % 10;
+        const action = game.keybindings.actions?.get?.(`${MODULE_ID}.slot-${row + 1}-${digit}`);
+        try { if (action) action.name = slotName(row, digit); } catch (_) { /* keeps the unformatted name */ }
+      }
+    }
+  });
+
   game.keybindings.register(MODULE_ID, "page-next", {
-    name: "퀵슬롯 다음 페이지",
+    name: "PKH.Keys.PageNext",
     editable: [{ key: "BracketRight" }],
     onDown: () => {
       const hud = game.pf2eKrHud?.hud;
@@ -54,7 +65,7 @@ function registerKeybindings() {
     }
   });
   game.keybindings.register(MODULE_ID, "page-prev", {
-    name: "퀵슬롯 이전 페이지",
+    name: "PKH.Keys.PagePrev",
     editable: [{ key: "BracketLeft" }],
     onDown: () => {
       const hud = game.pf2eKrHud?.hud;
@@ -65,13 +76,13 @@ function registerKeybindings() {
   });
   // Only takes the key while a quickslot card is up (or about to be), so T stays free otherwise.
   game.keybindings.register(MODULE_ID, PIN_ACTION, {
-    name: "퀵슬롯 설명 카드 고정 / 닫기",
-    hint: "설명 카드가 떠 있을 때 누르면 카드가 고정되어 마우스로 스크롤하거나 링크를 누를 수 있습니다. 다시 누르거나 Esc로 닫습니다.",
+    name: "PKH.Keys.PinCard.Name",
+    hint: "PKH.Keys.PinCard.Hint",
     editable: [{ key: "KeyT" }],
     onDown: () => game.pf2eKrHud?.hud?.slotCard?.togglePin() ?? false
   });
   game.keybindings.register(MODULE_ID, "toggle-portraits", {
-    name: "내 화면에서 파티 초상화 숨기기/보이기",
+    name: "PKH.Keys.TogglePortraits",
     editable: [],
     onDown: () => {
       game.settings.set(MODULE_ID, "portraitsHideLocal", !game.settings.get(MODULE_ID, "portraitsHideLocal"));
@@ -142,7 +153,7 @@ Hooks.once("setup", () => {
 
 Hooks.once("ready", () => {
   if (game.system.id !== "pf2e") {
-    console.warn(`${MODULE_ID} | PF2e 시스템이 아니므로 비활성화합니다.`);
+    console.warn(`${MODULE_ID} | ${t("Notify.NotPf2e")}`);
     return;
   }
   installCalmTooltips();

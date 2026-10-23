@@ -1,0 +1,1252 @@
+{
+  "PKH": {
+    "Keys": {
+      "RowShort": "Row {n}",
+      "Slot": "Quickslot {row} · {digit}",
+      "PageNext": "Quickslots: next page",
+      "PagePrev": "Quickslots: previous page",
+      "PinCard": {
+        "Name": "Pin / close quickslot info card",
+        "Hint": "Press while an info card is showing to pin it, so you can scroll it with the mouse and click its links. Press again or Esc to close."
+      },
+      "TogglePortraits": "Hide/show party portraits on my screen"
+    },
+    "Notify": {
+      "NotPf2e": "Not the PF2e system, so the module stays off.",
+      "SelectToken": "Select a token first."
+    },
+    "SettingsWindow": {
+      "Tabs": {
+        "Portraits": "Party Portraits",
+        "Hud": "Character HUD",
+        "Turns": "Turn Tracker",
+        "Chat": "Chat",
+        "Tokens": "Token Tooltip",
+        "Gm": "GM Tools",
+        "Voice": "Discord Voice",
+        "Other": "Other"
+      },
+      "Menus": {
+        "PortraitSlots": "Assign PC seats (portrait manager)",
+        "VoiceSetup": "Open setup wizard",
+        "VoiceBridge": "Link Discord ↔ Foundry users"
+      },
+      "Sections": {
+        "Display": "Display",
+        "SizePosition": "Size · Position",
+        "HpBubbles": "HP · Speech Bubbles",
+        "PlayersList": "Players List",
+        "SlotCard": "Quickslot Info Card",
+        "Behaviour": "Behaviour",
+        "CoreUi": "Foundry · PF2e Default UI",
+        "Reactions": "Reaction Alerts",
+        "Sustain": "Sustained Spells",
+        "BulkDamage": "Apply Damage (PF2e Toolbelt)",
+        "Combatants": "Combatants",
+        "ClockDice": "Clock · Dice",
+        "FontSize": "Font · Size",
+        "Messages": "Messages",
+        "LongSessions": "Long Sessions (less lag)",
+        "Typing": "Typing Indicator",
+        "Distance": "Distance",
+        "Health": "Health Status",
+        "TimeLight": "Time · Lighting",
+        "Palette": "GM Palette",
+        "Browser": "Compendium Browser",
+        "Link": "Connection",
+        "Other": "Other"
+      },
+      "Title": "Rutz's PF2e HUD Settings",
+      "WorldTip": "World setting — applies to everyone",
+      "World": "World",
+      "Empty": "Nothing here that you can change.",
+      "Defaults": "Reset this topic",
+      "Saved": "Settings saved.",
+      "MenuName": "{tab} Settings",
+      "MenuLabel": "{tab} settings"
+    },
+    "Common": {
+      "Close": "Close",
+      "Save": "Save",
+      "NoDescription": "No description.",
+      "Apply": "Apply",
+      "Delete": "Delete",
+      "Cancel": "Cancel"
+    },
+    "Settings": {
+      "browserHideLegacy": {
+        "Name": "Compendium Browser: Hide legacy",
+        "Hint": "Leaves pre-remaster (legacy) entries out of the PF2e Compendium Browser (feats, spells, equipment …). Reopen the browser or reload after changing this."
+      },
+      "chatFaceZoom": {
+        "Name": "Tidy chat portraits (round tokens for NPCs)",
+        "Hint": "NPCs: tokens that use a token ring (e.g. NPCs from art modules) are redrawn as a round token with the subject inside the ring, like on the map, so they don't spill over the top of the chat card. PCs: PF2e's own picture is left as it is."
+      },
+      "bulkDamage": {
+        "Name": "Damage card: “Apply all” button (PF2e Toolbelt)",
+        "Hint": "On damage cards with Toolbelt's target rows, adds a button that applies everyone's damage at once by their save result (critical failure ×2 · failure ×1 · success ×½ · critical success none). GM only."
+      },
+      "chatTrim": {
+        "Name": "Trim chat cards (less lag in long sessions)",
+        "Hint": "Keeps only the latest cards on the page and takes older ones out of it (the messages themselves stay). Scrolling up brings them back. Does the same job as the Less Chat module, so turn on only one of the two."
+      },
+      "chatTrimKeep": {
+        "Name": "Chat cards kept on the page"
+      },
+      "chatJumpButton": {
+        "Name": "↓ button to the latest message",
+        "Hint": "Shows a small button in the corner of the chat while you are scrolled up."
+      },
+      "sustainChecker": {
+        "Name": "Sustain reminder",
+        "Hint": "Casting a Sustain spell puts a “Sustain: spell” effect on the caster. When that character's turn starts, the player and the GM get a whispered card asking “Sustain (1 action) / End”. Choosing End also removes the effects the spell put on anyone. Replaces pf2e-sustain-reminder."
+      },
+      "hudEnabled": {
+        "Name": "Show character HUD",
+        "Hint": "Keeps the quickslot HUD of the token you last selected at the bottom of the screen."
+      },
+      "hudScale": {
+        "Name": "HUD size",
+        "Hint": "Overall HUD scale. Slot size follows the screen width automatically and is then multiplied by this."
+      },
+      "hudEffectSize": {
+        "Name": "Condition/effect icon size (px)",
+        "Hint": "Diameter of the round condition and effect icons above the HP bar."
+      },
+      "hudEffectDurations": {
+        "Name": "Show effect time left",
+        "Hint": "Draws a ring around effect icons for the time left and adds a short label (3R · 7m · 1h). Hover for the exact time left, the total and when it ends."
+      },
+      "hudReactionPip": {
+        "Name": "Show reaction next to the action pips",
+        "Hint": "In combat, shows a reaction (↩) pip next to the action pips. It fills in when you choose “Use” on a reaction prompt, and you can also click/right-click it yourself. It comes back when your turn starts."
+      },
+      "hudSaveCard": {
+        "Name": "Post a DC card with saving throws",
+        "Hint": "Clicking Fortitude, Reflex or Will on the HUD also posts a “Fortitude DC 26” (10 + modifier) card to chat along with the roll."
+      },
+      "hudRows": {
+        "Name": "Quickslot rows",
+        "Choices": {
+          "R1": "1 row",
+          "R2": "2 rows",
+          "R3": "3 rows"
+        }
+      },
+      "hudHideCoreHotbar": {
+        "Name": "Hide Foundry's macro bar",
+        "Hint": "Use only the module's quickslots. The number keys then work only on the quickslots too."
+      },
+      "hudHideEffectsPanel": {
+        "Name": "Hide PF2e's effects panel",
+        "Hint": "Hides PF2e's column of effect icons at the top right. Effects are shown above the HUD's HP bar instead."
+      },
+      "hudAutoInfused": {
+        "Name": "Auto-place infused items",
+        "Hint": "Puts infused items (made by an alchemist and the like) into empty quickslots automatically, and clears them away when they're gone."
+      },
+      "hudNpcAutoFill": {
+        "Name": "Auto-fill NPC quickslots",
+        "Hint": "The first time the GM selects an NPC whose quickslots are empty, they're filled with Strikes → actions → spells."
+      },
+      "hudSlotCard": {
+        "Name": "Quickslot Info Card",
+        "Hint": "Rest the mouse on a quickslot for a moment to see its cost, traits and description on a card — no need to open the sheet."
+      },
+      "hudSlotCardDelay": {
+        "Name": "Quickslot Info Card: Delay (seconds)",
+        "Hint": "How long the mouse has to rest before the card appears. Shorter is quicker, but the card then also pops up when you just pass over a slot."
+      },
+      "chatDock": {
+        "Name": "Chat clock and dice",
+        "Hint": "Shows the date and time at the top of the chat, and dice and flat check (5 · 11) buttons above the input box."
+      },
+      "clock12h": {
+        "Name": "Chat clock: 12-hour (AM/PM)",
+        "Hint": "When off, the clock uses 24-hour time (15:05)."
+      },
+      "timeDarknessSync": {
+        "Name": "Match scene lighting to the time",
+        "Hint": "When game time changes, sets the current scene's darkness for day, dawn, dusk or night (can be turned off per scene). If PF2e's world clock sync is on, that takes priority."
+      },
+      "timeDarknessMax": {
+        "Name": "Darkness at midnight"
+      },
+      "paletteSize": {
+        "Name": "GM palette size",
+        "Choices": {
+          "S3x2": "3 × 2",
+          "S4x2": "4 × 2",
+          "S4x3": "4 × 3",
+          "S5x3": "5 × 3",
+          "S6x2": "6 × 2"
+        }
+      },
+      "paletteOpacity": {
+        "Name": "GM palette opacity",
+        "Hint": "Becomes opaque when you hover over it."
+      },
+      "healthOnHover": {
+        "Name": "Show health status on token hover",
+        "Hint": "For tokens whose HP you can't see (usually NPCs), shows only a rough status such as “Lightly hurt”."
+      },
+      "healthShowGM": {
+        "Name": "Show health status to the GM too"
+      },
+      "tokenTipDistance": {
+        "Name": "Show distance on token hover",
+        "Hint": "Shows the distance from your selected token (or else your character) to that token, stacked above the health status. While on, PF2e's own distance label is hidden so the two don't overlap. With “Never”, PF2e's own label is used as usual.",
+        "Choices": {
+          "always": "Always",
+          "encounters": "Only in encounters",
+          "never": "Never (use PF2e's own label)"
+        }
+      },
+      "healthFull": {
+        "Name": "Health Status: At full HP"
+      },
+      "healthFullShow": {
+        "Name": "Show “Unharmed”",
+        "Hint": "Full HP is the most common state, so by default it's hidden and shown only in encounters.",
+        "Choices": {
+          "combat": "Only in encounters",
+          "always": "Always",
+          "never": "Never"
+        }
+      },
+      "healthLevels": {
+        "Name": "Health status levels",
+        "Hint": "“percent:name” pairs separated by |. At or above that percent, that name is shown. E.g. 75:Lightly hurt|50:Hurt|25:Badly hurt|1:Near death. Left at the default, the built-in labels follow your language."
+      },
+      "healthZero": {
+        "Name": "Health Status: At 0 HP"
+      },
+      "reactionChecker": {
+        "Name": "Reaction alerts",
+        "Hint": "When a reaction can be used (an enemy moves, attacks, deals damage …), only that character's player and the GM are told, with a chat card. (No pf2e-reaction or socketlib needed.)"
+      },
+      "reactionCombatOnly": {
+        "Name": "Reaction alerts only in combat"
+      },
+      "reactionPopup": {
+        "Name": "Reaction alert pop-up",
+        "Hint": "Along with the chat card, shows a small prompt at the top of the screen (gone after 30 seconds)."
+      },
+      "reactionPopupGM": {
+        "Name": "Reaction pop-up for the GM too",
+        "Hint": "When off, the GM gets chat cards only (handy when NPCs have lots of reactions)."
+      },
+      "turnTracker": {
+        "Name": "Turn Tracker (top of screen)",
+        "Hint": "A light tracker at the top of the screen that shows only the turn order, round and initiative during combat. Not shown while Carousel Combat Tracker is active."
+      },
+      "turnTrackerDefeated": {
+        "Name": "Turn Tracker: Defeated combatants",
+        "Hint": "Whether dead or defeated combatants are hidden or kept in grey. They're never hidden during their own turn. Combatants at 0 HP who aren't dead (dying, unconscious) are always shown half grey, and go back to normal when healed.",
+        "Choices": {
+          "hide": "Hide",
+          "grey": "Show in grey"
+        }
+      },
+      "turnTrackerWidth": {
+        "Name": "Turn Tracker: Portrait width (px)",
+        "Hint": "The portrait of whoever is acting shows 1.2× larger. Portraits never shrink in big fights; the overflow is folded into “+n”."
+      },
+      "turnTrackerAspect": {
+        "Name": "Turn Tracker: Portrait shape",
+        "Choices": {
+          "Square": "Square (1:1)",
+          "Slight": "Slightly tall (4:5)",
+          "Portrait": "Portrait (2:3)",
+          "Tall": "Tall (1:2)"
+        }
+      },
+      "turnTrackerGroup": {
+        "Name": "Turn Tracker: Group identical enemies",
+        "Hint": "Folds enemies of the same kind (same name and picture) whose turns come one after another into one portrait marked ×n. The current and the next turn are never folded."
+      },
+      "turnSkipDead": {
+        "Name": "Turn Tracker: Skip defeated enemies' turns",
+        "Hint": "When the turn of an enemy at 0 HP or dead comes up (player characters excluded), the GM's client passes it on once automatically. This stops a double click on Next, after the turn landed on a dead enemy, from skipping the first character."
+      },
+      "turnTrackerTop": {
+        "Name": "Turn Tracker: Distance from the top (px)",
+        "Hint": "Increase this if it overlaps the scene navigation bar or the like."
+      },
+      "playersListMode": {
+        "Name": "Players list",
+        "Hint": "If the players list at the bottom left covers the portraits, fold it into a small icon. Click the icon to peek at the list.",
+        "Choices": {
+          "normal": "Show as usual",
+          "icon": "Fold into a small icon"
+        }
+      },
+      "portraitSlotsMenu": {
+        "Name": "Portrait Manager",
+        "Label": "Open portrait manager",
+        "Hint": "Assigns characters to seats PC 1–6. Empty seats are filled with the players' assigned characters automatically."
+      },
+      "portraitsShown": {
+        "Name": "Show party portraits (everyone)",
+        "Hint": "When the GM turns this on, the party portraits appear on everyone's screen."
+      },
+      "portraitsHideLocal": {
+        "Name": "Hide portraits on my screen only",
+        "Hint": "Hides them on this computer even when the GM has them on."
+      },
+      "portraitStyleDefault": {
+        "Name": "Portrait style (world default)",
+        "Hint": "Everyone's default style, set by the GM. Players can pick their own under “Portrait style (my screen)” below."
+      },
+      "portraitStyle": {
+        "Choices": {
+          "bare": "Image only (no background)",
+          "card": "Card (translucent panel)",
+          "Default": "Follow the GM's default"
+        },
+        "Name": "Portrait style (my screen)",
+        "Hint": "“Card” puts the portrait on a translucent panel. “Image only” drops the panel and frame so only the character art shows. Recommended art: square 512×512 px (at least 256×256; 768×768 on a 4K screen). Card: keep the face in the top third — the top and bottom may be cropped. Image only: a PNG/WebP with a transparent background, with the figure's waist or feet touching the bottom edge. Tall full-body art (e.g. 400×800) shows small, so pad it out to a square."
+      },
+      "portraitIdleDim": {
+        "Name": "Dim idle portraits",
+        "Hint": "Greys portraits out slightly while they aren't talking or chatting."
+      },
+      "portraitScale": {
+        "Name": "Portrait size",
+        "Hint": "The largest size. On a short screen they shrink automatically so they don't overlap."
+      },
+      "portraitBottomMargin": {
+        "Name": "Portrait bottom margin (px)",
+        "Hint": "How far above the bottom of the screen the lowest row (PC 5 · 6) sits. Increase it if a voice app or the bottom UI covers them."
+      },
+      "portraitImage": {
+        "Name": "Portrait image source",
+        "Hint": "Token art (including dynamic token rings) can look small in a portrait because of its round frame. If you can, give the actor portrait a square 512×512 image.",
+        "Choices": {
+          "actor": "Actor portrait (actor.img)",
+          "token": "Token art"
+        }
+      },
+      "portraitHpNumbers": {
+        "Name": "Portrait HP numbers",
+        "Hint": "The HP bar is always shown. Choose who sees the numbers.",
+        "Choices": {
+          "owner": "Owners and GM only",
+          "all": "Everyone",
+          "none": "No one"
+        }
+      },
+      "portraitChatBubbles": {
+        "Name": "Chat speech bubbles",
+        "Hint": "When a character chats, their portrait lights up with a speech bubble beside it. (Rolls and cards only light it up briefly, without a bubble.)"
+      },
+      "portraitBubbleSeconds": {
+        "Name": "Speech bubble duration (seconds)"
+      },
+      "whisperPolicy": {
+        "Name": "Whisper scope",
+        "Hint": "Who players can whisper, and whether the GM sees whispers between players. Applies the same way to whispers typed with “/w”.",
+        "Choices": {
+          "gm": "GM only (default)",
+          "allGmSees": "Players too — the GM always sees them",
+          "all": "Players too — without the GM"
+        }
+      },
+      "chatGrouping": {
+        "Name": "Group chat messages",
+        "Hint": "Merges consecutive lines from the same speaker into one block."
+      },
+      "chatGroupWindow": {
+        "Name": "Grouping window (minutes)",
+        "Hint": "Only lines from the same speaker that follow within this time are merged."
+      },
+      "chatShowUser": {
+        "Name": "Show the player's name",
+        "Hint": "Shows the real player's name in small type under the character's name."
+      },
+      "chatAvatars": {
+        "Name": "Show chat portraits",
+        "Hint": "Shows the speaker's token/character image on the left of the chat card."
+      },
+      "chatCardTheme": {
+        "Name": "Chat card tone",
+        "Hint": "Light cards look like the attached example. Dark cards are closer to Foundry's default theme.",
+        "Choices": {
+          "light": "Light cards",
+          "dark": "Dark cards"
+        }
+      },
+      "chatHeadingFont": {
+        "Name": "Name / check line font",
+        "Hint": "Font used for character names and check description lines."
+      },
+      "chatBodyFont": {
+        "Name": "Chat font",
+        "Hint": "Applies to chat message text only. Sheets, windows and card titles stay as they are. “Default” follows the PF2e-KR font."
+      },
+      "chatFontFamily": {
+        "Name": "Custom chat font (advanced)",
+        "Hint": "Leave empty to use the font chosen above. Enter a CSS font-family value as is."
+      },
+      "chatFontSize": {
+        "Name": "Chat font size (px)",
+        "Hint": "0 = default size. Applies to chat message text only."
+      },
+      "chatSidebarWidth": {
+        "Name": "Chat sidebar width (px)",
+        "Hint": "0 = Foundry's default. Foundry's sidebar width changes with the font size setting, so use this to fix it. (Recommended 340–420)"
+      },
+      "chatHideEditorMenu": {
+        "Name": "Hide the chat input's formatting toolbar",
+        "Hint": "Hides the “Paragraph · Italic · HTML” toolbar above the chat input in Foundry v13/v14. Shortcuts such as Ctrl+B and Ctrl+I still work. The space goes to the speaking-character bar (Rutz's Cinematic Stage)."
+      },
+      "typingIndicator": {
+        "Name": "Typing indicator",
+        "Hint": "While someone types in the chat box, shows “… is typing” above the input. Not shown while a whisper (/w) is being written. Replaces the same feature of Cautious Gamemaster's Pack."
+      },
+      "typingShowKeeper": {
+        "Name": "Show the GM's typing too",
+        "Hint": "Shows players “typing” while the GM writes as well. When off, the GM's typing isn't shown."
+      },
+      "typingReserveHeight": {
+        "Name": "Typing line height (px)",
+        "Hint": "Height of the line where “… is typing” appears. The space is always kept free, so the chat cards don't move when the indicator comes and goes. 0 hides the indicator."
+      },
+      "typingSelector": {
+        "Name": "Typing indicator selector (advanced)",
+        "Hint": "CSS selector of other typing indicators to move into the reserved strip. Leave empty to move nothing."
+      },
+      "voiceBridgeEnabled": {
+        "Name": "Use the Discord voice link",
+        "Hint": "When off, nothing connects to the bridge and no connection errors are logged. Tables that don't use Discord should leave it off. Connecting from the setup wizard turns it on automatically."
+      },
+      "voiceBridgeUrl": {
+        "Name": "Discord voice bridge address",
+        "Hint": "The bridge bot's address. Only one GM connects and relays to everyone, so players never need to reach this address. The setup wizard fills it in for you."
+      },
+      "voiceBridgeMenu": {
+        "Name": "Discord ↔ Foundry users",
+        "Label": "Manage links",
+        "Hint": "Links Discord users to Foundry users one by one. The connection status and recent voice signals are shown here too."
+      },
+      "voiceSetupMenu": {
+        "Name": "Discord voice setup wizard",
+        "Label": "Open setup wizard",
+        "Hint": "Guides you step by step through installing the voice bridge on a local PC or an Oracle server. Hardly any commands to type yourself."
+      }
+    },
+    "Lore": {
+      "BadName": "Enter a valid Lore name.",
+      "NoCheck": "Couldn't find this character's Lore check. Check the Lore entries on the sheet.",
+      "RollFailed": "The Lore roll failed. Check it on the sheet."
+    },
+    "Bulk": {
+      "Heal": "Heal",
+      "WaitingSaves": "Before their save (left out): {names}",
+      "ApplyAll": "Apply all",
+      "HealAll": "Heal all",
+      "People": "targets: {n}",
+      "SavesPending": "{n} awaiting save",
+      "Applying": "Applying {i}/{n}",
+      "Applied": "All applied"
+    },
+    "Chat": {
+      "JumpLatest": "Jump to the latest message",
+      "SafeMode": "Safe mode: all chat DOM changes are off.",
+      "TypingMany": "Several people are typing…",
+      "TypingOne": "{names} is typing…",
+      "TypingSome": "{names} are typing…",
+      "TestName": "Test",
+      "TestResult": "If “Test is typing…” shows above the chat input for 4 seconds, the display side works."
+    },
+    "Sustain": {
+      "EffectName": "Sustain: {spell}",
+      "EffectDesc": "Sustained spell: <b>{spell}</b>. You're asked whether to Sustain it when your turn starts.",
+      "CardTitle": "Sustained spells",
+      "Keep": "Sustain",
+      "OneAction": "1 action",
+      "End": "End",
+      "Kept": "✔ Sustained",
+      "Ended": "✖ Ended",
+      "NoteKept": "<b>{spell}</b> sustained (1 action)",
+      "NoteEnded": "<b>{spell}</b> ended"
+    },
+    "Skills": {
+      "RollFailed": "{action}: couldn't roll ({error})",
+      "Loading": "Loading skills…",
+      "MapTip": "{label} {value} (attack #{n})",
+      "FirstAttack": "First attack (no penalty)",
+      "MapChip": "#{n} {value}",
+      "Normal": "Normal",
+      "RollTip": "Roll {skill}",
+      "LoreLabel": "Character's Lore",
+      "Roll": "Roll",
+      "Title": "Skills",
+      "HideUntrained": "Hide untrained actions",
+      "FollowOn": "On — click to turn off",
+      "FollowOff": "Exploration activity: click to turn the effect on",
+      "Lore": "Lore Skills",
+      "NoFollowEffect": "Couldn't find the “Follow the Expert” effect."
+    },
+    "Time": {
+      "D": "{n}d",
+      "H": "{n}h",
+      "M": "{n}m",
+      "S": "{n}s",
+      "Unit": {
+        "rounds": "{n} rnd",
+        "minutes": "{n} min",
+        "hours": "{n} hr",
+        "days": "{n} d"
+      }
+    },
+    "Saves": {
+      "fortitude": "Fortitude",
+      "reflex": "Reflex",
+      "will": "Will"
+    },
+    "Effects": {
+      "Expiry": {
+        "TurnStart": "ends at the start of the turn",
+        "TurnEnd": "ends at the end of the turn",
+        "RoundEnd": "ends at the end of the round"
+      },
+      "Unlimited": "Unlimited",
+      "EncounterShort": "Enc",
+      "Encounter": "Until the encounter ends",
+      "ExpiredShort": "End",
+      "Expired": "Expired (removed when the next turn is processed)",
+      "RoundsLeft": "{rounds} rnd left ({time})",
+      "TimeLeft": "{time} left",
+      "AboutRounds": "about {rounds} rnd",
+      "Total": "Total {total}",
+      "NeedsSustain": "Needs Sustain",
+      "Edit": "Edit effect",
+      "ToChat": "Send to chat",
+      "CounterHelp": "Left-click +1 · Right-click −1",
+      "RemoveHelp": "Right-click: remove",
+      "RemoveAll": "Shift+click: remove all"
+    },
+    "Hud": {
+      "SpeedType": {
+        "burrow": "Burrow",
+        "climb": "Climb",
+        "fly": "Fly",
+        "swim": "Swim",
+        "travel": "Travel"
+      },
+      "SpellDc": "Spell DC",
+      "SaveRequest": "Saving throw requested",
+      "SaveDcLine": "{save} save DC (10 {mod})",
+      "Aria": {
+        "Hud": "Character HUD",
+        "Inspect": "Inspected character",
+        "EffectCard": "Effect details",
+        "MapPopup": "Choose attack"
+      },
+      "ApSource": {
+        "tracker": "linked to the action tracker",
+        "chat": "counted from chat rolls",
+        "manual": "manual"
+      },
+      "Pip": {
+        "Bonus": "Extra action (quickened etc.)",
+        "BonusNone": "Extra action — none right now",
+        "Nth": "Action {n}",
+        "Lost": "(slowed/stunned)",
+        "Help": "Click: use an action · Right-click: undo · Shift+click: grant/take back the extra action"
+      },
+      "Rx": {
+        "Count": "Reaction {left} / {max}",
+        "Used": "used this round",
+        "Help": "Click: use your reaction · Right-click: undo · Comes back when your turn starts"
+      },
+      "Ap": {
+        "Count": "Actions {used} / {max}",
+        "Note": "For reference — never blocks an action",
+        "Undo": "Undo one action",
+        "UndoAll": "Right-click: undo the whole turn"
+      },
+      "Slot": {
+        "EmptyTip": "Click: add a skill or action<br>or drag one from the sheet",
+        "StrikeTip": "Click to choose which attack this is",
+        "Auto": "Placed automatically (infused item)"
+      },
+      "Page": "Page {n}",
+      "Lock": {
+        "Locked": "Locked — click to edit the layout",
+        "Editing": "Editing — click to lock",
+        "NoPermission": "You can't change this layout"
+      },
+      "Rows": "Rows: {n} (click to change)",
+      "Editors": "Edit permissions (GM)",
+      "Pin": {
+        "On": "Pinned — stays on this character when you select other tokens (click to unpin)",
+        "Off": "Pin this character (stays when you select other tokens)"
+      },
+      "AutoFill": "Fill empty slots",
+      "AutoFillOrder": "Strikes → actions → spells",
+      "PagesTip": "Mouse wheel: change page",
+      "SaveRoll": "Roll {save} save",
+      "SaveCardTip": "Also posts a {save} DC {dc} card to chat",
+      "PerceptionRoll": "Roll Perception",
+      "Perception": "Perception",
+      "AcTip": "Armor Class",
+      "DcTip": "Post a saving throw request to chat",
+      "DcTipDetail": "With Fortitude · Reflex · Will DC {dc} buttons",
+      "Bar": {
+        "Inventory": "Browse inventory",
+        "Faces": "Portrait expressions (switch with @keyword)",
+        "Skills": "Skills — every skill and skill action",
+        "SkillsHelp": "Click to roll · Hover for details",
+        "Sheet": "Character sheet — Actions tab",
+        "Grimoire": "Browse spells · feats"
+      },
+      "Pop": {
+        "ItemHelp": "Click: post to chat · Right-click: details",
+        "Inventory": "Inventory",
+        "InventoryHint": "Drag onto a quickslot to place it",
+        "NoItems": "No items",
+        "Cantrips": "Cantrips",
+        "Focus": "Focus Spells",
+        "Grimoire": "Spells · Feats",
+        "GrimoireHint": "For “oh right, I have that too” — click to post to chat",
+        "NoSpells": "No spells",
+        "Actions": "Actions",
+        "Feats": "Feats · Features"
+      },
+      "Notify": {
+        "NoEdit": "You don't have permission to change this character's quickslot layout.",
+        "Locked": "The quickslots are locked. Click the lock on the left to unlock them, then edit.",
+        "AutoFilled": "Empty slots filled: {n}.",
+        "CantStrike": "{name}: can't Strike right now.",
+        "CantUse": "{name}: can't be used right now."
+      },
+      "Menu": {
+        "Icon": "Change icon (this slot only)",
+        "ResetIcon": "Original icon",
+        "Details": "Details",
+        "Clear": "Clear slot"
+      },
+      "Map": {
+        "Action": "Action",
+        "Off": "can't Strike now",
+        "First": "First attack",
+        "Nth": "Attack #{n} (multiple attack penalty)",
+        "Hit": "#{n}"
+      },
+      "Use": {
+        "Use": "Use",
+        "Chat": "Post to chat",
+        "DetailsTip": "Opens this item's sheet for the full description",
+        "Details": "Details…",
+        "Passive": "Passive — no action to use"
+      },
+      "Speed": "Speed {n} feet"
+    },
+    "Spell": {
+      "Cantrip": "Cantrip",
+      "NoFocus": "No Focus Points left",
+      "Innate": "Innate",
+      "InnateUses": "Innate ({left}/{max})",
+      "NoUsesToday": "No uses left today",
+      "Rank": "Rank {rank}",
+      "PreparedUsed": "Everything prepared at this rank is already cast",
+      "NotPrepared": "Not prepared",
+      "NotPreparedToday": "Not prepared today",
+      "RankSlots": "Rank {rank} ({value}/{max})",
+      "NoSlotsRank": "No slots left at this rank",
+      "NoSlots": "No spell slots available",
+      "CastFocus": "Cast (focus)",
+      "Cast": "Cast",
+      "Tip": {
+        "Focus": "Spends 1 Focus Point",
+        "FocusCantrip": "Focus cantrip — spends no points",
+        "Cantrip": "Cantrip — spends nothing",
+        "Innate": "Innate spell — uses one of today's uses",
+        "Slot": "Spends a spell slot of this rank"
+      },
+      "ChatTip": "Posts only the spell card, without spending a slot or Focus Point",
+      "ToChat": "Send to chat",
+      "DetailsTip": "Opens this spell's sheet for the full description",
+      "Ritual": "Cast rituals from the Spells tab of the character sheet"
+    },
+    "Card": {
+      "OneAction": "{n} action",
+      "Actions": "{n} actions",
+      "ActionRange": "{from} to {to} actions",
+      "Reaction": "Reaction",
+      "Free": "Free action",
+      "CantripRank": "Cantrip {rank}",
+      "FocusRank": "Focus {rank}",
+      "RitualRank": "Ritual {rank}",
+      "SpellRank": "Spell {rank}",
+      "Level": "Level {level}",
+      "Range": "Range",
+      "Targets": "Targets",
+      "Area": "Area",
+      "AreaValue": "{value}-foot {type}",
+      "Duration": "Duration",
+      "Defense": "Defense",
+      "Basic": "basic",
+      "CloseEsc": "Close (Esc)",
+      "Pinned": "Pinned · Scroll with the wheel · Esc to close",
+      "Pin": "to pin",
+      "Attacks": "Attacks",
+      "StrikeHelp": "Click: choose which attack · Middle-click: third attack",
+      "Item": "Item",
+      "NotCarried": "Not carried right now.",
+      "Left": "{n} left",
+      "Help": {
+        "Spell": "Click: cast / send to chat",
+        "Action": "Click: use / post to chat",
+        "Consumable": "Click: post the card · Shift+click: use",
+        "Item": "Click: post to chat",
+        "Use": "Click: use",
+        "Roll": "Click: roll",
+        "Effect": "Click: toggle on the selected tokens",
+        "Macro": "Macro · Click: run"
+      },
+      "Effect": "Effect",
+      "Macro": "Macro"
+    },
+    "Slots": {
+      "DeletedMacro": "Deleted macro",
+      "MissingItem": "Missing item",
+      "NotCarried": "{name}: not carried right now.",
+      "CantStrikeWhy": "{name}: can't Strike right now (not held, or none left).",
+      "Error": "Something went wrong: {error}",
+      "OwnItemsOnly": "Only items this character has can go on a slot.",
+      "CantDrop": "This can't go on a slot. Right-click an empty slot and pick from the list instead.",
+      "Picker": {
+        "Filter": "Search by name…",
+        "Strikes": "Strikes",
+        "Skills": "Skill checks",
+        "Actions": "Actions (most used first)",
+        "Hint": "Drag items, spells, feats and macros onto a slot from the sheet or the macro directory.",
+        "Title": "Add to slot — {name}"
+      },
+      "Editors": {
+        "Assigned": "Assigned character — always allowed",
+        "None": "No player owns this actor.",
+        "Title": "Quickslot edit permissions — {name}",
+        "Hint": "Even with ownership, only the people checked here (and the GM) can rearrange the slots. Every owner can use them."
+      }
+    },
+    "Clock": {
+      "Phase": {
+        "Day": "Day",
+        "Dawn": "Dawn",
+        "Dusk": "Dusk",
+        "Night": "Night"
+      },
+      "Back": "Back {amount}",
+      "Forward": "Forward {amount}",
+      "GmHint": "Click: set the time · lighting",
+      "Morning": "Morning",
+      "Noon": "Noon",
+      "Evening": "Evening",
+      "Midnight": "Midnight",
+      "Go": "Go",
+      "SyncScene": "Match this scene's lighting to the time",
+      "Pf2eSyncs": "PF2e's world clock has “Sync scene darkness” on, so it sets the lighting."
+    },
+    "Calendar": {
+      "Golarion": {
+        "Moonday": "Moonday",
+        "Toilday": "Toilday",
+        "Wealday": "Wealday",
+        "Oathday": "Oathday",
+        "Fireday": "Fireday",
+        "Starday": "Starday",
+        "Sunday": "Sunday",
+        "Abadius": "Abadius",
+        "Calistril": "Calistril",
+        "Pharast": "Pharast",
+        "Gozran": "Gozran",
+        "Desnus": "Desnus",
+        "Sarenith": "Sarenith",
+        "Erastus": "Erastus",
+        "Arodus": "Arodus",
+        "Rova": "Rova",
+        "Lamashan": "Lamashan",
+        "Neth": "Neth",
+        "Kuthona": "Kuthona"
+      },
+      "Earth": {
+        "Monday": "Monday",
+        "Tuesday": "Tuesday",
+        "Wednesday": "Wednesday",
+        "Thursday": "Thursday",
+        "Friday": "Friday",
+        "Saturday": "Saturday",
+        "Sunday": "Sunday"
+      },
+      "Era": {
+        "AR": "AR",
+        "IC": "IC",
+        "AD": "AD",
+        "CE": "CE"
+      },
+      "Year": "{year} {era}",
+      "Day": "{weekday}, {monthName} {day}",
+      "Full": "{day}, {year}",
+      "EarthMonth": "{name}",
+      "Time12": "{h}:{mm} {ampm}",
+      "Am": "AM",
+      "Pm": "PM"
+    },
+    "Dice": {
+      "ShiftTwo": "Shift: roll 2",
+      "Flat": "Flat check DC {dc}",
+      "Flat5": "Concealed, etc.",
+      "Flat11": "Hidden, etc.",
+      "Success": "Success",
+      "Failure": "Failure"
+    },
+    "Request": {
+      "Adjust": {
+        "IncrediblyEasy": "Incredibly easy",
+        "VeryEasy": "Very easy",
+        "Easy": "Easy",
+        "Normal": "Normal",
+        "Hard": "Hard",
+        "VeryHard": "Very hard",
+        "IncrediblyHard": "Incredibly hard"
+      },
+      "Title": "Roll Request",
+      "SecretTag": "secret",
+      "SecretLabel": "Secret",
+      "PickLore": "Choose a Lore from the sheets…",
+      "DefaultDc": "Default DC",
+      "RowDcTip": "DC for this roll only (empty = the default DC below)",
+      "BasicSave": "Basic save",
+      "Basic": "Basic",
+      "Remove": "Remove",
+      "PickHint": "Pick rolls above. You can pick several.",
+      "Tab": {
+        "Saves": "Saving Throws",
+        "Skills": "Skills · Perception",
+        "Lore": "Lore"
+      },
+      "PickAria": "Roll to request",
+      "Add": "Add",
+      "LoreName": "Or type a Lore name",
+      "LorePlaceholder": "e.g. Sailing Lore",
+      "LoreHint": "Choose one from the sheets or type a name, then press ‘Add’ and ‘Send’.",
+      "None": "None",
+      "Level": "Level",
+      "LevelDc": "Use the level-based DC",
+      "Note": "Note (optional)",
+      "MacroName": "Macro name (optional)",
+      "SaveMacro": "Save as macro",
+      "Send": "Send",
+      "NeedLore": "Choose a Lore or type its name.",
+      "NeedCheck": "Add at least one roll.",
+      "Sent": "Roll request sent.",
+      "MacroMade": "Created macro \"{name}\".",
+      "MacroMadePlaced": "Created macro \"{name}\" — added to the GM palette."
+    },
+    "Palette": {
+      "CondHelp": "Click +1 · Right-click −1",
+      "EffectHelp": "Click: add/remove",
+      "MacroHelp": "Click: run",
+      "OnSelected": "on the selected tokens",
+      "Title": "GM Palette",
+      "Locked": "Locked — click to edit (move · add · remove)",
+      "Editing": "Editing — drag to move, drop to add, right-click to remove",
+      "OnlyTypes": "Only macros, effects and conditions can go here.",
+      "Full": "No empty cell left."
+    },
+    "Health": {
+      "Full": "Unharmed",
+      "Zero": "Down",
+      "DefaultLevels": "75:Lightly hurt|50:Hurt|25:Badly hurt|1:Near death"
+    },
+    "Reactions": {
+      "Trigger": {
+        "move": "An enemy moves within reach",
+        "manipulate": "An enemy within reach makes a ranged attack, uses a manipulate action or casts a spell",
+        "targeted": "I'm targeted by an attack",
+        "critFail": "An enemy critically fails an attack against me",
+        "damaged": "I take damage",
+        "allyDamaged": "An ally in range takes damage",
+        "save": "I attempt a saving throw"
+      },
+      "Skip": "Don't react",
+      "State": {
+        "Used": "✔ Used <b>{choice}</b>",
+        "Skipped": "✖ Didn't react",
+        "Spent": "— No reaction left",
+        "Expired": "— The turn passed"
+      },
+      "Budget": "Reactions {left}/{max}",
+      "Opportunity": "Reaction Opportunity",
+      "Pending": "{n} pending",
+      "TurnTitle": {
+        "Round": "Round {round}",
+        "Turn": "{name}'s turn"
+      },
+      "UsedMsg": "<b>{token}</b> used the reaction <b>{reaction}</b>.",
+      "NoMelee": "No melee weapon to Strike with as a reaction.",
+      "StrikeTitle": "Reaction Strike — choose a weapon",
+      "StrikeQuestion": "Which weapon do you Strike with?",
+      "Declined": "{name}: didn't react",
+      "SbReverted": "{name}: damage reverted. Turn the shield on in the original damage card and apply it again.",
+      "SbNote": "<b>{name}</b> Shield Block — damage reverted. Turn on the shield (block) toggle and apply it again.",
+      "NoPermission": "You don't have permission to change this character's reaction settings.",
+      "Config": {
+        "Auto": "recognized",
+        "Notify": "Alert",
+        "Range": "Range",
+        "Reach": "reach",
+        "Feet": "ft",
+        "Strike": "Roll a Strike when used",
+        "Title": "Reaction Settings — {name}",
+        "Who": "Who should be asked?",
+        "WhoHint": "If nobody is picked, only the <b>player assigned</b> this character and the GM are asked (not people who merely own it).",
+        "Extra": "Extra reactions per round",
+        "ExtraSuffix": "(Combat Reflexes etc.)",
+        "PerReaction": "Conditions per reaction",
+        "PerHint": "Recognized reactions come with their default conditions filled in. Ctrl+click to pick several triggers.",
+        "None": "This character has no reactions.",
+        "Saved": "Reaction settings saved."
+      }
+    },
+    "Turns": {
+      "Aria": "Turn order",
+      "Round": "Round",
+      "Combat": "Combat",
+      "Ready": "Setup",
+      "RoundStart": "Round {n} starts",
+      "Collapse": "Collapse",
+      "AndMore": "… and {n} more",
+      "MoreCount": "{n} more",
+      "MoreHelp": "Click: show everyone (scroll with the wheel)",
+      "MoreAria": "{n} more. Click to show everyone.",
+      "EndTurn": "End Turn",
+      "GroupHelp": "Each click moves to the next one",
+      "Initiative": "Initiative {n}",
+      "Dead": "Defeated",
+      "Down": "Unconscious",
+      "EndHelp": "Click: end turn · Shift+click: look at the token",
+      "GmHelp": "Right-click: adjust initiative",
+      "Prev": "Previous turn",
+      "Next": "Next turn",
+      "EndMine": "End my turn",
+      "RollAll": "Roll all initiative (no dialog)",
+      "RollNpc": "Roll NPC initiative only (no dialog)",
+      "Start": "Begin combat",
+      "End": "End combat",
+      "RollMine": "Roll my initiative",
+      "Edit": {
+        "Initiative": "Initiative",
+        "After": "Right after the current turn ({name})",
+        "Undefeat": "Clear defeated",
+        "Defeat": "Mark defeated",
+        "Show": "Show to players",
+        "Hide": "Hide from players",
+        "NeedNumber": "Enter an initiative number."
+      }
+    },
+    "Toolkit": {
+      "Title": "Rutz Toolkit",
+      "Portraits": "Portrait Manager",
+      "Faces": "My portrait expressions",
+      "Request": "Roll request · make a macro",
+      "Palette": "Toggle GM palette",
+      "Reactions": "Reaction settings — selected character",
+      "Whisper": "Whisper window",
+      "Notes": "Shared notes window",
+      "Voice": "Discord voice link"
+    },
+    "Portraits": {
+      "Seat": {
+        "pc1": "Top left",
+        "pc2": "Top right",
+        "pc3": "Middle left",
+        "pc4": "Middle right",
+        "pc5": "Bottom left",
+        "pc6": "Bottom right"
+      },
+      "Manager": {
+        "Auto": "— Automatic / empty —",
+        "FacesTip": "Expressions",
+        "ShowAll": "Show party portraits to everyone",
+        "Bubbles": "Chat speech bubbles",
+        "Seats": "Seats",
+        "SeatsHint": "Left empty, the players' <b>assigned characters</b> take the seats in user-list order.",
+        "Layout": "Layout",
+        "LockLayout": "Lock layout",
+        "EditLayout": "Edit layout (drag · wheel to resize)",
+        "Reset": "Default positions",
+        "AllAuto": "All seats automatic"
+      },
+      "Aria": "Party portraits",
+      "EditTag": "Drag to move · Wheel to resize",
+      "Editing": "Portrait layout editing: drag to move, wheel to resize. The same button locks it again.",
+      "Locked": "Portrait layout locked.",
+      "Reset": "Portraits are back in their default positions."
+    },
+    "Faces": {
+      "NoPicker": "You can't open the file picker. Paste the image path instead.",
+      "NoActor": "Select the character to set expressions for first.",
+      "NoPermission": "You don't have permission to change this character's expressions or token images.",
+      "PresetName": "Name (e.g. Disguise)",
+      "TokenPath": "Token image path",
+      "TokenSize": "Token size (squares)",
+      "KeepSize": "Keep size",
+      "Squares": "{n} sq",
+      "SquaresUnit": "sq",
+      "Browse": "Choose image",
+      "Keyword": "Keyword (e.g. smile)",
+      "ImagePath": "Image path",
+      "Title": "Expressions · Token Images — {name}",
+      "Hint1": "Put <b>@keyword</b> in a chat message and the portrait switches to that expression. The keyword is removed from the message.",
+      "Hint2": "<b>@{face}</b> goes back to the normal portrait. Sending only a keyword changes the expression without posting a message.",
+      "Presets": "Token Image Presets",
+      "PresetsHint": "Switch them from the <b>{icon}</b> button on the token's right-click HUD. “Original image” is always offered as well.",
+      "Saved": "Saved — expressions: {faces}, token images: {images}.",
+      "Original": "Original image",
+      "HudButton": "Change token image · size"
+    },
+    "Players": {
+      "Online": "{n} online — click to peek"
+    },
+    "Panels": {
+      "Resize": "Resize",
+      "Refresh": "Refresh",
+      "Whisper": {
+        "Title": "Whispers",
+        "OnlineOnly": "Show online players only",
+        "ShowOffline": "Show offline players too (past conversations)",
+        "All": "All",
+        "Empty": "(no text)",
+        "None": "No whispers yet.",
+        "Placeholder": "Whisper to {name}… (Enter to send)",
+        "PickHint": "Pick someone's tab to whisper them right away."
+      },
+      "Notes": {
+        "Title": "Notes (shared)",
+        "Export": "Export to a journal entry",
+        "Copy": "Copy all",
+        "EditTip": "Right-click to edit",
+        "None": "Nothing written yet. Type below and press Enter.",
+        "Placeholder": "A notebook everyone shares. Enter to post, Shift+Enter for a new line. Right-click your own entries to edit or delete them.",
+        "Saving": "Saving draft…",
+        "Saved": "Draft saved",
+        "CreateFailed": "Couldn't post the note.",
+        "NotYours": "Only the GM can edit other people's entries.",
+        "EditTitle": "Edit Note",
+        "EditFailed": "Couldn't edit the note.",
+        "Copied": "Notes copied to the clipboard.",
+        "NoJournal": "You don't have permission to create journal entries.",
+        "JournalName": "Shared Notes ({date})",
+        "Page": "Notes"
+      }
+    },
+    "Fonts": {
+      "pretendard": "Pretendard — modern Korean sans (OFL)",
+      "plex": "IBM Plex Sans KR — crisp body sans (OFL)",
+      "gowunDodum": "Gowun Dodum — soft, easy-on-the-eyes sans (OFL)",
+      "kopubBatang": "KoPubWorld Batang — print body serif (unreliable CDN)",
+      "ridiBatang": "RIDIBatang — novel body serif, a Chosun Shinmyeongjo substitute (OFL)",
+      "gowunBatang": "Gowun Batang — calm serif (OFL)",
+      "nanumMyeongjo": "Nanum Myeongjo — classic serif (OFL)",
+      "songMyung": "Song Myung — thin, cool serif (OFL)",
+      "hahmlet": "Hahmlet — heavy, characterful serif (OFL)",
+      "system": "System default font (no download)",
+      "inherit": "Default (unchanged)"
+    },
+    "Voice": {
+      "NotConnected": "Not connected to the bridge.",
+      "BridgeError": "Bridge: {message}",
+      "Reconnect": "Reconnect",
+      "Status": {
+        "off": "Not connected",
+        "connecting": "Connecting…",
+        "retrying": "Waiting to reconnect…",
+        "on": "Connected",
+        "standby": "Standby (another GM is relaying)",
+        "disabled": "Off (can be turned on in the module settings)",
+        "gaveup": "Couldn't find the bridge, so retrying stopped",
+        "error": "Bad address"
+      },
+      "Mapping": {
+        "Title": "Discord Voice Links",
+        "LiveTip": "Lights up green while speaking",
+        "PickUser": "— Foundry user —",
+        "DiscordId": "Discord user ID",
+        "NoteOpt": "Note (optional)",
+        "ColUser": "Foundry user",
+        "ColDiscord": "Discord ID",
+        "ColNote": "Note",
+        "Empty": "No users linked yet. Add one with the button below.",
+        "Add": "Add user",
+        "Heard": "Recent voice signals",
+        "HeardHint": "With the bridge connected, speak in the voice channel. The Discord IDs heard show up here; press <b>+</b> to add a row right away. No need to look IDs up yourself.",
+        "Listening": "Listening in <b>{where}</b>",
+        "NotIn": "Not in any voice channel right now.",
+        "Channel": "Voice Channel",
+        "Move": "Move to this channel",
+        "Join": "Listen in this channel",
+        "Leave": "Leave",
+        "RefreshChannels": "Refresh the channel list",
+        "LeaveHint": "Between sessions, press <b>Leave</b>. The bot drops out of the voice channel and goes back to it when you press the button again. No need to restart anything on the server.",
+        "ChannelsLater": "Once connected, the voice channels the bot can see are listed here.",
+        "PickChannel": "Choose a voice channel.",
+        "BadId": "A Discord ID is a 15–21 digit number: {ids}",
+        "DupId": "The same Discord ID is listed twice: {ids}",
+        "SavedPartial": "Users saved: {n}. Rows left out because of empty fields: {skipped}.",
+        "Saved": "Users saved: {n}.",
+        "NoUrl": "No bridge address set (module settings)",
+        "Unlinked": "not linked",
+        "Adopt": "Add a row for this ID",
+        "NoSignals": "No signals yet."
+      },
+      "Setup": {
+        "BatType": "Windows batch file",
+        "Copied": "Copied.",
+        "CopyFailed": "Couldn't copy. Select the text and copy it yourself.",
+        "Title": "Discord Voice Setup Wizard",
+        "Steps": {
+          "Mode": "Setup type",
+          "Bot": "Discord bot",
+          "Files": "Create files",
+          "Check": "Check connection"
+        },
+        "Back": "Back",
+        "ResetTip": "Clears every answer and the connection settings and starts over",
+        "Reset": "Start over",
+        "Next": "Next",
+        "Finish": "Done",
+        "WhereTitle": "Where do you run Foundry?",
+        "Local": "On my PC (local hosting)",
+        "LocalDesc": "You run Foundry on Windows and the players connect to it. You only double-click one file (.bat).",
+        "Server": "On a server such as Oracle (pm2 + Caddy)",
+        "ServerDesc": "Paste into SSH once and add a few lines to your Caddy config. It starts again by itself after the server reboots.",
+        "EitherWay": "Either way, only <b>one GM's screen</b> receives the voice signals and passes them on to every player. Players don't need to set anything up.",
+        "RemoveSummary": "To remove a bridge you installed on a server and start again",
+        "RemoveHint": "Run the line below over SSH to remove the pm2 entry and the settings file (.env).",
+        "Copy": "Copy",
+        "BotTitle": "Prepare the Discord bot",
+        "Portal": "Discord Developer Portal",
+        "Guide1": "Create a <b>New Application</b> in the {portal}.",
+        "Guide2": "<b>Bot</b> menu → <b>Reset Token</b> → paste the token below.",
+        "Guide3": "In <b>OAuth2 → URL Generator</b>, pick the scope <code>bot</code> and the permissions <code>View Channels</code> · <code>Connect</code>, then invite the bot to your server with the generated URL.",
+        "Guide4": "Turn on <b>Settings → Advanced → Developer Mode</b> in Discord, then right-click the server and the voice channel and choose <b>Copy ID</b>.",
+        "Token": "Bot token",
+        "NotSaved": "not saved",
+        "GuildId": "Server ID",
+        "ChannelId": "Voice channel ID",
+        "TokenHint": "The token is only used to build the files in the next step and is never saved in the world, because world settings are sent to every player.",
+        "SavedDialog": "Saved <b>{name}</b>. If you saved it inside the module folder, double-click that file.",
+        "SavedFallback1": "This browser can't open a window to choose where to save, so the file went to your <b>Downloads folder</b>. Move it from Downloads into the module folder (the path above), then run it.",
+        "SavedFallback2": "Find it with File Explorer (<code>Win+E</code>) → <b>Downloads</b>, or with <code>Ctrl+J</code> in the browser.",
+        "SavedFallback3": "(Browsers block the save window when you connect through http://IP address. It does appear on an https address or on localhost.)",
+        "GetBat": "Get the launcher",
+        "LocalGuide1": "Use the button below to save <code>start-voice-bridge.bat</code> <b>inside the module folder</b>.",
+        "LocalGuide2": "Double-click it. The first run takes 1–2 minutes to install the required files.",
+        "LocalGuide3": "When the black window shows <code>Joined voice channel</code>, it worked. <b>Keep that window open during the session.</b>",
+        "SaveBat": "Save start-voice-bridge.bat",
+        "SaveDirHint": "The button opens a window to choose where to save. Paste the path below into the address bar at the top of that window and press Enter to jump straight to that folder. (If you moved your Foundry data folder, go to <code>{path}</code> inside it.)",
+        "CopyPath": "Copy path",
+        "AutoStartSummary": "To start it automatically whenever Windows starts",
+        "AutoStart1": "Press <code>Win+R</code>, type <code>shell:startup</code> and press OK.",
+        "AutoStart2": "Copy the saved <code>start-voice-bridge.bat</code> into the <b>Startup</b> folder that opens.",
+        "AutoStart3": "To stop, delete the file from that folder.",
+        "LocalNote1": "If Node.js is missing, its download page opens automatically. Install the LTS version, then run the file again.",
+        "LocalNote2": "This file contains the bot token. <b>Don't send it to anyone.</b>",
+        "ServerTitle": "Install on the server",
+        "NodeSummary": "First: does the server have Node.js and pm2?",
+        "NodeHint": "Type <code>node -v</code> over SSH; if it shows v20 or later, skip this. Otherwise run the two lines below in order.",
+        "NodeModulesHint": "<b>Don't copy the node_modules folder from your PC to the server.</b> Its files are built per operating system, so what was installed on Windows won't run on a Linux server. Step 3 below installs fresh ones for the server.",
+        "Domain": "Domain",
+        "DomainHint": "Filled in from the address you're using right now. Leave it if it's the domain you use to reach Foundry.",
+        "DataPath": "Foundry data folder (on the server; leave it if unsure)",
+        "Regen": "Apply changes",
+        "SshTitle": "① Run over SSH, one line at a time",
+        "SshHint": "Copy and paste them one at a time from the top, pressing Enter each time. Go on to the next line once the previous one has finished.",
+        "CaddyTitle": "② Add to the Caddy config",
+        "CaddyHint": "Open it with <code>sudo nano /etc/caddy/Caddyfile</code>, change the existing block as below, then run <code>sudo systemctl reload caddy</code>. Caddy handles the certificate and the WebSocket, so port 8787 doesn't need to be opened.",
+        "UpdateHint": "Updating the module can remove the <code>.env</code> and the installed files in this folder. If it won't connect after an update, run steps 1–4 of this page again.",
+        "State": {
+          "on": "Connected — setup is complete!",
+          "connecting": "Connecting…",
+          "retrying": "Waiting for the bridge… (check that the bridge is running)",
+          "error": "Invalid address format",
+          "standby": "Another GM is relaying",
+          "disabled": "The voice link is off — the button above turns it on and connects",
+          "gaveup": "Couldn't find the bridge, so retrying stopped — start the bridge, then press the button above",
+          "off": "Not connected"
+        },
+        "BridgeUrl": "Bridge address",
+        "Connect": "Connect to this address",
+        "LinkTitle": "Finally: link people",
+        "LinkHint": "Once connected, open the <b>link manager</b> and have everyone speak in the voice channel one at a time. Press <b>+</b> next to each Discord ID heard and pick the Foundry user — that's it.",
+        "OpenMapping": "Open link manager",
+        "HowToTitle": "How to start the bridge",
+        "HowToLocal": "<b>Double-click</b> the <code>start-voice-bridge.bat</code> you saved in step 3. No commands to type. A minimized window appears in the taskbar, and shortly afterwards the status above changes to <b>Connected</b>. This screen updates by itself.",
+        "HowToLocalWhy": "For security, a web page (Foundry) can't run programs on your PC, so this one double-click is up to you.",
+        "SaveBatAgain": "Save the .bat again",
+        "HowToServerTitle": "On a server it should already be running",
+        "HowToServer": "If you ran the commands in step 3, pm2 keeps the bridge running and starts it again after a reboot. Nothing to start by hand.",
+        "HowToServerTrouble": "If it won't connect: check the bot log over SSH with <code>{logs}</code>, and if you changed the Caddy config, make sure you ran <code>sudo systemctl reload caddy</code>.",
+        "ResetConfirm1": "This clears everything entered in the wizard, the bridge address and the connection key, and turns the voice link off.",
+        "ResetConfirm2": "The Discord ↔ Foundry user links are kept. To remove a bridge installed on a server as well, follow the note on the first screen.",
+        "ResetDone": "Voice link settings have been reset.",
+        "Danger1": "Danger: anyone on the internet can read the .env file that holds the bot token.",
+        "Danger2": "This server serves files that start with a dot over the web. Reset the token in the Discord Developer Portal right away (Reset Token), and stop this file from being served in your hosting settings.",
+        "Safe": "Security check: the settings file (.env) can't be read from the internet.",
+        "Validate": {
+          "Mode": "Please choose how you run Foundry.",
+          "Token": "Please enter the bot token.",
+          "Guild": "The server ID is a 15–21 digit number.",
+          "Channel": "The voice channel ID is a 15–21 digit number.",
+          "Domain": "Please enter the domain."
+        },
+        "TokenAgainDownload": "The bot token isn't saved. Enter it again in step 2, then download.",
+        "TokenAgain": "The bot token isn't saved. Please enter it again in step 2.",
+        "DomainEmpty": "The domain is empty. Please enter it in step 3."
+      },
+      "Bat": {
+        "NoBridge": "[Error] bridge.js not found.",
+        "PutHere": "Put this file in the module folder pf2e-kr-hud\\tools\\discord-voice-bridge and run it there.",
+        "NoNode": "[Info] Node.js is not installed. Opening the download page.",
+        "InstallLts": "Install the LTS version, then run this file again.",
+        "FirstRun": "First run: installing the required files on this PC. This can take 1-2 minutes...",
+        "Starting": "Starting the bridge. Closing this window stops the voice link."
+      },
+      "Shell": {
+        "NoFolder": "Module folder not found. Check that the module is installed in Foundry."
+      },
+      "Cmd": {
+        "Cd": {
+          "Label": "Go to the module folder",
+          "Hint": "Finds the bridge folder and moves into it. If the last line shows the folder path, it worked."
+        },
+        "Env": {
+          "Label": "Create the settings file (.env)",
+          "Hint": "This line contains the bot token. Careful if you're sharing your screen."
+        },
+        "Install": {
+          "Label": "Install the required files",
+          "Hint": "Downloads fresh files built for this server. This can take 1–2 minutes."
+        },
+        "Start": {
+          "Label": "Start it and register auto-start",
+          "Hint": "pm2 starts it again even after the server reboots."
+        },
+        "Check": {
+          "Label": "Check that it works",
+          "Hint": "If you see Joined voice channel, it worked."
+        }
+      },
+      "Caddy": {
+        "Domain": "yourdomain.duckdns.org",
+        "BridgeComment": "Voice bridge (keep this block above the Foundry settings)",
+        "FoundryComment": "Your existing Foundry settings"
+      }
+    }
+  }
+}
