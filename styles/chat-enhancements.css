@@ -1,0 +1,238 @@
+/* PF2e-KR HUD — chat: typed-line merging, typing indicator. PF2e cards are never restyled. */
+
+:root { --pkh-typing-reserve: 26px; --pkh-whisper: #7b63c4; }
+
+/* One speech bubble per run of typed lines: no header, no divider, no gap. */
+#chat .chat-message.pkh-grouped,
+.chat-log .chat-message.pkh-grouped,
+.chat-popout .chat-message.pkh-grouped {
+  margin-top: calc(-1 * var(--pkh-chat-gap, 6px) - 1px) !important;
+  border-top-color: transparent !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  box-shadow: none !important;
+}
+.chat-message.pkh-grouped .message-header { display: none !important; }
+.chat-message.pkh-grouped::before, .chat-message.pkh-grouped::after { display: none !important; }
+.chat-message.pkh-run-continues {
+  border-bottom-color: transparent !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+/* Typed lines are compact everywhere (same before and after merging → no jumping). */
+.chat-message.pkh-chat-message { padding-bottom: 0.3rem !important; }
+.chat-message.pkh-chat-message .message-content { overflow-wrap: anywhere; margin: 0 !important; padding: 0 !important; }
+.chat-message.pkh-chat-message .message-content > :first-child { margin-top: 0 !important; }
+.chat-message.pkh-chat-message .message-content > :last-child { margin-bottom: 0 !important; }
+.chat-message.pkh-chat-message .message-content p { margin: 0 0 0.2rem !important; }
+.chat-message.pkh-grouped { padding-top: 0.1rem !important; }
+
+/* Chat font / size (settings) — typed and card text inside the log only. */
+/* Glyph/icon fonts are excluded: PF2e draws ◆◆ with its own action font. */
+body.pkh-chat-font .chat-message .message-content,
+body.pkh-chat-font .chat-message .message-content :where(p, span, div, li, em, strong, b, h1, h2, h3, h4):not(.action-glyph, .pf2-icon, [class*="fa-"], .fa, .fas, .far) {
+  font-family: var(--pkh-chat-font) !important;
+}
+body.pkh-chat-size :is(#chat, .chat-log, .chat-popout) .chat-message .message-content { font-size: var(--pkh-chat-font-size) !important; }
+
+/* Dynamic-token art in the header gets a little room instead of being moved. */
+.chat-message .message-header img { margin-inline-end: 0.3rem; }
+
+/* Optional fixed chat width (setting). */
+body.pkh-fixed-sidebar #sidebar { width: var(--pkh-sidebar-width) !important; }
+body.pkh-fixed-sidebar { --sidebar-width: var(--pkh-sidebar-width); }
+
+:root {
+  --pkh-chat-font: RIDIBatang, "리디바탕", "Nanum Myeongjo", "Batang", serif;
+  --pkh-chat-heading: var(--pkh-chat-font);
+  --pkh-chat-font-size: 14px;
+  --pkh-typing-reserve: 26px;
+
+  /* Overridden per theme below. */
+  --pkh-surface: #f5f3ef;
+  --pkh-surface-hover: #faf8f5;
+  --pkh-text: #24242a;
+  --pkh-text-soft: #6f6f7a;
+  --pkh-hairline: rgba(0, 0, 0, 0.09);
+  --pkh-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  --pkh-accent: #8d8d99;
+  --pkh-whisper: #7b63c4;
+  --pkh-radius: 14px;
+}
+
+/* --- Reserved strip for "…is typing" indicators -------------------------- */
+
+.pkh-typing-reserve {
+  position: relative;
+  flex: 0 0 auto;
+
+  height: var(--pkh-typing-reserve, 26px);
+  min-height: var(--pkh-typing-reserve, 26px);
+  max-height: var(--pkh-typing-reserve, 26px);
+
+  margin: 0;
+  padding: 0 10px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/*
+ * Anything relocated in here is pinned inside the reserved strip, so a typing
+ * notification appearing or disappearing can never reflow the message list.
+ */
+.pkh-typing-reserve > * {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+
+  font-family: var(--pkh-chat-font);
+  font-size: 11.5px;
+  font-style: italic;
+  line-height: 1.4;
+  color: rgba(236, 236, 244, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Safety net ----------------------------------------------------------
+ * If a re-render ever strands one of our injected elements outside a chat
+ * root, it must not float over the canvas. The script removes orphans, and
+ * this hides any that exist between a detach and the next cleanup pass.
+ */
+@supports selector(:not(.a *)) {
+  .pkh-typing-reserve:not(.pkh-chat-root *) {
+    display: none !important;
+  }
+}
+
+/* Shared notes live in their own panel; keep them out of the chat log. */
+.pkh-chat-root .chat-message.pkh-note-message {
+  display: none !important;
+}
+
+/* --- "…님이 입력 중입니다" ------------------------------------------------ */
+
+.pkh-typing-reserve .pkh-typing-text {
+  gap: 4px;
+  font-style: normal;
+}
+
+.pkh-typing-reserve .pkh-typing-text .dots {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 2px;
+}
+
+.pkh-typing-reserve .pkh-typing-text .dots i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pkh-typing-dot 1.2s infinite ease-in-out;
+}
+
+.pkh-typing-reserve .pkh-typing-text .dots i:nth-child(2) { animation-delay: 0.2s; }
+
+.pkh-typing-reserve .pkh-typing-text .dots i:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pkh-typing-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30%           { opacity: 1;    transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkh-typing-reserve .pkh-typing-text .dots i { animation: none; opacity: 0.6; }
+}
+
+/*
+ * The typing line inside the chat form (placement after Cautious Gamemaster's
+ * Pack). The form becomes a column only when it holds our line — the same
+ * rule CGMP applies — so the line stacks above the chat box. The line keeps a
+ * fixed height, so text appearing never shifts the chat log.
+ */
+:is(#chat-form, .chat-form):has(> .pkh-typing-line) {
+  display: flex;
+  flex-direction: column;
+}
+
+.pkh-typing-line {
+  flex: 0 0 var(--pkh-typing-reserve, 26px);
+  height: var(--pkh-typing-reserve, 26px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0 6px;
+  overflow: hidden;
+  font-size: 12px;
+  font-style: italic;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.pkh-typing-line:not(.active) {
+  visibility: hidden;
+}
+
+.pkh-typing-line .dots {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.pkh-typing-line .dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pkh-typing-dot 1.2s infinite ease-in-out;
+}
+
+.pkh-typing-line .dots i:nth-child(2) { animation-delay: 0.2s; }
+
+.pkh-typing-line .dots i:nth-child(3) { animation-delay: 0.4s; }
+
+/* The line inside the form now does the reserving; the old strip would double it. */
+body.pkh-typing-builtin .pkh-typing-reserve {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkh-typing-line .dots i { animation: none; opacity: 0.6; }
+}
+
+/* the chat input's formatting toolbar (Paragraph / Italic / HTML in v13–v14), hidden by setting */
+body.pkh-no-chat-menu #chat-message :is(.menu-container, menu.editor-menu) { display: none !important; }
+
+/* chat portraits: the finished round token made from a ring subject (chat-faces.mjs) */
+.chat-message .message-header .portrait.pkh-face { overflow: visible; }
+.chat-message .message-header .portrait.pkh-face img { width: 36px; height: 36px; object-fit: contain !important; transform: none !important; border: none; }
+
+/* ---- v1.12: jump to newest ---- */
+#pkh-chat-jump {
+  position: fixed; z-index: 70; width: 32px; height: 32px; padding: 0; margin: 0; border-radius: 50%;
+  display: grid; place-items: center; line-height: 1; font-size: 0.85rem; cursor: pointer;
+  border: 1px solid #c9a227; background: rgba(20, 16, 11, 0.92); color: #f3e6b8;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55); transition: opacity 150ms ease, transform 100ms ease;
+}
+#pkh-chat-jump:hover { transform: scale(1.08); background: rgba(48, 38, 20, 0.96); }
+#pkh-chat-jump.hidden { opacity: 0; pointer-events: none; }
+
+/* ---- v1.12: Toolbelt "apply to everyone" ---- */
+.pkh-bulk { margin: 0 0 4px; }
+.pkh-bulk button {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  line-height: 26px; padding: 0 8px; border-radius: 5px; font-weight: 700;
+  border: 1px solid #c4524a; background: linear-gradient(180deg, rgba(160, 50, 40, 0.35), rgba(90, 25, 20, 0.35));
+}
+.pkh-bulk button small { font-weight: 400; opacity: 0.8; }
+.pkh-bulk button:disabled { opacity: 0.7; }

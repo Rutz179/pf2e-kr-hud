@@ -1,0 +1,184 @@
+// First: the diagnostics watch WebGL canvases, errors and missing files from the start (before the map is drawn).
+import { initDiagnostics } from "./diagnostics.mjs";
+import { openDiagnostics, registerDiagnosticsSettings } from "./diagnostics-window.mjs";
+import { MAX_ROWS, MODULE_ID, SLOTS_PER_ROW, t } from "./shared.mjs";
+import { initPortraits, registerPortraitSettings } from "./portraits.mjs";
+import { initToolkit, registerToolkitSettings } from "./toolkit.mjs";
+import { initGmTools, registerGmToolSettings } from "./gm-tools.mjs";
+import { initReactions, registerReactionSettings } from "./reactions.mjs";
+import { initContingency, registerContingencySettings } from "./contingency.mjs";
+import { initHud, registerHudSettings } from "./hud.mjs";
+import { registerInfusedHelper } from "./slots.mjs";
+import { initTurnTracker, registerTurnTrackerSettings } from "./turn-tracker.mjs";
+import { PIN_ACTION } from "./slot-card.mjs";
+import { openSettings, registerSettingsWindows } from "./settings-window.mjs";
+import { patchChatPortraits, registerChatFaceSettings } from "./chat-faces.mjs";
+import { installCalmTooltips } from "./tips.mjs";
+import { initChatTrim, registerChatTrimSettings } from "./chat-trim.mjs";
+import { initBulkDamage, registerBulkDamageSettings } from "./bulk-damage.mjs";
+import { initSustain, registerSustainSettings } from "./sustain.mjs";
+import { initSkills, registerSkillsSettings } from "./skills.mjs";
+import { initBrowserLegacy, registerBrowserLegacySettings } from "./browser-legacy.mjs";
+
+/*
+ * Hotkeys
+ *
+ * Row 1 = 1…0, row 2 = Shift+1…0, row 3 = Alt+1…0 (rebindable in Configure
+ * Controls). They run at PRIORITY precedence. With "기본 매크로 바 끄기" on
+ * (default) the digits always belong to this HUD; with it off they fall
+ * through to Foundry's macro bar whenever no HUD is showing.
+ */
+function registerKeybindings() {
+  const MOD = foundry.helpers?.interaction?.KeyboardManager?.MODIFIER_KEYS
+    ?? globalThis.KeyboardManager?.MODIFIER_KEYS
+    ?? { SHIFT: "Shift", ALT: "Alt" };
+  const rowMods = [[], [MOD.SHIFT], [MOD.ALT]];
+  // Names are filled in at i18nInit: translations are not loaded yet during init.
+  const slotName = (row, digit) => t("Keys.Slot", { row: t("Keys.RowShort", { n: row + 1 }), digit });
+
+  for (let row = 0; row < MAX_ROWS; row++) {
+    for (let col = 0; col < SLOTS_PER_ROW; col++) {
+      const digit = (col + 1) % 10;
+      game.keybindings.register(MODULE_ID, `slot-${row + 1}-${digit}`, {
+        name: "PKH.Keys.Slot",
+        editable: [{ key: `Digit${digit}`, modifiers: rowMods[row] }],
+        precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
+        onDown: () => game.pf2eKrHud?.hud?.executeHotkey(row, col) ?? false
+      });
+    }
+  }
+
+  Hooks.once("i18nInit", () => {
+    for (let row = 0; row < MAX_ROWS; row++) {
+      for (let col = 0; col < SLOTS_PER_ROW; col++) {
+        const digit = (col + 1) % 10;
+        const action = game.keybindings.actions?.get?.(`${MODULE_ID}.slot-${row + 1}-${digit}`);
+        try { if (action) action.name = slotName(row, digit); } catch (_) { /* keeps the unformatted name */ }
+      }
+    }
+  });
+
+  game.keybindings.register(MODULE_ID, "page-next", {
+    name: "PKH.Keys.PageNext",
+    editable: [{ key: "BracketRight" }],
+    onDown: () => {
+      const hud = game.pf2eKrHud?.hud;
+      if (!hud?.actor) return false;
+      hud.setPage(hud.actor, hud.page(hud.actor) + 1);
+      return true;
+    }
+  });
+  game.keybindings.register(MODULE_ID, "page-prev", {
+    name: "PKH.Keys.PagePrev",
+    editable: [{ key: "BracketLeft" }],
+    onDown: () => {
+      const hud = game.pf2eKrHud?.hud;
+      if (!hud?.actor) return false;
+      hud.setPage(hud.actor, hud.page(hud.actor) - 1);
+      return true;
+    }
+  });
+  // Only takes the key while a quickslot card is up (or about to be), so T stays free otherwise.
+  game.keybindings.register(MODULE_ID, PIN_ACTION, {
+    name: "PKH.Keys.PinCard.Name",
+    hint: "PKH.Keys.PinCard.Hint",
+    editable: [{ key: "KeyT" }],
+    onDown: () => game.pf2eKrHud?.hud?.slotCard?.togglePin() ?? false
+  });
+  game.keybindings.register(MODULE_ID, "toggle-portraits", {
+    name: "PKH.Keys.TogglePortraits",
+    editable: [],
+    onDown: () => {
+      game.settings.set(MODULE_ID, "portraitsHideLocal", !game.settings.get(MODULE_ID, "portraitsHideLocal"));
+      return true;
+    }
+  });
+}
+
+/*
+ * One-time world defaults for PF2e (GM only). Done once, so a GM who turns
+ * something back on keeps it on.
+ *  - "인카운터 중 조건 보기" (pf2e.statusEffectShowCombatMessage): the per-turn
+ *    "현재 상태" chat card. The HUD shows conditions already.
+ */
+async function applyPf2eDefaultsOnce() {
+  if (!game.user.isGM || game.settings.get(MODULE_ID, "pf2eDefaultsApplied")) return;
+  try {
+    if (game.settings.settings.has("pf2e.statusEffectShowCombatMessage")) {
+      await game.settings.set("pf2e", "statusEffectShowCombatMessage", false);
+    }
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not change PF2e defaults`, err);
+  }
+  await game.settings.set(MODULE_ID, "pf2eDefaultsApplied", true);
+}
+
+Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "pf2eDefaultsApplied", { scope: "world", config: false, type: Boolean, default: false });
+  registerPortraitSettings();
+  registerHudSettings();
+  registerKeybindings();
+  registerToolkitSettings();
+  registerChatFaceSettings();
+  registerGmToolSettings();
+  registerReactionSettings();
+  registerContingencySettings();
+  registerTurnTrackerSettings();
+  registerChatTrimSettings();
+  registerBulkDamageSettings();
+  registerSustainSettings();
+  registerSkillsSettings();
+  registerBrowserLegacySettings();
+  registerDiagnosticsSettings();
+});
+
+/*
+ * Raw "@UUID[…]" left in a chat message (some drops and macros post text that
+ * never went through the enricher) is enriched when the message is drawn, so
+ * the chat shows the item's name as a link instead of the code.
+ */
+const RAW_REF = /@(UUID|Compendium|Check|Damage|Template)\[|\[\[\//;
+async function enrichLeftovers(message, html) {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const content = root?.querySelector?.(".message-content");
+  if (!content || !RAW_REF.test(content.textContent ?? "")) return;
+  const Editor = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+  try {
+    content.innerHTML = await Editor.enrichHTML(content.innerHTML, { relativeTo: message, rollData: message.getRollData?.() ?? {} });
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not enrich chat message`, err);
+  }
+}
+Hooks.on("renderChatMessageHTML", enrichLeftovers);
+
+// Every module file has registered its settings by now; group them into windows.
+Hooks.once("setup", () => {
+  patchChatPortraits();
+  registerSettingsWindows();
+});
+
+Hooks.once("ready", () => {
+  initDiagnostics();
+  game.pf2eKrHud = { ...(game.pf2eKrHud ?? {}), diagnostics: openDiagnostics };
+  if (game.system.id !== "pf2e") {
+    console.warn(`${MODULE_ID} | ${t("Notify.NotPf2e")}`);
+    return;
+  }
+  installCalmTooltips();
+  applyPf2eDefaultsOnce();
+  initPortraits();
+  initHud();
+  initToolkit();
+  initGmTools();
+  initReactions();
+  initContingency();
+  initTurnTracker();
+  initChatTrim();
+  initBulkDamage();
+  initSustain();
+  initSkills();
+  initBrowserLegacy();
+  registerInfusedHelper();
+  game.pf2eKrHud = { ...(game.pf2eKrHud ?? {}), settings: openSettings, diagnostics: openDiagnostics };
+  console.log(`${MODULE_ID} | ready`);
+});

@@ -1,0 +1,411 @@
+/* Ported from Rutz's CoC7 toolkit voice UI */
+/* ==========================================================================
+ * Discord voice mapping editor (v0.9.6)
+ * ========================================================================== */
+
+#pkh-voice-mapping .window-content {
+  padding: 0;
+  overflow: hidden;
+}
+.pkh-vmap {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+.pkh-vmap .vmap-status {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+}
+.pkh-vmap .vmap-state { font-weight: 700; white-space: nowrap; }
+.pkh-vmap .vmap-state.on { color: #6ddc91; }
+.pkh-vmap .vmap-state.busy { color: #ecc069; }
+.pkh-vmap .vmap-state.off { opacity: 0.6; }
+.pkh-vmap .vmap-state.error { color: #f08a78; }
+.pkh-vmap .vmap-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+  font-family: monospace;
+  font-size: 11px;
+}
+.pkh-vmap .vmap-head,
+.pkh-vmap .vmap-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(0, 0.9fr) 30px;
+  align-items: center;
+  gap: 6px;
+}
+.pkh-vmap .vmap-head {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  opacity: 0.6;
+  padding: 0 2px;
+}
+.pkh-vmap .vmap-rows {
+  flex: 1 1 auto;
+  min-height: 60px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-gutter: stable;
+}
+.pkh-vmap .vmap-row button,
+.pkh-vmap .vmap-heard-row button {
+  width: 30px;
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.pkh-vmap .vmap-live {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+.pkh-vmap .speaking .vmap-live {
+  background: #3ba55d;
+  box-shadow: 0 0 0 3px rgba(59, 165, 93, 0.3);
+}
+.pkh-vmap .vmap-actions {
+  flex: 0 0 auto;
+}
+.pkh-vmap .vmap-actions button {
+  width: auto;
+}
+.pkh-vmap .vmap-heard {
+  flex: 0 0 auto;
+  max-height: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pkh-vmap .vmap-heard h4 {
+  margin: 0;
+  font-size: 12px;
+}
+.pkh-vmap .vmap-heard .hint {
+  margin: 0;
+  font-size: 11px;
+}
+.pkh-vmap .vmap-heard-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pkh-vmap .vmap-heard-row {
+  display: grid;
+  grid-template-columns: 14px auto minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.pkh-vmap .vmap-heard-row code {
+  font-size: 11px;
+}
+.pkh-vmap .vmap-heard-row .who {
+  opacity: 0.75;
+}
+.pkh-vmap .vmap-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.pkh-vmap .vmap-footer button {
+  width: auto;
+}
+/* ==========================================================================
+ * Discord voice setup wizard (v0.9.7)
+ * ========================================================================== */
+
+#pkh-voice-setup .window-content {
+  padding: 0;
+  overflow: hidden;
+}
+.pkh-vsetup {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.pkh-vsetup .vs-steps {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pkh-vsetup .vs-steps li {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: 0.45;
+}
+.pkh-vsetup .vs-steps li span {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+}
+.pkh-vsetup .vs-steps li.active { opacity: 1; font-weight: 700; }
+.pkh-vsetup .vs-steps li.active span { background: #5865f2; color: #fff; }
+.pkh-vsetup .vs-steps li.done { opacity: 0.8; }
+.pkh-vsetup .vs-steps li.done span { background: #3ba55d; color: #fff; }
+.pkh-vsetup .vs-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px;
+  scrollbar-gutter: stable;
+}
+.pkh-vsetup h3 { margin: 0 0 10px; }
+.pkh-vsetup h4 { margin: 16px 0 4px; font-size: 13px; }
+.pkh-vsetup .vs-choice {
+  display: grid;
+  grid-template-columns: auto 34px 1fr;
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.pkh-vsetup .vs-choice.selected {
+  border-color: #5865f2;
+  background: rgba(88, 101, 242, 0.12);
+}
+.pkh-vsetup .vs-choice > i {
+  font-size: 22px;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+.pkh-vsetup .vs-choice p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.pkh-vsetup .vs-guide {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.pkh-vsetup .vs-field {
+  margin-bottom: 8px;
+}
+.pkh-vsetup .vs-field label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pkh-vsetup .vs-field .secret {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(236, 192, 105, 0.2);
+  color: #ecc069;
+  font-size: 10px;
+  font-weight: 600;
+}
+.pkh-vsetup .vs-code {
+  position: relative;
+  margin: 4px 0 6px;
+}
+.pkh-vsetup .vs-code pre {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 44px 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre;
+  user-select: all;
+}
+.pkh-vsetup .vs-code.inline pre {
+  max-height: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.pkh-vsetup .vs-code button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+}
+.pkh-vsetup button.small {
+  width: auto;
+  font-size: 11.5px;
+}
+.pkh-vsetup .vs-state {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-weight: 700;
+}
+.pkh-vsetup .vs-state.on { color: #6ddc91; }
+.pkh-vsetup .vs-state.busy { color: #ecc069; }
+.pkh-vsetup .vs-state.error { color: #f08a78; }
+.pkh-vsetup .vs-state.off { opacity: 0.7; }
+.pkh-vsetup .vs-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pkh-vsetup .vs-footer button {
+  width: auto;
+}
+.pkh-vsetup .vs-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pkh-vsetup .vs-check input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+.pkh-vsetup .vs-howto {
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid #5865f2;
+  border-radius: 8px;
+  background: rgba(88, 101, 242, 0.08);
+}
+.pkh-vsetup .vs-howto h4 {
+  margin: 0 0 6px;
+}
+.pkh-vsetup .vs-howto p {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pkh-vsetup .vs-saved {
+  margin: 8px 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(59, 165, 93, 0.14);
+  color: #b9f0cb;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pkh-vsetup .vs-saved.fallback {
+  background: rgba(236, 192, 105, 0.12);
+  color: #f3dca6;
+}
+.pkh-vsetup .vs-saved .hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+.pkh-vsetup .vs-more {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12.5px;
+}
+.pkh-vsetup .vs-more summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.pkh-vsetup .vs-more ol {
+  margin: 8px 0 4px;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+/* --- v1.1.0 setup wizard: step-by-step commands, reset, exposure check --- */
+
+.pkh-vsetup .vs-cmd {
+  margin: 10px 0 12px;
+}
+.pkh-vsetup .vs-cmd-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 12.5px;
+}
+.pkh-vsetup .vs-cmd-no {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #5865f2;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.pkh-vsetup .vs-cmd .hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+}
+.pkh-vsetup .vs-code pre.secret {
+  border-left: 3px solid #ecc069;
+}
+.pkh-vsetup .vs-footer-left {
+  display: flex;
+  gap: 8px;
+}
+.pkh-vsetup .vs-footer button.subtle {
+  opacity: 0.75;
+}
+.pkh-vsetup .vs-footer button.subtle:hover {
+  opacity: 1;
+}
+.pkh-vsetup .vs-danger {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(196, 68, 47, 0.18);
+  border-left: 3px solid #c4442f;
+  color: #ffd2c9;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pkh-vsetup .vs-safe {
+  color: #9fe0b6;
+  font-size: 11.5px;
+}

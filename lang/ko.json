@@ -1,0 +1,1440 @@
+{
+  "PKH": {
+    "Keys": {
+      "RowShort": "{n}줄",
+      "Slot": "퀵슬롯 {row} {digit}번",
+      "PageNext": "퀵슬롯 다음 페이지",
+      "PagePrev": "퀵슬롯 이전 페이지",
+      "PinCard": {
+        "Name": "퀵슬롯 설명 카드 고정 / 닫기",
+        "Hint": "설명 카드가 떠 있을 때 누르면 카드가 고정되어 마우스로 스크롤하거나 링크를 누를 수 있습니다. 다시 누르거나 Esc로 닫습니다."
+      },
+      "TogglePortraits": "내 화면에서 파티 초상화 숨기기/보이기"
+    },
+    "Notify": {
+      "NotPf2e": "PF2e 시스템이 아니므로 비활성화합니다.",
+      "SelectToken": "먼저 토큰을 선택하세요."
+    },
+    "SettingsWindow": {
+      "Tabs": {
+        "Portraits": "파티 초상화",
+        "Hud": "캐릭터 HUD",
+        "Turns": "턴 트래커",
+        "Chat": "채팅창",
+        "Tokens": "토큰 툴팁",
+        "Gm": "GM 도구",
+        "Voice": "디스코드 음성",
+        "Other": "기타",
+        "Diag": "진단"
+      },
+      "Menus": {
+        "PortraitSlots": "PC 자리 지정 (초상화 관리)",
+        "VoiceSetup": "설정 도우미 열기",
+        "VoiceBridge": "디스코드 ↔ Foundry 사용자 연결",
+        "Diag": "진단 창 열기"
+      },
+      "Sections": {
+        "Display": "표시",
+        "SizePosition": "크기·위치",
+        "HpBubbles": "HP·말풍선",
+        "PlayersList": "접속자 목록",
+        "SlotCard": "퀵슬롯 설명 카드",
+        "Behaviour": "동작",
+        "CoreUi": "Foundry·PF2e 기본 UI",
+        "Reactions": "반응(리액션) 알림",
+        "Sustain": "지속 주문",
+        "BulkDamage": "피해 적용 (PF2e Toolbelt)",
+        "Combatants": "전투원",
+        "ClockDice": "시계·주사위",
+        "FontSize": "글꼴·크기",
+        "Messages": "메시지",
+        "LongSessions": "긴 세션 (렉 줄이기)",
+        "Typing": "입력 중 표시",
+        "Distance": "거리",
+        "Health": "체력 상태",
+        "TimeLight": "시간·조명",
+        "Palette": "GM 팔레트",
+        "Browser": "컴펜디움 브라우저",
+        "Link": "연동",
+        "Other": "기타",
+        "Diag": "감지"
+      },
+      "Title": "Rutz's PF2e HUD 설정",
+      "WorldTip": "월드 설정 — 모두에게 적용",
+      "World": "월드",
+      "Empty": "이 항목에서 바꿀 수 있는 설정이 없습니다.",
+      "Defaults": "이 항목 기본값으로",
+      "Saved": "설정을 저장했습니다.",
+      "MenuName": "{tab} 설정",
+      "MenuLabel": "{tab} 상세 설정"
+    },
+    "Common": {
+      "Close": "닫기",
+      "Save": "저장",
+      "NoDescription": "설명이 없습니다.",
+      "Apply": "적용",
+      "Delete": "삭제",
+      "Cancel": "취소"
+    },
+    "Settings": {
+      "browserHideLegacy": {
+        "Name": "컴펜디움 브라우저: 레거시 숨기기",
+        "Hint": "PF2e 컴펜디움 브라우저(피트·주문·장비 …)에서 리마스터 이전(레거시) 항목을 빼고 보여 줍니다. 바꾼 뒤에는 브라우저를 다시 열거나 새로고침하세요."
+      },
+      "chatFaceZoom": {
+        "Name": "채팅 초상화 정리 (NPC는 원형 토큰)",
+        "Hint": "NPC: 토큰 링을 쓰는 토큰(아트 모듈의 NPC 등)이 채팅 카드 위로 크게 넘치지 않도록, 맵에서처럼 링 안에 들어간 원형 토큰으로 바꿉니다. PC: PF2e가 보여 주는 원래 그림 그대로 둡니다."
+      },
+      "bulkDamage": {
+        "Name": "피해 카드: '모두 적용' 버튼 (PF2e Toolbelt)",
+        "Hint": "Toolbelt의 대상 목록이 붙은 피해 카드에, 각 대상의 내성 결과대로(대실패 ×2 · 실패 ×1 · 성공 ×½ · 대성공 없음) 한 번에 적용하는 버튼을 띄웁니다. GM만 보입니다."
+      },
+      "chatTrim": {
+        "Name": "채팅 카드 정리 (긴 세션 렉 줄이기)",
+        "Hint": "화면에는 최근 카드만 남기고 오래된 카드는 페이지에서 내려 둡니다(메시지는 그대로). 위로 스크롤하면 다시 불러옵니다. Less Chat 모듈과 같은 역할이니 둘 중 하나만 켜세요."
+      },
+      "chatTrimKeep": {
+        "Name": "화면에 남길 채팅 카드 수"
+      },
+      "chatJumpButton": {
+        "Name": "가장 최근 채팅으로 가는 ↓ 버튼",
+        "Hint": "위로 스크롤해 있을 때 채팅창 구석에 작은 버튼을 띄웁니다."
+      },
+      "sustainChecker": {
+        "Name": "지속 주문 확인",
+        "Hint": "지속(Sustain) 주문을 쓰면 시전자에게 '지속: 주문' 효과를 붙이고, 그 캐릭터의 턴이 시작될 때 플레이어와 GM에게 귓속말 카드로 '지속(1행동) / 끝내기'를 묻습니다. 끝내기를 고르면 그 주문이 건 효과도 사라집니다. pf2e-sustain-reminder 대신 씁니다."
+      },
+      "hudEnabled": {
+        "Name": "캐릭터 HUD 표시",
+        "Hint": "마지막으로 선택한 내 토큰의 퀵슬롯 HUD를 화면 아래에 계속 띄웁니다."
+      },
+      "hudScale": {
+        "Name": "HUD 크기",
+        "Hint": "HUD 전체 배율입니다. 칸 크기는 화면 너비에 맞춰 자동으로 정해지고, 여기에 이 배율이 곱해집니다."
+      },
+      "hudEffectSize": {
+        "Name": "상태·효과 아이콘 크기 (px)",
+        "Hint": "HP 막대 위에 뜨는 동그란 상태·효과 아이콘의 지름입니다."
+      },
+      "hudEffectsWidth": {
+        "Name": "효과 아이콘이 많을 때",
+        "Hint": "효과가 늘어나도 아래 퀵슬롯은 길어지지 않습니다. '화면 너비까지': 퀵슬롯보다 넓게(가운데 기준) 화면이 허용하는 만큼 옆으로 늘어난 뒤, 그래도 넘치면 원래 줄 위에 한 줄씩 더 쌓습니다. '퀵슬롯 너비에서': 퀵슬롯 너비를 넘으면 바로 위로 쌓습니다.",
+        "Choices": {
+          "screen": "화면 너비까지 늘린 뒤 위로 쌓기",
+          "bar": "퀵슬롯 너비에서 위로 쌓기"
+        }
+      },
+      "hudEffectDurations": {
+        "Name": "효과 남은 시간 표시",
+        "Hint": "효과 아이콘 둘레에 남은 시간만큼 테두리를 그리고 작은 글자(3R · 7분 · 1시간)를 붙입니다. 마우스를 올리면 정확한 남은 시간·전체 시간·끝나는 시점을 보여 줍니다."
+      },
+      "hudReactionPip": {
+        "Name": "행동 칸 옆에 반응 표시",
+        "Hint": "전투 중 행동 점 옆에 반응(↩) 점을 보여 줍니다. 반응 확인 창에서 '사용'을 고르면 자동으로 채워지고, 직접 클릭/우클릭으로도 고칠 수 있습니다. 내 턴이 시작되면 돌아옵니다."
+      },
+      "hudSaveCard": {
+        "Name": "내성 굴림 시 DC 카드도 올리기",
+        "Hint": "HUD에서 인내·반사·의지를 누르면 굴림과 함께 '인내 DC 26'(10+수정치) 카드를 채팅에 올립니다."
+      },
+      "hudRows": {
+        "Name": "퀵슬롯 줄 수",
+        "Choices": {
+          "R1": "1줄",
+          "R2": "2줄",
+          "R3": "3줄"
+        }
+      },
+      "hudHideCoreHotbar": {
+        "Name": "Foundry 기본 매크로 바 끄기",
+        "Hint": "모듈의 퀵슬롯만 사용합니다. 숫자키도 모듈 퀵슬롯에만 반응합니다."
+      },
+      "hudHideEffectsPanel": {
+        "Name": "PF2e 기본 효과 패널 숨기기",
+        "Hint": "오른쪽 위에 세로로 늘어서는 PF2e 효과 아이콘을 숨깁니다. 효과는 HUD의 HP 막대 위에 표시됩니다."
+      },
+      "hudAutoInfused": {
+        "Name": "주입(Infused) 아이템 자동 배치",
+        "Hint": "연금술사 등이 만든 주입 아이템을 퀵슬롯 빈칸에 자동으로 올리고, 사라지면 자동으로 치웁니다."
+      },
+      "hudNpcAutoFill": {
+        "Name": "NPC 퀵슬롯 자동 채우기",
+        "Hint": "GM이 퀵슬롯이 비어 있는 NPC를 처음 선택하면 공격 → 액션 → 주문 순으로 자동으로 채웁니다."
+      },
+      "hudSlotCard": {
+        "Name": "퀵슬롯 설명 카드",
+        "Hint": "퀵슬롯에 마우스를 잠시 올려두면 그 능력의 비용·특성·설명을 카드로 보여줍니다. 시트를 열지 않아도 됩니다."
+      },
+      "hudSlotCardDelay": {
+        "Name": "퀵슬롯 설명 카드: 뜨기까지 (초)",
+        "Hint": "마우스를 올리고 이만큼 지나야 카드가 뜹니다. 짧을수록 빨리 뜨지만 지나가며 스칠 때도 뜹니다."
+      },
+      "chatDock": {
+        "Name": "채팅창 시계와 주사위",
+        "Hint": "채팅창 맨 위에 날짜·시간, 입력칸 위에 주사위와 플랫 체크(5·11) 버튼을 띄웁니다."
+      },
+      "clock12h": {
+        "Name": "채팅창 시계: 오전/오후 12시간제",
+        "Hint": "끄면 24시간제(15:05)로 표시합니다."
+      },
+      "timeDarknessSync": {
+        "Name": "시간에 맞춰 장면 조명 조절",
+        "Hint": "게임 시간이 바뀌면 현재 장면의 어둠을 낮·새벽·황혼·밤에 맞춥니다 (장면별로 끌 수 있음). PF2e 월드 시계의 동기화가 켜져 있으면 그쪽이 우선합니다."
+      },
+      "timeDarknessMax": {
+        "Name": "한밤중 어둠 정도"
+      },
+      "paletteSize": {
+        "Name": "GM 팔레트 크기",
+        "Choices": {
+          "S3x2": "3 × 2칸",
+          "S4x2": "4 × 2칸",
+          "S4x3": "4 × 3칸",
+          "S5x3": "5 × 3칸",
+          "S6x2": "6 × 2칸"
+        }
+      },
+      "paletteOpacity": {
+        "Name": "GM 팔레트 투명도",
+        "Hint": "마우스를 올리면 불투명해집니다."
+      },
+      "healthOnHover": {
+        "Name": "토큰에 마우스를 올리면 체력 상태 표시",
+        "Hint": "HP를 볼 권한이 없는 토큰(보통 NPC)에 '가벼운 부상' 같은 대략적인 상태만 보여줍니다."
+      },
+      "healthShowGM": {
+        "Name": "GM에게도 체력 상태 표시"
+      },
+      "tokenTipDistance": {
+        "Name": "토큰에 마우스를 올리면 거리 표시",
+        "Hint": "선택한 내 토큰(없으면 내 캐릭터)에서 그 토큰까지의 거리를 체력 상태 위에 쌓아 보여줍니다. 켜 두면 PF2e 기본 거리 표시는 겹치지 않도록 숨깁니다. '표시 안 함'이면 PF2e 기본 표시를 그대로 씁니다.",
+        "Choices": {
+          "always": "항상",
+          "encounters": "전투 중에만",
+          "never": "표시 안 함 (PF2e 기본 표시 사용)"
+        }
+      },
+      "healthFull": {
+        "Name": "체력 상태: 최대일 때"
+      },
+      "healthFullShow": {
+        "Name": "'건강함' 표시",
+        "Hint": "HP가 가득 찬 상태는 가장 흔해서 평소에는 숨기고 전투 중에만 보여주는 것이 기본입니다.",
+        "Choices": {
+          "combat": "전투 중에만",
+          "always": "항상",
+          "never": "표시 안 함"
+        }
+      },
+      "healthLevels": {
+        "Name": "체력 상태 단계",
+        "Hint": "\"퍼센트:이름\"을 |로 구분. 그 퍼센트 이상이면 그 이름. 예) 75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱"
+      },
+      "healthZero": {
+        "Name": "체력 상태: 0일 때"
+      },
+      "reactionChecker": {
+        "Name": "반응(리액션) 알림",
+        "Hint": "적의 이동·공격·피해 등으로 반응을 쓸 수 있을 때, 그 캐릭터를 맡은 플레이어와 GM에게만 채팅 카드로 알립니다. (pf2e-reaction·socketlib 불필요)"
+      },
+      "reactionCombatOnly": {
+        "Name": "반응 알림은 전투 중에만"
+      },
+      "reactionPopup": {
+        "Name": "반응 알림 팝업",
+        "Hint": "채팅 카드와 함께 화면 위쪽에 작은 선택 창을 띄웁니다 (30초 뒤 사라짐)."
+      },
+      "reactionGmCopy": {
+        "Name": "PC 리액션도 GM 카드에 모으기",
+        "Hint": "GM은 플레이어에게 간 귓속말 카드도 볼 수 있어서 기본은 꺼 둡니다(같은 내용이 두 장 뜨지 않게). 꺼 두어도 NPC의 반응 기회는 GM 카드로 오고, PC 카드의 버튼은 GM도 누를 수 있습니다."
+      },
+      "reactionPopupGM": {
+        "Name": "GM에게도 반응 팝업",
+        "Hint": "끄면 GM은 채팅 카드로만 받습니다 (NPC 반응이 많을 때 편함)."
+      },
+      "contingencyPrompt": {
+        "Name": "일일 준비 때 컨틴전시 묻기",
+        "Hint": "밤새 휴식 뒤, 컨틴전시 주문이 있는 캐릭터의 주인에게 오늘 컨틴전시를 걸지 묻는 창을 띄웁니다(조건·동반 주문·슬롯 소모). 걸어 두면 리액션으로 등록되어 조건이 되면 반응 알림처럼 묻습니다."
+      },
+      "turnTracker": {
+        "Name": "턴 트래커 (화면 위)",
+        "Hint": "전투 중 화면 위쪽에 차례 순서·라운드·우선권만 보여주는 가벼운 트래커입니다. Carousel Combat Tracker가 켜져 있으면 표시하지 않습니다."
+      },
+      "turnTrackerDefeated": {
+        "Name": "턴 트래커: 쓰러진 전투원",
+        "Hint": "죽거나 패배한 전투원을 숨길지 회색으로 남길지 정합니다. 그 전투원의 차례인 동안은 숨기지 않습니다. HP 0이지만 죽지 않은(빈사·의식 불명) 전투원은 언제나 절반만 회색으로 보이고, HP를 회복하면 원래대로 돌아옵니다.",
+        "Choices": {
+          "hide": "숨기기",
+          "grey": "회색으로 표시"
+        }
+      },
+      "turnTrackerWidth": {
+        "Name": "턴 트래커: 초상화 너비 (px)",
+        "Hint": "현재 차례인 초상화는 이보다 1.2배 크게 보입니다. 초상화는 전투원이 많아도 줄어들지 않고, 넘치는 인원은 '+n'으로 묶입니다."
+      },
+      "turnTrackerAspect": {
+        "Name": "턴 트래커: 초상화 비율",
+        "Choices": {
+          "Square": "정사각형 (1:1)",
+          "Slight": "약간 긴 (4:5)",
+          "Portrait": "초상화 (2:3)",
+          "Tall": "길쭉한 (1:2)"
+        }
+      },
+      "turnTrackerGroup": {
+        "Name": "턴 트래커: 같은 적 묶기",
+        "Hint": "차례가 연달아 붙은 같은 종류의 적(같은 이름·그림)을 초상화 하나로 묶고 ×n으로 표시합니다. 지금 차례와 다음 차례는 묶지 않습니다."
+      },
+      "turnSkipDead": {
+        "Name": "턴 트래커: 쓰러진 적 차례 자동으로 넘기기",
+        "Hint": "HP 0이거나 사망 상태인 적(플레이어 캐릭터 제외)의 차례가 오면 GM 화면에서 한 번 자동으로 넘깁니다. 죽은 적에게 차례가 가서 다음 버튼을 두 번 누르다 1번 캐릭터를 건너뛰는 일을 막습니다."
+      },
+      "turnTrackerTop": {
+        "Name": "턴 트래커: 화면 위에서 띄울 거리 (px)",
+        "Hint": "장면 탐색 막대 등과 겹치면 늘리세요."
+      },
+      "playersListMode": {
+        "Name": "접속자 목록 표시",
+        "Hint": "왼쪽 아래 접속자 목록이 초상화를 가리면 작은 아이콘으로 접어 두세요. 아이콘을 누르면 잠깐 펼쳐집니다.",
+        "Choices": {
+          "normal": "그대로 보이기",
+          "icon": "작은 아이콘으로 접기"
+        }
+      },
+      "portraitSlotsMenu": {
+        "Name": "초상화 관리",
+        "Label": "초상화 관리 열기",
+        "Hint": "PC 1~6 자리에 캐릭터를 지정합니다. 비워 두면 플레이어의 할당된 캐릭터가 자동으로 들어갑니다."
+      },
+      "portraitsShown": {
+        "Name": "파티 초상화 표시 (모두)",
+        "Hint": "GM이 켜면 모든 참가자 화면에 파티 초상화가 뜹니다."
+      },
+      "portraitsHideLocal": {
+        "Name": "내 화면에서만 초상화 숨기기",
+        "Hint": "GM이 켜 두었더라도 이 컴퓨터에서는 숨깁니다."
+      },
+      "portraitIdleDim": {
+        "Name": "대기 중 초상화 흐리게",
+        "Hint": "말하거나 채팅하지 않는 동안 초상화를 회색으로 살짝 눌러 둡니다."
+      },
+      "portraitScale": {
+        "Name": "초상화 크기",
+        "Hint": "최대 크기입니다. 화면이 낮으면 겹치지 않도록 자동으로 줄어듭니다."
+      },
+      "portraitBottomMargin": {
+        "Name": "초상화 아래 여백 (px)",
+        "Hint": "맨 아래 줄(PC 5·6)을 화면 아래에서 얼마나 띄울지 정합니다. 접속 프로그램이나 하단 UI에 가리면 늘리세요."
+      },
+      "portraitImage": {
+        "Name": "초상화 그림 출처",
+        "Hint": "토큰 그림(다이나믹 토큰 링 포함)은 원형 틀 때문에 초상화에서 작아 보일 수 있습니다. 가능하면 액터 초상화에 정사각형 512×512 그림을 넣으세요. 배경이 투명한 PNG/WebP로, 인물의 허리나 발끝이 아래 가장자리에 닿게 두면 잘 어울립니다. 세로로 긴 전신 그림(예: 400×800)은 작게 보이니 정사각형으로 여백을 맞춰 주세요.",
+        "Choices": {
+          "actor": "액터 초상화 (actor.img)",
+          "token": "토큰 그림"
+        }
+      },
+      "portraitHpNumbers": {
+        "Name": "초상화 HP 숫자",
+        "Hint": "HP 막대는 항상 보입니다. 숫자를 누구에게 보여줄지 정합니다.",
+        "Choices": {
+          "owner": "소유자와 GM만",
+          "all": "모두",
+          "none": "아무에게도 안 보임"
+        }
+      },
+      "portraitChatBubbles": {
+        "Name": "채팅 말풍선",
+        "Hint": "캐릭터가 채팅하면 초상화를 밝히고 옆에 말풍선을 띄웁니다. (굴림·카드는 말풍선 없이 잠깐 밝히기만)"
+      },
+      "portraitBubbleSeconds": {
+        "Name": "말풍선 표시 시간 (초)"
+      },
+      "whisperPolicy": {
+        "Name": "귓속말 범위",
+        "Hint": "플레이어가 누구에게 귓속말할 수 있는지, GM이 플레이어끼리의 귓속말을 보는지 정합니다. '/w'로 직접 입력한 귓속말에도 똑같이 적용됩니다.",
+        "Choices": {
+          "gm": "GM하고만 (기본)",
+          "allGmSees": "플레이어끼리도 가능 — GM이 항상 함께 봄",
+          "all": "플레이어끼리도 가능 — GM 없이"
+        }
+      },
+      "chatGrouping": {
+        "Name": "채팅 메시지 묶기",
+        "Hint": "같은 화자가 연속으로 말하면 하나의 말풍선 블록으로 합칩니다."
+      },
+      "chatGroupWindow": {
+        "Name": "묶기 허용 간격(분)",
+        "Hint": "이 시간 안에 이어진 같은 화자의 발언만 하나로 묶습니다."
+      },
+      "chatShowUser": {
+        "Name": "발언자(플레이어) 이름 표시",
+        "Hint": "캐릭터 이름 아래에 실제 플레이어 이름을 작게 표시합니다."
+      },
+      "chatAvatars": {
+        "Name": "채팅 초상화 표시",
+        "Hint": "발언자의 토큰/캐릭터 이미지를 채팅 카드 왼쪽에 표시합니다."
+      },
+      "chatCardTheme": {
+        "Name": "채팅 카드 톤",
+        "Hint": "밝은 카드는 첨부한 예시와 같은 모양입니다. 어두운 카드는 Foundry 기본 테마에 가깝습니다.",
+        "Choices": {
+          "light": "밝은 카드",
+          "dark": "어두운 카드"
+        }
+      },
+      "chatHeadingFont": {
+        "Name": "이름 / 판정줄 글꼴",
+        "Hint": "캐릭터 이름과 판정 설명줄에 쓰는 글꼴입니다."
+      },
+      "chatBodyFont": {
+        "Name": "채팅 글꼴",
+        "Hint": "채팅 메시지 본문에만 적용됩니다. 시트·창·카드 제목은 그대로입니다. '기본'이면 PF2e-KR 글꼴을 따릅니다."
+      },
+      "chatFontFamily": {
+        "Name": "채팅 글꼴 직접 지정(고급)",
+        "Hint": "비워두면 위에서 고른 글꼴을 씁니다. CSS font-family 값을 그대로 넣으세요."
+      },
+      "chatFontSize": {
+        "Name": "채팅 글자 크기 (px)",
+        "Hint": "0이면 기본 크기. 채팅 메시지 본문에만 적용됩니다."
+      },
+      "chatSidebarWidth": {
+        "Name": "채팅창 너비 (px)",
+        "Hint": "0이면 Foundry 기본값. Foundry의 사이드바는 글꼴 크기 설정에 따라 너비가 바뀌므로, 고정하고 싶을 때 쓰세요. (권장 340~420)"
+      },
+      "chatHideEditorMenu": {
+        "Name": "채팅 입력창 서식 도구 숨기기",
+        "Hint": "Foundry v13/v14 채팅 입력창 위의 '문단 · 기울임 · HTML' 도구 줄을 숨깁니다. Ctrl+B, Ctrl+I 같은 단축키는 그대로 됩니다. 빈 자리에는 말하는 캐릭터 바(Rutz's Cinematic Stage)가 들어갑니다."
+      },
+      "typingIndicator": {
+        "Name": "입력 중 표시",
+        "Hint": "누군가 채팅창에 글을 쓰는 동안 입력창 위에 '…님이 입력 중입니다'를 보여줍니다. 귓속말(/w)을 쓰는 중에는 표시하지 않습니다. Cautious Gamemaster's Pack의 같은 기능을 대신합니다."
+      },
+      "typingShowKeeper": {
+        "Name": "GM의 입력 중 표시도 보이기",
+        "Hint": "GM이 글을 쓰는 동안에도 플레이어에게 '입력 중'을 보여줍니다. 끄면 GM의 입력은 표시되지 않습니다."
+      },
+      "typingReserveHeight": {
+        "Name": "입력 표시 예약 높이(px)",
+        "Hint": "'…님이 입력 중입니다'가 표시되는 줄의 높이입니다. 이 공간은 늘 비워두므로 표시가 나타나고 사라져도 채팅 카드가 움직이지 않습니다. 0이면 입력 중 표시도 보이지 않습니다."
+      },
+      "typingSelector": {
+        "Name": "입력 표시 선택자(고급)",
+        "Hint": "예약 공간으로 옮길 타이핑 표시 요소의 CSS 선택자입니다. 비워두면 이동시키지 않습니다."
+      },
+      "voiceBridgeEnabled": {
+        "Name": "디스코드 음성 연동 사용",
+        "Hint": "끄면 브리지에 전혀 접속하지 않으며, 접속 실패 로그도 남지 않습니다. 디스코드 연동을 쓰지 않는 테이블은 꺼 두세요. 설정 도우미에서 연결하면 자동으로 켜집니다."
+      },
+      "voiceBridgeUrl": {
+        "Name": "디스코드 음성 브리지 주소",
+        "Hint": "브리지 봇 주소입니다. GM 한 명만 접속해 모두에게 중계하므로 플레이어는 이 주소에 닿을 필요가 없습니다. 설정 도우미를 쓰면 자동으로 채워집니다."
+      },
+      "voiceBridgeMenu": {
+        "Name": "디스코드 ↔ Foundry 사용자 연결",
+        "Label": "연결 관리",
+        "Hint": "디스코드 사용자와 Foundry 사용자를 한 명씩 연결합니다. 연결 상태와 최근 음성 신호도 여기서 확인할 수 있습니다."
+      },
+      "voiceSetupMenu": {
+        "Name": "디스코드 음성 연동 설정 도우미",
+        "Label": "설정 도우미 열기",
+        "Hint": "로컬 PC나 Oracle 서버에 음성 브리지를 설치하는 과정을 단계별로 안내합니다. 명령을 직접 입력할 필요가 거의 없습니다."
+      },
+      "diagWatch": {
+        "Name": "문제 감지 알림",
+        "Hint": "맵 그래픽(WebGL)이 끊기거나 그래픽 창이 너무 많이 열리면 바로 알리고 새로고침을 제안합니다. GM에게도 알려 갑니다."
+      },
+      "chatRescue": {
+        "Name": "멈춘 굴림 카드 꺼내기",
+        "Hint": "굴림 카드가 9초가 지나도 숨겨져 있으면(Dice So Nice 애니메이션 실패 등) 채팅에 꺼내 보여 줍니다 — 새로고침하지 않아도 됩니다."
+      },
+      "diagGuard": {
+        "Name": "버려진 그래픽 창 정리",
+        "Hint": "모듈이 3D 그래픽 창을 화면에서 빼 버리고 새로 만드는 일이 반복되면, 빠진 창의 그래픽을 놓아 주어 브라우저가 맵을 끊지 않게 합니다. Foundry 자신의 창은 건드리지 않습니다."
+      }
+    },
+    "Lore": {
+      "BadName": "올바른 지식 이름을 입력하세요.",
+      "NoCheck": "이 캐릭터의 지식 판정을 찾지 못했습니다. 시트의 지식 항목을 확인하세요.",
+      "RollFailed": "지식 굴림에 실패했습니다. 시트에서 다시 확인하세요."
+    },
+    "Bulk": {
+      "Heal": "회복",
+      "WaitingSaves": "내성 굴림 전 (빼고 적용): {names}",
+      "ApplyAll": "모두 적용",
+      "HealAll": "모두 회복",
+      "ApplyBoth": "피해·회복 모두 적용",
+      "People": "{n}명",
+      "SavesPending": "내성 대기 {n}",
+      "Applying": "적용 중 {i}/{n}",
+      "Applied": "모두 적용함"
+    },
+    "Chat": {
+      "JumpLatest": "가장 최근 채팅으로",
+      "SafeMode": "안전 모드: 채팅 DOM 수정을 모두 껐습니다.",
+      "TypingMany": "여러 명이 입력 중입니다",
+      "TypingOne": "{names}님이 입력 중입니다",
+      "TypingSome": "{names}님이 입력 중입니다",
+      "TestName": "테스트",
+      "TestResult": "입력창 위에 '테스트님이 입력 중입니다'가 4초간 보이면 표시 쪽은 정상입니다."
+    },
+    "Sustain": {
+      "EffectName": "지속: {spell}",
+      "EffectDesc": "지속하는 주문: <b>{spell}</b>. 내 턴이 시작될 때 지속할지 묻습니다.",
+      "CardTitle": "지속하는 주문",
+      "Keep": "지속",
+      "OneAction": "1행동",
+      "End": "끝내기",
+      "Kept": "✔ 지속함",
+      "Ended": "✖ 끝냄",
+      "NoteKept": "<b>{spell}</b> 지속 (1행동)",
+      "NoteEnded": "<b>{spell}</b> 끝냄"
+    },
+    "Skills": {
+      "RollFailed": "{action}: 굴리지 못했습니다 ({error})",
+      "Loading": "기술 목록 불러오는 중…",
+      "MapTip": "{label} {value} ({n}번째 공격)",
+      "FirstAttack": "첫 공격 (페널티 없음)",
+      "MapChip": "{n}회 {value}",
+      "Normal": "보통",
+      "RollTip": "{skill} 판정 굴림",
+      "LoreLabel": "캐릭터의 지식",
+      "Roll": "굴리기",
+      "Title": "기술",
+      "HideUntrained": "미훈련 행동 숨기기",
+      "FollowOn": "켜짐 — 눌러서 끄기",
+      "FollowOff": "탐험 활동: 눌러서 효과 켜기",
+      "Lore": "지식 기술",
+      "NoFollowEffect": "'전문가 따르기' 효과를 찾지 못했습니다."
+    },
+    "Time": {
+      "D": "{n}일",
+      "H": "{n}시간",
+      "M": "{n}분",
+      "S": "{n}초",
+      "Unit": {
+        "rounds": "{n}라운드",
+        "minutes": "{n}분",
+        "hours": "{n}시간",
+        "days": "{n}일"
+      }
+    },
+    "Saves": {
+      "fortitude": "인내",
+      "reflex": "반사",
+      "will": "의지"
+    },
+    "Effects": {
+      "Expiry": {
+        "TurnStart": "턴 시작에 끝남",
+        "TurnEnd": "턴 끝에 끝남",
+        "RoundEnd": "라운드 끝에 끝남"
+      },
+      "Unlimited": "무제한",
+      "EncounterShort": "전투",
+      "Encounter": "전투가 끝날 때까지",
+      "ExpiredShort": "끝",
+      "Expired": "시간이 다 됨 (다음 턴 처리 때 사라짐)",
+      "RoundsLeft": "{rounds}라운드 남음 ({time})",
+      "TimeLeft": "{time} 남음",
+      "AboutRounds": "약 {rounds}라운드",
+      "Total": "전체 {total}",
+      "NeedsSustain": "지속(Sustain) 필요",
+      "Edit": "효과 편집",
+      "ToChat": "채팅에 보내기",
+      "CounterHelp": "좌클릭 +1 · 우클릭 −1",
+      "RemoveHelp": "우클릭 제거",
+      "RemoveAll": "Shift+클릭 모두 제거"
+    },
+    "Hud": {
+      "SpeedType": {
+        "burrow": "굴착",
+        "climb": "등반",
+        "fly": "비행",
+        "swim": "수영",
+        "travel": "여행"
+      },
+      "SpellDc": "주문 DC",
+      "SaveRequest": "내성 굴림 요구",
+      "SaveDcLine": "{save} 내성 DC (10 {mod})",
+      "Aria": {
+        "Hud": "캐릭터 HUD",
+        "Inspect": "관찰 중인 캐릭터",
+        "EffectCard": "효과 설명",
+        "MapPopup": "공격 선택"
+      },
+      "ApSource": {
+        "tracker": "액션 트래커와 연동",
+        "chat": "채팅의 굴림으로 자동 계산",
+        "manual": "수동"
+      },
+      "Pip": {
+        "Bonus": "추가 행동 (신속 등)",
+        "BonusNone": "추가 행동 — 지금은 없음",
+        "Nth": "{n}번째 행동",
+        "Lost": "(감속/기절)",
+        "Help": "클릭 행동 사용 · 우클릭 되돌리기 · Shift+클릭 추가 행동 부여/회수"
+      },
+      "Rx": {
+        "Count": "반응 {left} / {max}",
+        "Used": "이번 라운드에 사용함",
+        "Help": "클릭 반응 사용 · 우클릭 되돌리기 · 내 턴이 시작되면 돌아옵니다"
+      },
+      "Ap": {
+        "Count": "행동 {used} / {max}",
+        "Note": "참조용 — 행동을 막지 않습니다",
+        "Undo": "행동 하나 되돌리기",
+        "UndoAll": "우클릭: 이번 턴 전부 되돌리기"
+      },
+      "Slot": {
+        "EmptyTip": "클릭: 기술·액션 추가<br>또는 시트에서 끌어다 놓기",
+        "StrikeTip": "클릭하면 몇 번째 공격인지 고르는 창이 열립니다",
+        "Auto": "자동 배치됨 (주입 아이템)"
+      },
+      "Page": "{n}페이지",
+      "Lock": {
+        "Locked": "잠김 — 눌러서 배치 편집",
+        "Editing": "편집 중 — 눌러서 잠그기",
+        "NoPermission": "배치를 바꿀 권한이 없습니다"
+      },
+      "Rows": "줄 수: {n}줄 (눌러서 변경)",
+      "Editors": "편집 권한 (GM)",
+      "Pin": {
+        "On": "고정됨 — 다른 토큰을 골라도 이 캐릭터 유지 (눌러서 해제)",
+        "Off": "이 캐릭터 고정 (다른 토큰을 골라도 유지)"
+      },
+      "AutoFill": "빈칸 자동 채우기",
+      "RollRequest": "굴림 요청",
+      "AutoFillOrder": "공격 → 액션 → 주문 순",
+      "PagesTip": "휠로 페이지 넘기기",
+      "SaveRoll": "{save} 내성 굴림",
+      "SaveCardTip": "채팅에 {save} DC {dc} 카드도 함께 올립니다",
+      "PerceptionRoll": "지각 굴림",
+      "Perception": "지각",
+      "AcTip": "방어도",
+      "DcTip": "채팅에 내성 굴림 요구 카드 올리기",
+      "DcTipDetail": "인내·반사·의지 DC {dc} 버튼 포함",
+      "Bar": {
+        "Inventory": "인벤토리 훑어보기",
+        "Faces": "초상화 표정 (@키워드로 바꾸기)",
+        "Skills": "기술 — 모든 기술과 기술 행동",
+        "SkillsHelp": "클릭해서 굴리기 · 마우스를 올리면 설명",
+        "Sheet": "캐릭터 시트 — 액션 탭",
+        "Grimoire": "주문 · 피트 훑어보기"
+      },
+      "Pop": {
+        "ItemHelp": "클릭: 채팅에 올리기 · 우클릭: 자세히 보기",
+        "Inventory": "인벤토리",
+        "InventoryHint": "끌어서 퀵슬롯에 올릴 수 있어요",
+        "NoItems": "소지품 없음",
+        "Cantrips": "캔트립",
+        "Focus": "집중 주문",
+        "Grimoire": "주문 · 피트",
+        "GrimoireHint": "“아 맞다, 이것도 있었지” 용도 — 클릭하면 채팅에 올라갑니다",
+        "NoSpells": "주문 없음",
+        "Actions": "액션",
+        "Feats": "피트 · 특성"
+      },
+      "Notify": {
+        "NoEdit": "이 캐릭터의 퀵슬롯 배치를 바꿀 권한이 없습니다.",
+        "Locked": "퀵슬롯이 잠겨 있습니다. 왼쪽 자물쇠를 눌러 푼 뒤 편집하세요.",
+        "AutoFilled": "{n}개를 빈칸에 채웠습니다.",
+        "CantStrike": "{name}: 지금은 공격할 수 없습니다.",
+        "CantUse": "{name}: 지금은 사용할 수 없습니다."
+      },
+      "Menu": {
+        "Icon": "아이콘 바꾸기 (이 슬롯만)",
+        "ResetIcon": "원래 아이콘",
+        "Details": "자세히 보기",
+        "Clear": "슬롯 비우기"
+      },
+      "Map": {
+        "Action": "행동",
+        "Off": "지금은 공격 불가",
+        "First": "첫 공격",
+        "Nth": "{n}번째 공격 (다중 공격 페널티)",
+        "Hit": "{n}타"
+      },
+      "Use": {
+        "Use": "사용",
+        "Chat": "채팅에 올리기",
+        "DetailsTip": "이 항목의 창을 열어 전체 설명을 봅니다",
+        "Details": "자세히…",
+        "Passive": "지속 효과 — 사용할 행동이 없습니다"
+      },
+      "Speed": "이동 속도 {n}피트"
+    },
+    "Spell": {
+      "Cantrip": "캔트립",
+      "NoFocus": "포커스 점수가 없습니다",
+      "Innate": "선천",
+      "InnateUses": "선천 ({left}/{max})",
+      "NoUsesToday": "오늘 쓸 횟수를 다 썼습니다",
+      "Rank": "{rank}랭크",
+      "PreparedUsed": "이 랭크에 준비한 것을 이미 썼습니다",
+      "NotPrepared": "준비 안 됨",
+      "NotPreparedToday": "오늘 준비하지 않은 주문입니다",
+      "RankSlots": "{rank}랭크 ({value}/{max})",
+      "NoSlotsRank": "이 랭크의 슬롯이 없습니다",
+      "NoSlots": "쓸 수 있는 슬롯이 없습니다",
+      "CastFocus": "포커스 시전",
+      "Cast": "시전",
+      "Tip": {
+        "Focus": "포커스 점수 1점을 씁니다",
+        "FocusCantrip": "포커스 캔트립 — 점수를 쓰지 않습니다",
+        "Cantrip": "캔트립 — 아무것도 쓰지 않습니다",
+        "Innate": "선천 주문 — 하루 횟수를 씁니다",
+        "Slot": "이 랭크의 주문 슬롯을 씁니다"
+      },
+      "ChatTip": "슬롯이나 집중 점수를 쓰지 않고 주문 카드만 올립니다",
+      "ToChat": "채팅으로 보내기",
+      "DetailsTip": "이 주문의 창을 열어 전체 설명을 봅니다",
+      "Ritual": "의식 주문은 캐릭터 시트의 주문 탭에서 진행하세요"
+    },
+    "Card": {
+      "OneAction": "{n}행동",
+      "Actions": "{n}행동",
+      "ActionRange": "{from}~{to}행동",
+      "Reaction": "반응",
+      "Free": "자유 행동",
+      "CantripRank": "캔트립 {rank}",
+      "FocusRank": "포커스 {rank}",
+      "RitualRank": "의식 {rank}",
+      "SpellRank": "주문 {rank}랭크",
+      "Level": "레벨 {level}",
+      "Range": "사거리",
+      "Targets": "대상",
+      "Area": "범위",
+      "AreaValue": "{value}피트 {type}",
+      "Duration": "지속",
+      "Defense": "방어",
+      "Basic": "기본",
+      "CloseEsc": "닫기 (Esc)",
+      "Pinned": "고정됨 · 휠로 스크롤 · Esc로 닫기",
+      "Pin": "고정",
+      "Attacks": "공격",
+      "StrikeHelp": "클릭: 몇 번째 공격인지 고르기 · 가운데 클릭: 3번째 공격",
+      "Item": "아이템",
+      "NotCarried": "지금 가지고 있지 않습니다.",
+      "Left": "남은 {n}",
+      "Help": {
+        "Spell": "클릭: 시전 / 채팅으로 보내기",
+        "Action": "클릭: 사용 / 채팅에 올리기",
+        "Consumable": "클릭: 카드 올리기 · Shift+클릭: 사용",
+        "Item": "클릭: 채팅에 올리기",
+        "Use": "클릭: 사용",
+        "Roll": "클릭: 굴리기",
+        "Effect": "클릭: 선택한 토큰에 켜기 / 끄기",
+        "Macro": "매크로 · 클릭: 실행"
+      },
+      "Effect": "효과",
+      "Macro": "매크로"
+    },
+    "Slots": {
+      "DeletedMacro": "삭제된 매크로",
+      "MissingItem": "없는 아이템",
+      "NotCarried": "{name}: 지금 가지고 있지 않습니다.",
+      "CantStrikeWhy": "{name}: 지금은 공격할 수 없습니다 (들고 있지 않거나 남은 수량이 없음).",
+      "Error": "실행 중 오류가 발생했습니다: {error}",
+      "OwnItemsOnly": "이 캐릭터가 가진 아이템만 슬롯에 올릴 수 있습니다.",
+      "CantDrop": "이 항목은 슬롯에 올릴 수 없습니다. 빈 슬롯을 우클릭해 목록에서 골라 보세요.",
+      "Picker": {
+        "Filter": "이름으로 찾기…",
+        "Strikes": "공격",
+        "Skills": "기술 굴림",
+        "Actions": "액션 (자주 쓰는 순)",
+        "Hint": "아이템·주문·피트·매크로는 시트나 매크로 목록에서 슬롯으로 끌어다 놓으면 됩니다.",
+        "Title": "슬롯에 추가 — {name}"
+      },
+      "Editors": {
+        "Assigned": "할당된 캐릭터 — 항상 가능",
+        "None": "이 액터를 소유한 플레이어가 없습니다.",
+        "Title": "퀵슬롯 편집 권한 — {name}",
+        "Hint": "소유 권한이 있어도 여기 체크된 사람(과 GM)만 슬롯 배치를 바꿀 수 있습니다. 사용은 소유자 모두 가능합니다."
+      }
+    },
+    "Clock": {
+      "Phase": {
+        "Day": "낮",
+        "Dawn": "새벽",
+        "Dusk": "황혼",
+        "Night": "밤"
+      },
+      "Back": "되돌리기 {amount}",
+      "Forward": "앞으로 {amount}",
+      "GmHint": "눌러서 시각 지정 · 조명 설정",
+      "Morning": "아침",
+      "Noon": "정오",
+      "Evening": "저녁",
+      "Midnight": "자정",
+      "Go": "이동",
+      "SyncScene": "이 장면 조명을 시간에 맞추기",
+      "Pf2eSyncs": "PF2e 월드 시계의 '장면 어둠 동기화'가 켜져 있어 그쪽이 조명을 맞춥니다."
+    },
+    "Calendar": {
+      "Golarion": {
+        "Moonday": "문데이",
+        "Toilday": "토일데이",
+        "Wealday": "윌데이",
+        "Oathday": "오스데이",
+        "Fireday": "파이어데이",
+        "Starday": "스타데이",
+        "Sunday": "선데이",
+        "Abadius": "아바디우스",
+        "Calistril": "칼리스트릴",
+        "Pharast": "파라스트",
+        "Gozran": "고즈란",
+        "Desnus": "데스누스",
+        "Sarenith": "사레니스",
+        "Erastus": "에라스투스",
+        "Arodus": "아로두스",
+        "Rova": "로바",
+        "Lamashan": "라마샨",
+        "Neth": "네스",
+        "Kuthona": "쿠토나"
+      },
+      "Earth": {
+        "Monday": "월요일",
+        "Tuesday": "화요일",
+        "Wednesday": "수요일",
+        "Thursday": "목요일",
+        "Friday": "금요일",
+        "Saturday": "토요일",
+        "Sunday": "일요일"
+      },
+      "Era": {
+        "AR": "골라리온력",
+        "IC": "제국력",
+        "AD": "서기",
+        "CE": "서기"
+      },
+      "Year": "{era} {year}년",
+      "Day": "{month}월 {day}일 {weekday}",
+      "Full": "{year} {day}",
+      "EarthMonth": "{month}월",
+      "Time12": "{ampm} {h}:{mm}",
+      "Am": "오전",
+      "Pm": "오후"
+    },
+    "Dice": {
+      "ShiftTwo": "Shift: 2개",
+      "Flat": "플랫 체크 DC {dc}",
+      "Flat5": "가려짐 등",
+      "Flat11": "숨김 등",
+      "Success": "성공",
+      "Failure": "실패"
+    },
+    "Request": {
+      "Adjust": {
+        "IncrediblyEasy": "믿기 힘들 만큼 쉬움",
+        "VeryEasy": "매우 쉬움",
+        "Easy": "쉬움",
+        "Normal": "보통",
+        "Hard": "어려움",
+        "VeryHard": "매우 어려움",
+        "IncrediblyHard": "믿기 힘들 만큼 어려움"
+      },
+      "Title": "굴림 요청",
+      "SecretTag": "비밀",
+      "SecretLabel": "비밀",
+      "PickLore": "시트의 지식 선택…",
+      "DefaultDc": "기본 DC",
+      "RowDcTip": "이 굴림만의 DC (비우면 아래 기본 DC)",
+      "BasicSave": "기본 내성",
+      "Basic": "기본",
+      "Remove": "빼기",
+      "PickHint": "위에서 굴림을 고르세요. 여러 개를 고를 수 있습니다.",
+      "Tab": {
+        "Saves": "내성 굴림",
+        "Skills": "기술 · 지각",
+        "Lore": "지식"
+      },
+      "PickAria": "요청할 굴림",
+      "Add": "추가",
+      "LoreName": "지식 이름 직접 입력",
+      "LorePlaceholder": "예: 선원 지식, Sailing Lore",
+      "LoreHint": "시트에서 선택하거나 직접 입력한 뒤 ‘추가’와 ‘보내기’를 누르세요.",
+      "None": "없음",
+      "Level": "레벨",
+      "LevelDc": "레벨 DC 넣기",
+      "PartyLevel": "파티",
+      "OwnLores": "{name}의 지식",
+      "PartyLores": "파티 지식",
+      "Note": "설명 (선택)",
+      "MacroName": "매크로 이름 (선택)",
+      "SaveMacro": "매크로로 저장",
+      "Send": "보내기",
+      "NeedLore": "지식을 선택하거나 이름을 입력하세요.",
+      "NeedCheck": "굴림을 하나 이상 추가하세요.",
+      "Sent": "굴림 요청을 보냈습니다.",
+      "MacroMade": "매크로 \"{name}\"을 만들었습니다.",
+      "MacroMadePlaced": "매크로 \"{name}\"을 만들었습니다 — GM 팔레트에 넣었습니다."
+    },
+    "Palette": {
+      "CondHelp": "클릭 +1 · 우클릭 −1",
+      "EffectHelp": "클릭: 넣기/빼기",
+      "MacroHelp": "클릭: 실행",
+      "OnSelected": "선택한 토큰에",
+      "Title": "GM 팔레트",
+      "Locked": "잠김 — 눌러서 편집(이동·추가·제거)",
+      "Editing": "편집 중 — 끌어서 이동, 끌어다 놓아 추가, 우클릭 제거",
+      "OnlyTypes": "매크로, 효과, 상태만 올릴 수 있습니다.",
+      "Full": "빈칸이 없습니다."
+    },
+    "Health": {
+      "Full": "건강함",
+      "Zero": "쓰러짐",
+      "DefaultLevels": "75:가벼운 부상|50:부상|25:심한 부상|1:죽음의 문턱"
+    },
+    "Reactions": {
+      "Trigger": {
+        "move": "간격 안의 적이 이동",
+        "manipulate": "간격 안의 적이 원거리 공격·조작 행동·주문",
+        "targeted": "내가 공격 대상이 됨",
+        "critFail": "나를 향한 적의 공격이 대실패",
+        "damaged": "내가 피해를 받음",
+        "allyDamaged": "범위 안 아군이 피해를 받음",
+        "save": "내가 내성 굴림을 함",
+        "approach": "적이 범위 안으로 다가옴",
+        "hpLow": "내 HP가 기준 아래로 떨어짐",
+        "condition": "내가 상태이상에 걸림"
+      },
+      "Skip": "반응 안 함",
+      "State": {
+        "Used": "✔ <b>{choice}</b> 사용",
+        "Skipped": "✖ 반응하지 않음",
+        "Spent": "— 남은 리액션 없음",
+        "Expired": "— 턴이 지나감"
+      },
+      "Budget": "리액션 {left}/{max}",
+      "Opportunity": "반응 기회",
+      "Pending": "대기 {n}",
+      "TurnTitle": {
+        "Round": "{round}라운드",
+        "Turn": "{name}의 턴"
+      },
+      "UsedMsg": "<b>{token}</b>이(가) 반응 <b>{reaction}</b>을(를) 사용했습니다.",
+      "NoMelee": "반응으로 휘두를 근접 무기가 없습니다.",
+      "StrikeTitle": "반응 공격 — 무기 선택",
+      "StrikeQuestion": "어떤 무기로 공격할까요?",
+      "Declined": "{name}: 반응하지 않음",
+      "SbReverted": "{name}: 피해를 되돌렸습니다. 원래 피해 카드에서 방패를 켜고 다시 적용하세요.",
+      "SbNote": "<b>{name}</b> 방패 막기 — 피해를 되돌렸습니다. 방패(막기) 버튼을 켜고 다시 적용하세요.",
+      "NoPermission": "이 캐릭터의 반응 설정을 바꿀 권한이 없습니다.",
+      "Config": {
+        "Auto": "자동 인식",
+        "Notify": "알림",
+        "Range": "범위",
+        "Reach": "간격",
+        "Feet": "피트",
+        "Strike": "사용하면 공격 굴림",
+        "Title": "반응 설정 — {name}",
+        "Who": "누구에게 물어볼까요?",
+        "WhoHint": "아무도 고르지 않으면 이 캐릭터를 <b>할당받은 플레이어</b>와 GM에게만 묻습니다 (소유권만 있는 사람에게는 안 감).",
+        "Extra": "라운드당 추가 리액션",
+        "ExtraSuffix": "개 (전투 반사신경 등)",
+        "PerReaction": "반응별 조건",
+        "PerHint": "자동 인식된 반응은 기본 조건이 채워져 있습니다. 트리거는 Ctrl+클릭으로 여러 개 고를 수 있습니다.",
+        "None": "이 캐릭터에게는 반응(리액션) 능력이 없습니다.",
+        "Saved": "반응 설정을 저장했습니다.",
+        "Contingency": "컨틴전시 준비"
+      }
+    },
+    "Contingency": {
+      "Title": "컨틴전시",
+      "Ask": "{name}이(가) 일일 준비를 마쳤습니다. 오늘 컨틴전시를 걸까요?",
+      "Setup": "컨틴전시 준비",
+      "None": "이 캐릭터에게는 컨틴전시 주문이 없습니다.",
+      "WindowTitle": "컨틴전시 — {name}",
+      "Lead": "{name}의 컨틴전시를 오늘 하루 동안 걸어 둡니다(일일 준비 중 10분). 조건이 되면 리액션으로 동반 주문이 나에게 발동합니다.",
+      "Step1": "컨틴전시",
+      "Step2": "조건 (트리거)",
+      "Step3": "그러면 — 동반 주문",
+      "RankN": "{n}랭크",
+      "SpendSlot": "슬롯 소모",
+      "SpendFocus": "집중력 소모",
+      "Cantrip": "캔트립",
+      "CapHint": "동반 주문은 {cap}랭크 이하, 3행동 이하인 주문입니다.",
+      "NoSlot": "쓸 수 있는 7랭크 이상 슬롯(또는 준비한 컨틴전시)이 없습니다. 슬롯은 직접 처리해 주세요.",
+      "KwIf": "만약",
+      "KwOr": "또는",
+      "AddOr": "또는 — 조건 추가",
+      "Remove": "빼기",
+      "Within": "거리",
+      "Feet": "피트",
+      "CustomPlaceholder": "예: 문이 열리면, 누가 내 이름을 부르면",
+      "Untracked": "직접 입력 — 자동으로 감시하지 않음",
+      "RuleHint": "목록의 조건은 반응 알림처럼 자동으로 감지해 리액션 창을 띄웁니다. '직접 입력'은 글로만 남고 감시하지 않으니, 그때는 준비 카드의 '지금 발동'을 누르세요.",
+      "NoCompanion": "고를 수 있는 동반 주문이 없습니다 ({cap}랭크 이하 · 3행동 이하 · 오늘 쓸 수 있는 주문).",
+      "OnSelf": "— 나에게만",
+      "Or": " 또는 ",
+      "Skip": "오늘은 안 함",
+      "Go": "컨틴전시 걸기",
+      "PickSpell": "동반 주문을 고르세요.",
+      "PickTrigger": "조건을 하나 이상 정하세요.",
+      "NotSpent": "{what}: 쓸 슬롯이 없어 소모하지 못했습니다 — 시트에서 직접 처리하세요.",
+      "ItemName": "컨틴전시: {spell}",
+      "Trigger": "트리거",
+      "ItemFoot": "컨틴전시 ({rank}랭크) · 다음 일일 준비까지 · 다시 걸면 이전 것은 사라집니다",
+      "Ready": "{name}의 컨틴전시 준비 완료",
+      "FireNow": "지금 발동",
+      "Done": "{name}의 컨틴전시를 걸었습니다.",
+      "Fired": "{name}의 컨틴전시 발동 — {spell}",
+      "Kind": {
+        "targeted": "내가 공격 대상이 될 때",
+        "approach": "적이 가까이 다가올 때",
+        "move": "적이 내 근처에서 움직일 때",
+        "manipulate": "근처 적이 조작·주문 시전할 때",
+        "damaged": "내가 피해를 받을 때",
+        "hp-low": "내 HP가 일정 % 이하가 될 때",
+        "condition": "내가 상태이상에 걸릴 때",
+        "save": "내가 내성 굴림을 할 때",
+        "crit-fail": "나를 노린 공격이 치명적 실패할 때",
+        "ally-damaged": "근처 아군이 피해를 받을 때",
+        "custom": "직접 입력"
+      },
+      "Say": {
+        "targeted": "내가 공격의 대상이 될 때",
+        "approach": "적이 내 {range}피트 안으로 다가올 때",
+        "move": "적이 내 {range}피트 안에서 움직일 때",
+        "manipulate": "내 {range}피트 안의 적이 조작하거나 주문을 시전할 때",
+        "damaged": "내가 피해를 받을 때",
+        "hp-low": "내 HP가 {pct}% 이하로 떨어질 때",
+        "condition": "내가 {condition} 상태가 될 때",
+        "save": "내가 내성 굴림을 할 때",
+        "crit-fail": "나를 노린 공격이 치명적 실패할 때",
+        "ally-damaged": "내 {range}피트 안의 아군이 피해를 받을 때"
+      }
+    },
+    "Turns": {
+      "Aria": "턴 순서",
+      "Round": "라운드",
+      "Combat": "전투",
+      "Ready": "준비",
+      "RoundStart": "{n}라운드 시작",
+      "Collapse": "접기",
+      "AndMore": "… 외 {n}",
+      "MoreCount": "뒤에 {n}명",
+      "MoreHelp": "클릭: 모두 펼치기 (휠로 넘기기)",
+      "MoreAria": "뒤에 {n}명 더 있음. 클릭하면 모두 펼칩니다.",
+      "EndTurn": "턴 종료",
+      "GroupHelp": "클릭할 때마다 다음 개체로 이동",
+      "Initiative": "우선권 {n}",
+      "Dead": "쓰러짐",
+      "Down": "의식 불명",
+      "EndHelp": "클릭: 턴 종료 · Shift+클릭: 토큰 보기",
+      "GmHelp": "우클릭: 우선권 조정",
+      "Prev": "이전 차례",
+      "Next": "다음 차례",
+      "EndMine": "내 차례 끝내기",
+      "RollAll": "우선권 모두 굴리기 (창 없이 바로)",
+      "RollNpc": "NPC 우선권만 굴리기 (창 없이 바로)",
+      "Start": "전투 시작",
+      "End": "전투 종료",
+      "RollMine": "내 우선권 굴리기",
+      "Edit": {
+        "Initiative": "우선권",
+        "After": "지금 차례({name}) 바로 다음으로",
+        "Undefeat": "쓰러짐 해제",
+        "Defeat": "쓰러짐 표시",
+        "Show": "플레이어에게 보이기",
+        "Hide": "플레이어에게 숨기기",
+        "NeedNumber": "우선권 숫자를 입력하세요."
+      }
+    },
+    "Toolkit": {
+      "Title": "러츠 툴킷",
+      "Portraits": "초상화 관리",
+      "Faces": "내 초상화 표정",
+      "Request": "굴림 요청 · 매크로 만들기",
+      "Palette": "GM 팔레트 켜기/끄기",
+      "Reactions": "반응(리액션) 설정 — 선택한 캐릭터",
+      "Whisper": "귓속말 창",
+      "Notes": "공유 노트 창",
+      "Voice": "디스코드 음성 연동"
+    },
+    "Portraits": {
+      "Seat": {
+        "pc1": "왼쪽 위",
+        "pc2": "오른쪽 위",
+        "pc3": "왼쪽 가운데",
+        "pc4": "오른쪽 가운데",
+        "pc5": "왼쪽 아래",
+        "pc6": "오른쪽 아래"
+      },
+      "Manager": {
+        "Auto": "— 자동 / 비움 —",
+        "FacesTip": "표정 설정",
+        "ShowAll": "모든 참가자에게 파티 초상화 표시",
+        "Bubbles": "채팅 말풍선",
+        "Seats": "자리 배정",
+        "SeatsHint": "비워 두면 플레이어의 <b>할당된 캐릭터</b>가 유저 목록 순서대로 들어갑니다.",
+        "Layout": "배치",
+        "LockLayout": "배치 잠그기",
+        "EditLayout": "배치 편집 (끌기 · 휠 크기)",
+        "Reset": "기본 자리로",
+        "AllAuto": "자리 전부 자동"
+      },
+      "Aria": "파티 초상화",
+      "EditTag": "끌어서 이동 · 휠로 크기",
+      "Editing": "초상화 배치 편집: 끌어서 옮기고, 휠로 크기를 바꾸세요. 같은 버튼으로 잠급니다.",
+      "Locked": "초상화 배치를 잠갔습니다.",
+      "Reset": "초상화 배치를 기본 자리로 되돌렸습니다."
+    },
+    "Faces": {
+      "NoPicker": "파일 선택 창을 열 권한이 없습니다. 이미지 주소를 직접 붙여 넣으세요.",
+      "NoActor": "표정을 설정할 캐릭터를 먼저 선택하세요.",
+      "NoPermission": "이 캐릭터의 표정·토큰 이미지를 바꿀 권한이 없습니다.",
+      "PresetName": "이름 (예: 변장)",
+      "TokenPath": "토큰 이미지 경로",
+      "TokenSize": "토큰 크기 (칸)",
+      "KeepSize": "크기 유지",
+      "Squares": "{n}칸",
+      "SquaresUnit": "칸",
+      "Browse": "이미지 고르기",
+      "Keyword": "키워드 (예: 웃음)",
+      "ImagePath": "이미지 경로",
+      "Title": "표정 · 토큰 이미지 — {name}",
+      "Hint1": "채팅에 <b>@키워드</b>를 넣으면 초상화가 그 표정으로 바뀝니다. 키워드는 메시지에서 지워집니다.",
+      "Hint2": "<b>@{face}</b>은 원래 초상화로 되돌립니다. 키워드만 보내면 메시지 없이 표정만 바뀝니다.",
+      "Presets": "토큰 이미지 프리셋",
+      "PresetsHint": "토큰을 우클릭하면 나오는 <b>{icon}</b> 버튼에서 바로 바꿀 수 있습니다. '원래 이미지'도 항상 함께 나옵니다.",
+      "Saved": "표정 {faces}개, 토큰 이미지 {images}개를 저장했습니다.",
+      "Original": "원래 이미지",
+      "HudButton": "토큰 이미지·크기 바꾸기"
+    },
+    "Players": {
+      "Online": "접속 중 {n}명 — 눌러서 잠깐 보기"
+    },
+    "Panels": {
+      "Resize": "크기 조정",
+      "Refresh": "새로고침",
+      "Whisper": {
+        "Title": "귓속말",
+        "OnlineOnly": "접속 중인 플레이어만 보기",
+        "ShowOffline": "접속하지 않은 플레이어도 보기 (지난 대화 확인)",
+        "All": "전체",
+        "Empty": "(내용 없음)",
+        "None": "주고받은 귓속말이 없습니다.",
+        "Placeholder": "{name}에게 귓속말... (Enter로 전송)",
+        "PickHint": "탭에서 상대를 고르면 바로 귓속말을 보낼 수 있습니다."
+      },
+      "Notes": {
+        "Title": "노트 (공유)",
+        "Export": "저널 항목으로 내보내기",
+        "Copy": "전체 복사",
+        "EditTip": "우클릭하여 수정",
+        "None": "아직 기록이 없습니다. 아래에 입력하고 Enter를 누르세요.",
+        "Placeholder": "모두가 함께 보는 기록장입니다. Enter로 등록, Shift+Enter로 줄바꿈. 내 기록은 우클릭으로 수정·삭제할 수 있습니다.",
+        "Saving": "임시 저장 중...",
+        "Saved": "임시 저장됨",
+        "CreateFailed": "노트를 등록하지 못했습니다.",
+        "NotYours": "다른 사람의 기록은 GM만 수정할 수 있습니다.",
+        "EditTitle": "노트 수정",
+        "EditFailed": "노트를 수정하지 못했습니다.",
+        "Copied": "노트를 클립보드에 복사했습니다.",
+        "NoJournal": "저널을 생성할 권한이 없습니다.",
+        "JournalName": "공유 노트 ({date})",
+        "Page": "노트"
+      }
+    },
+    "Fonts": {
+      "pretendard": "Pretendard — 현대적인 고딕 (OFL)",
+      "plex": "IBM Plex Sans KR — 또렷한 본문 고딕 (OFL)",
+      "gowunDodum": "고운돋움 — 부드럽고 눈이 편한 고딕 (OFL)",
+      "kopubBatang": "KoPubWorld 바탕 — 출판 본문용 명조 (CDN 불안정)",
+      "ridiBatang": "리디바탕 — 소설 본문체, 조선신명조 대체 (OFL)",
+      "gowunBatang": "고운바탕 — 차분한 명조 (OFL)",
+      "nanumMyeongjo": "나눔명조 — 고전적인 명조 (OFL)",
+      "songMyung": "송명 — 가늘고 서늘한 명조 (OFL)",
+      "hahmlet": "Hahmlet — 묵직하고 개성 있는 명조 (OFL)",
+      "system": "시스템 기본 글꼴 (내려받기 없음)",
+      "inherit": "기본 (변경 안 함)"
+    },
+    "Voice": {
+      "NotConnected": "브리지에 연결되어 있지 않습니다.",
+      "BridgeError": "브리지: {message}",
+      "Reconnect": "다시 연결",
+      "Status": {
+        "off": "연결 안 됨",
+        "connecting": "연결 중...",
+        "retrying": "재연결 대기 중...",
+        "on": "연결됨",
+        "standby": "대기 (다른 GM이 중계 중)",
+        "disabled": "사용 안 함 (모듈 설정에서 켤 수 있습니다)",
+        "gaveup": "브리지를 찾지 못해 재시도를 멈췄습니다",
+        "error": "주소 오류"
+      },
+      "Mapping": {
+        "Title": "디스코드 음성 연결",
+        "LiveTip": "말하는 중이면 초록색으로 켜집니다",
+        "PickUser": "— Foundry 사용자 —",
+        "DiscordId": "디스코드 사용자 ID",
+        "NoteOpt": "메모 (선택)",
+        "ColUser": "Foundry 사용자",
+        "ColDiscord": "디스코드 ID",
+        "ColNote": "메모",
+        "Empty": "아직 연결된 사용자가 없습니다. 아래 버튼으로 추가하세요.",
+        "Add": "사용자 추가",
+        "Heard": "최근 음성 신호",
+        "HeardHint": "브리지가 연결된 상태에서 음성 채널에 말해 보세요. 들린 디스코드 ID가 여기 나타나며, <b>+</b>를 누르면 바로 줄이 추가됩니다. ID를 직접 찾을 필요가 없습니다.",
+        "Listening": "<b>{where}</b> 에서 듣는 중",
+        "NotIn": "지금은 어느 음성 채널에도 들어가 있지 않습니다.",
+        "Channel": "음성 채널",
+        "Move": "이 방으로 옮기기",
+        "Join": "이 방에서 듣기",
+        "Leave": "나가기",
+        "RefreshChannels": "채널 목록 새로 고침",
+        "LeaveHint": "세션을 안 할 때는 <b>나가기</b>를 눌러 두세요. 봇이 음성 채널에서 빠지고, 다음에 다시 누르면 그 자리로 돌아옵니다. 서버에서 프로그램을 껐다 켤 필요가 없습니다.",
+        "ChannelsLater": "연결되면 봇이 볼 수 있는 음성 채널 목록이 여기 나타납니다.",
+        "PickChannel": "음성 채널을 고르세요.",
+        "BadId": "디스코드 ID는 15~21자리 숫자입니다: {ids}",
+        "DupId": "같은 디스코드 ID가 두 번 들어 있습니다: {ids}",
+        "SavedPartial": "{n}명 저장했습니다. 칸이 비어 있는 {skipped}줄은 제외했습니다.",
+        "Saved": "{n}명 저장했습니다.",
+        "NoUrl": "브리지 주소가 설정되지 않았습니다 (모듈 설정)",
+        "Unlinked": "연결 안 됨",
+        "Adopt": "이 ID로 줄 추가",
+        "NoSignals": "아직 들어온 신호가 없습니다."
+      },
+      "Setup": {
+        "BatType": "Windows 배치 파일",
+        "Copied": "복사했습니다.",
+        "CopyFailed": "복사하지 못했습니다. 직접 선택해서 복사하세요.",
+        "Title": "디스코드 음성 연동 설정 도우미",
+        "Steps": {
+          "Mode": "방식",
+          "Bot": "디스코드 봇",
+          "Files": "파일 만들기",
+          "Check": "연결 확인"
+        },
+        "Back": "이전",
+        "ResetTip": "입력값과 연결 설정을 모두 지우고 처음부터 다시 합니다",
+        "Reset": "처음부터 다시",
+        "Next": "다음",
+        "Finish": "완료",
+        "WhereTitle": "Foundry를 어디서 실행하고 계신가요?",
+        "Local": "내 PC에서 실행 (로컬 호스팅)",
+        "LocalDesc": "Windows에서 Foundry를 켜고 플레이어가 접속하는 방식. 실행 파일(.bat) 하나를 더블클릭하면 됩니다.",
+        "Server": "Oracle 등 서버에서 실행 (pm2 + Caddy)",
+        "ServerDesc": "SSH에 한 번 붙여넣고 Caddy 설정에 몇 줄 추가하면 됩니다. 서버가 재부팅돼도 자동으로 다시 켜집니다.",
+        "EitherWay": "어느 쪽이든 음성 신호는 <b>GM 화면 하나만</b> 받아서 모든 플레이어에게 전달합니다. 플레이어는 아무것도 설정할 필요가 없습니다.",
+        "RemoveSummary": "서버에 설치했던 브리지를 지우고 다시 하고 싶다면",
+        "RemoveHint": "SSH에서 아래 한 줄을 실행하면 pm2 등록과 설정 파일(.env)이 지워집니다.",
+        "Copy": "복사",
+        "BotTitle": "디스코드 봇 준비",
+        "Portal": "디스코드 개발자 포털",
+        "Guide1": "{portal}에서 <b>New Application</b>을 만듭니다.",
+        "Guide2": "<b>Bot</b> 메뉴 → <b>Reset Token</b> → 나온 토큰을 아래에 붙여넣습니다.",
+        "Guide3": "<b>OAuth2 → URL Generator</b>에서 Scopes <code>bot</code>, 권한 <code>View Channels</code> · <code>Connect</code>를 고르고 생성된 주소로 봇을 서버에 초대합니다.",
+        "Guide4": "디스코드 <b>설정 → 고급 → 개발자 모드</b>를 켠 뒤, 서버와 음성 채널을 우클릭해 <b>ID 복사</b>합니다.",
+        "Token": "봇 토큰",
+        "NotSaved": "저장되지 않음",
+        "GuildId": "서버 ID",
+        "ChannelId": "음성 채널 ID",
+        "TokenHint": "토큰은 다음 단계의 파일을 만드는 데만 쓰이고 월드에 저장되지 않습니다. 월드 설정은 모든 플레이어에게 전송되므로 토큰을 거기 두면 안 되기 때문입니다.",
+        "SavedDialog": "<b>{name}</b> 을(를) 저장했습니다. 모듈 폴더 안에 저장했다면 그 파일을 더블클릭하세요.",
+        "SavedFallback1": "저장 위치를 고르는 창을 열 수 없는 환경이라 <b>다운로드 폴더</b>에 저장했습니다. 다운로드 폴더에서 모듈 폴더(위 경로)로 옮긴 뒤 실행하세요.",
+        "SavedFallback2": "파일 탐색기(<code>Win+E</code>) → <b>다운로드</b>, 또는 브라우저에서 <code>Ctrl+J</code>로 찾을 수 있습니다.",
+        "SavedFallback3": "(http://IP 주소로 접속하면 브라우저가 저장 창을 막습니다. https 주소나 localhost에서는 창이 뜹니다.)",
+        "GetBat": "실행 파일 받기",
+        "LocalGuide1": "아래 버튼으로 <code>start-voice-bridge.bat</code>을 <b>모듈 폴더 안</b>에 저장합니다.",
+        "LocalGuide2": "더블클릭합니다. 처음에는 필요한 파일을 설치하느라 1~2분 걸립니다.",
+        "LocalGuide3": "검은 창에 <code>Joined voice channel</code>이 나오면 성공입니다. <b>세션 동안 그 창을 켜 두세요.</b>",
+        "SaveBat": "start-voice-bridge.bat 저장하기",
+        "SaveDirHint": "버튼을 누르면 저장할 위치를 고르는 창이 뜹니다. 그 창 위쪽 주소 칸에 아래 경로를 붙여넣고 Enter를 누르면 바로 그 폴더로 이동합니다. (Foundry 데이터 폴더를 옮기셨다면 그 안의 <code>{path}</code>로 가세요.)",
+        "CopyPath": "경로 복사",
+        "AutoStartSummary": "Windows를 켤 때마다 자동으로 실행하고 싶다면",
+        "AutoStart1": "<code>Win+R</code>을 누르고 <code>shell:startup</code>을 입력한 뒤 확인을 누릅니다.",
+        "AutoStart2": "열린 <b>시작 프로그램</b> 폴더에 저장한 <code>start-voice-bridge.bat</code>을 복사해 넣습니다.",
+        "AutoStart3": "그만두려면 같은 폴더에서 파일을 지우면 됩니다.",
+        "LocalNote1": "Node.js가 없으면 설치 페이지가 자동으로 열립니다. LTS를 설치한 뒤 다시 실행하세요.",
+        "LocalNote2": "이 파일에는 봇 토큰이 들어 있습니다. <b>다른 사람에게 보내지 마세요.</b>",
+        "ServerTitle": "서버에 설치",
+        "NodeSummary": "먼저: 서버에 Node.js와 pm2가 있나요?",
+        "NodeHint": "SSH에서 <code>node -v</code> 를 쳐서 v20 이상이 나오면 건너뛰세요. 없다면 아래 두 줄을 차례로 실행합니다.",
+        "NodeModulesHint": "<b>PC의 node_modules 폴더를 서버로 복사하지 마세요.</b> 그 안의 파일은 운영체제마다 다르게 만들어져서, Windows에서 설치한 것은 Linux 서버에서 동작하지 않습니다. 아래 3번 단계가 서버에 맞게 새로 설치합니다.",
+        "Domain": "도메인",
+        "DomainHint": "지금 접속한 주소에서 자동으로 채웠습니다. Foundry에 접속할 때 쓰는 도메인과 같으면 그대로 두세요.",
+        "DataPath": "Foundry 데이터 폴더 (서버, 모르면 그대로)",
+        "Regen": "입력값 반영",
+        "SshTitle": "① SSH에서 한 줄씩 실행",
+        "SshHint": "위에서부터 하나씩 복사해 붙여넣고 Enter를 누르세요. 앞 단계가 끝난 뒤 다음 줄로 넘어가면 됩니다.",
+        "CaddyTitle": "② Caddy 설정에 추가",
+        "CaddyHint": "<code>sudo nano /etc/caddy/Caddyfile</code> 로 열어 기존 블록을 아래처럼 바꾼 뒤 <code>sudo systemctl reload caddy</code>. Caddy가 인증서와 WebSocket을 처리하므로 8787 포트는 열 필요가 없습니다.",
+        "UpdateHint": "모듈을 업데이트하면 이 폴더의 <code>.env</code>와 설치 파일이 지워질 수 있습니다. 업데이트 후 연결이 안 되면 이 단계의 1~4번을 다시 실행하세요.",
+        "State": {
+          "on": "연결됨 — 설정이 끝났습니다!",
+          "connecting": "연결 중...",
+          "retrying": "브리지를 기다리는 중... (브리지가 켜져 있는지 확인하세요)",
+          "error": "주소 형식 오류",
+          "standby": "다른 GM이 중계 중입니다",
+          "disabled": "음성 연동이 꺼져 있습니다 — 위 버튼을 누르면 켜고 연결합니다",
+          "gaveup": "브리지를 찾지 못해 재시도를 멈췄습니다 — 브리지를 켠 뒤 위 버튼을 누르세요",
+          "off": "연결 안 됨"
+        },
+        "BridgeUrl": "브리지 주소",
+        "Connect": "이 주소로 연결",
+        "LinkTitle": "마지막으로 사람 연결",
+        "LinkHint": "연결되면 <b>연결 관리</b> 창을 열고 음성 채널에서 한 명씩 말해 보세요. 들린 디스코드 ID 옆 <b>+</b>를 누르고 Foundry 사용자를 고르면 끝입니다.",
+        "OpenMapping": "연결 관리 열기",
+        "HowToTitle": "브리지 켜는 법",
+        "HowToLocal": "3단계에서 저장한 <code>start-voice-bridge.bat</code>을 <b>더블클릭</b>하세요. 명령어를 칠 필요는 없습니다. 작업 표시줄에 최소화된 창이 생기고, 잠시 뒤 위의 상태가 <b>연결됨</b>으로 바뀝니다. 이 화면은 저절로 갱신됩니다.",
+        "HowToLocalWhy": "웹페이지(Foundry)는 보안상 PC의 프로그램을 직접 실행할 수 없어서, 이 한 번의 더블클릭만은 직접 해 주셔야 합니다.",
+        "SaveBatAgain": ".bat 다시 저장하기",
+        "HowToServerTitle": "서버에서는 이미 켜져 있어야 합니다",
+        "HowToServer": "3단계의 명령을 실행했다면 pm2가 브리지를 계속 실행하고, 서버를 재부팅해도 다시 켭니다. 따로 켤 일은 없습니다.",
+        "HowToServerTrouble": "연결이 안 되면: SSH에서 <code>{logs}</code> 로 봇 로그를 보고, Caddy 설정을 바꿨다면 <code>sudo systemctl reload caddy</code> 를 했는지 확인하세요.",
+        "ResetConfirm1": "도우미에 입력한 값, 브리지 주소, 연결 키를 모두 지우고 음성 연동을 끕니다.",
+        "ResetConfirm2": "디스코드 ↔ Foundry 사용자 연결 목록은 그대로 둡니다. 서버에 설치한 브리지까지 지우려면 첫 화면의 안내를 따르세요.",
+        "ResetDone": "음성 연동 설정을 초기화했습니다.",
+        "Danger1": "위험: 봇 토큰이 담긴 .env 파일을 인터넷에서 누구나 읽을 수 있습니다.",
+        "Danger2": "이 서버는 점으로 시작하는 파일도 웹으로 제공하고 있습니다. 즉시 디스코드 개발자 포털에서 토큰을 재발급(Reset Token)하고, 호스팅 설정에서 이 파일이 웹으로 제공되지 않도록 막으세요.",
+        "Safe": "보안 확인: 설정 파일(.env)은 인터넷에서 읽을 수 없습니다.",
+        "Validate": {
+          "Mode": "실행 방식을 골라 주세요.",
+          "Token": "봇 토큰을 입력해 주세요.",
+          "Guild": "서버 ID는 15~21자리 숫자입니다.",
+          "Channel": "음성 채널 ID는 15~21자리 숫자입니다.",
+          "Domain": "도메인을 입력해 주세요."
+        },
+        "TokenAgainDownload": "봇 토큰은 저장되지 않습니다. 2단계에서 토큰을 다시 입력한 뒤 받아 주세요.",
+        "TokenAgain": "봇 토큰은 저장되지 않습니다. 2단계에서 토큰을 다시 입력해 주세요.",
+        "DomainEmpty": "도메인이 비어 있습니다. 3단계에서 도메인을 입력해 주세요."
+      },
+      "Bat": {
+        "NoBridge": "[오류] bridge.js 를 찾지 못했습니다.",
+        "PutHere": "이 파일을 모듈 폴더의 pf2e-kr-hud\\tools\\discord-voice-bridge 안에 두고 실행하세요.",
+        "NoNode": "[안내] Node.js 가 설치되어 있지 않습니다. 설치 페이지를 엽니다.",
+        "InstallLts": "LTS 버전을 설치한 뒤 이 파일을 다시 실행하세요.",
+        "FirstRun": "처음 실행: 필요한 파일을 이 컴퓨터에 설치합니다. 1~2분 걸릴 수 있습니다...",
+        "Starting": "브리지를 시작합니다. 이 창을 닫으면 음성 연동이 멈춥니다."
+      },
+      "Shell": {
+        "NoFolder": "모듈 폴더를 찾지 못했습니다. Foundry에 모듈이 설치되어 있는지 확인하세요."
+      },
+      "Cmd": {
+        "Cd": {
+          "Label": "모듈 폴더로 이동",
+          "Hint": "브리지 폴더를 찾아 이동합니다. 마지막 줄에 폴더 경로가 나오면 성공입니다."
+        },
+        "Env": {
+          "Label": "설정 파일(.env) 만들기",
+          "Hint": "봇 토큰이 들어 있는 한 줄입니다. 화면 공유 중이라면 주의하세요."
+        },
+        "Install": {
+          "Label": "필요한 파일 설치",
+          "Hint": "이 서버에 맞는 파일을 새로 받습니다. 1~2분 걸릴 수 있습니다."
+        },
+        "Start": {
+          "Label": "실행하고 자동 시작 등록",
+          "Hint": "서버가 재부팅돼도 pm2가 다시 켭니다."
+        },
+        "Check": {
+          "Label": "동작 확인",
+          "Hint": "Joined voice channel 이 보이면 성공입니다."
+        }
+      },
+      "Caddy": {
+        "Domain": "내도메인.duckdns.org",
+        "BridgeComment": "음성 브리지 (이 블록을 Foundry 설정보다 위에 두세요)",
+        "FoundryComment": "기존 Foundry 설정"
+      }
+    },
+    "Diag": {
+      "Title": "진단 (렉·깨짐·오류)",
+      "Open": "진단 열기",
+      "MenuHint": "이 컴퓨터에서 이번 접속 동안 생긴 문제 — 그래픽(WebGL) 끊김, 모듈 오류, 서버에 없는 파일, 안 뜬 굴림 카드 — 를 모듈별로 보여 주고 고치는 방법을 제안합니다. GM은 플레이어들의 보고도 받습니다.",
+      "Unknown": "출처 모름",
+      "LostTitle": "맵 그래픽이 끊겼습니다",
+      "LostBody": "브라우저가 맵 화면의 그래픽(WebGL)을 끊었습니다. 이 상태에선 토큰·이펙트가 검은 사각형이나 깨진 그림으로 보입니다. 이번 접속에서 그래픽 창이 {n}개 만들어졌습니다 (브라우저 한도 약 16개).",
+      "LostHint": "새로고침하면 바로 돌아옵니다. 자주 생기면 HUD 설정 → 진단에서 성능 모드를 낮춰 보세요.",
+      "Reload": "새로고침",
+      "Later": "나중에",
+      "ManyContexts": "그래픽 창(WebGL)이 {n}개 열렸습니다 (주로 {top}). 더 늘면 맵이 깨질 수 있습니다 — HUD 설정 → 진단.",
+      "Rescued": "숨은 채 멈춘 굴림 카드를 꺼냈습니다",
+      "Perf": {
+        "LOW": "낮음",
+        "MED": "보통",
+        "HIGH": "높음",
+        "MAX": "최대"
+      },
+      "PlayerLost": "{user}: 맵 그래픽이 끊겼습니다 (WebGL). 새로고침하면 돌아옵니다 — HUD 설정 → 진단에서 자세히.",
+      "Why": {
+        "NotInstalled": "'{id}' 모듈이 서버에 설치돼 있지 않습니다 — 설치하거나, 이 파일을 쓰는 설정(Automated Animations 등)에서 빼세요.",
+        "Inactive": "{id} 모듈이 꺼져 있어 파일을 못 받습니다 — 켜거나 이 파일을 쓰는 설정을 고치세요.",
+        "FileGone": "{id} 모듈에 이 파일이 없습니다 — 모듈 버전이 바뀌며 경로가 달라졌을 수 있습니다. 업데이트하거나 설정에서 다시 고르세요.",
+        "UserFiles": "서버의 '{folder}' 폴더에 이 파일이 없습니다 — 옮겨졌거나 이름이 다릅니다."
+      },
+      "Tip": {
+        "Lost": "맵 그래픽이 끊긴 상태입니다. 새로고침하면 돌아옵니다.",
+        "NoAccel": "그래픽 가속이 꺼져 있습니다 ({gpu}). 브라우저 설정 → 시스템 → '가능한 경우 그래픽 가속 사용'을 켜고 다시 시작하세요. 꺼져 있으면 매우 느리고 자주 깨집니다.",
+        "Many": "지금 열려 있는 그래픽 창(WebGL)이 {n}개입니다 — 주로 {top}. 브라우저는 약 16개까지만 두고 가장 오래된 것(대개 맵)을 끊습니다.",
+        "Perf": "Foundry 성능 모드를 '{now}'에서 '{next}'(으)로 낮추면 그래픽 부담이 줄어듭니다 (이 컴퓨터만).",
+        "Fps": "최대 FPS가 {fps}입니다. 30으로 낮추면 그래픽 카드가 덜 바빠집니다 (이 컴퓨터만).",
+        "Dsn": "Dice So Nice가 굴림 카드를 주사위가 멈출 때까지 숨깁니다. 주사위 애니메이션이 실패하면 카드가 새로고침 전까지 안 뜹니다 (이번 접속: 꺼낸 카드 {rescued}개, Dice So Nice 오류 {errors}건). '채팅 메시지 즉시 표시'를 켜면 카드는 바로 뜨고 주사위는 그대로 굴러갑니다.",
+        "Rescued": "숨은 채 멈춘 굴림 카드를 {n}개 꺼냈습니다 (자동).",
+        "Errors": "{name}: 오류 {n}건.",
+        "Unverified": "Foundry v{gen}용으로 확인되지 않은 버전입니다 — 업데이트를 확인하고, 없으면 잠시 꺼 보세요.",
+        "Missing": "서버에 없는 파일을 {n}개 요청했습니다 — 아래 '없는 파일'에 모듈·폴더별로 있습니다. 소리가 안 나거나 이미지가 빈칸·검은칸으로 나오는 원인입니다.",
+        "Case": "대소문자만 다른 같은 경로가 함께 있습니다. 오라클 같은 리눅스 서버는 대소문자를 구분합니다 — 실제 파일 이름과 똑같이 맞추세요 (예: designs ↔ Designs).",
+        "Percent": "이름에 % 기호가 든 파일이 {n}개 있습니다. %는 주소에서 깨지므로 파일 이름에서 빼세요 (#, ? 도 마찬가지).",
+        "AllGood": "이번 접속에서는 문제가 보이지 않습니다.",
+        "OldChat": "이 컴퓨터는 예전 채팅 묶기 코드로 돌고 있습니다(지금: {version}). 모듈을 업데이트했다면 브라우저가 옛 파일을 들고 있는 것 — Ctrl+F5(강력 새로고침) 하세요.",
+        "Mixed": "다른 사람·다른 이름의 말이 한 카드로 묶인 줄이 {n}개 있습니다 (아래 '채팅 묶음'의 빨간 줄). '보고서 복사'로 보내 주세요.",
+        "Clock": "이 컴퓨터와 {user}의 컴퓨터 시각이 약 {s}초 다릅니다. 채팅의 '몇 초 전'·순서가 이상해 보일 수 있습니다 — 둘 중 틀린 쪽에서 Windows 설정 → 시간 → '지금 동기화'를 누르세요.",
+        "Leaky": "{name}이(가) 그래픽 창(WebGL)을 {n}개 만들었습니다(지금 {alive}개 살아 있음). 같은 창을 계속 새로 만드는 문제일 가능성이 큽니다 — 이 모듈을 최신으로 업데이트하고, 계속되면 이 컴퓨터에서 그 기능(예: 3D 주사위)을 꺼 보세요.",
+        "Released": "모듈이 화면에서 빼 버린 그래픽 창 {n}개를 정리해 브라우저 한도를 아꼈습니다 (자동)."
+      },
+      "PerfDown": "성능 모드 낮추기",
+      "Fps30": "30 FPS로",
+      "DsnOn": "즉시 표시 켜기",
+      "Since": "{time}부터",
+      "PerfMode": "성능 모드",
+      "MapGraphics": "맵 그래픽",
+      "Lost": "끊김",
+      "Ok": "정상",
+      "Rescues": "꺼낸 굴림 카드",
+      "Errors": "오류",
+      "Missing": "없는 파일",
+      "Restored": "복구됨",
+      "NotVerified": "이 Foundry용 확인 안 됨",
+      "Lead": "이 컴퓨터에서 이번 접속({time}부터)에 생긴 문제입니다. 새로고침하면 처음부터 다시 셉니다.",
+      "GpuUnknown": "그래픽 카드 정보 없음",
+      "Suggestions": "이렇게 해 보세요",
+      "Package": "모듈",
+      "Message": "내용",
+      "None": "없음",
+      "Where": "위치",
+      "Files": "파일",
+      "WebglHint": "모듈이 연 3D 그래픽 창 목록입니다. 브라우저 한도(약 16개)를 넘으면 가장 오래된 것부터 끊깁니다 — 맵(Foundry VTT)이 끊기면 화면이 깨집니다.",
+      "When": "시각",
+      "Copy": "보고서 복사",
+      "Ask": "플레이어 보고 받기",
+      "Refresh": "다시 보기",
+      "Players": "플레이어 보고",
+      "PlayersHint": "맵 그래픽이 끊긴 플레이어는 자동으로 알려 옵니다. '플레이어 보고 받기'로 지금 접속한 모두의 상태를 받습니다.",
+      "Player": "플레이어",
+      "NoReports": "아직 받은 보고가 없습니다.",
+      "Copied": "보고서를 복사했습니다 — 디스코드 등에 붙여 넣으세요.",
+      "Asked": "플레이어들에게 보고를 요청했습니다.",
+      "PerfChanged": "성능 모드: {mode}. 완전히 적용하려면 새로고침하세요.",
+      "FpsChanged": "최대 FPS를 30으로 낮췄습니다.",
+      "DsnChanged": "Dice So Nice: 채팅 메시지를 즉시 표시합니다.",
+      "WebglNow": "WebGL (지금 / 전체)",
+      "Chat": "채팅 묶음",
+      "ChatCode": "묶기 코드",
+      "Card": "카드",
+      "Speaker": "이름(화자)",
+      "OldCode": "옛 코드",
+      "ChatHint": "채팅창 아래쪽 카드들을 화면 순서대로 보여 줍니다. ↳ 는 바로 위 카드에 붙은 줄. 빨간 줄 = 다른 사람·다른 이름과 묶임(있으면 안 됨), 노란 줄 = Foundry 목록 순서나 시각이 화면 순서와 다름.",
+      "Issue": {
+        "mixed": "다른 화자와 묶임",
+        "order": "목록 순서와 다름",
+        "time": "시각 역전"
+      },
+      "Released": "버려진 그래픽 창 {n}개를 정리했습니다 (맵을 지키려고)",
+      "ReleasedOne": "정리함"
+    }
+  }
+}

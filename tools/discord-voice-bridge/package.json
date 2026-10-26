@@ -1,0 +1,20 @@
+{
+  "name": "pf2e-kr-hud-discord-voice-bridge",
+  "version": "1.0.0",
+  "description": "Relays Discord voice 'speaking' events to the PF2e-KR HUD Foundry module.",
+  "type": "module",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@discordjs/voice": "latest",
+    "@snazzah/davey": "latest",
+    "discord.js": "^14.16.0",
+    "libsodium-wrappers": "^0.7.15",
+    "ws": "^8.18.0"
+  }
+}

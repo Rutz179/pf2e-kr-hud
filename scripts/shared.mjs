@@ -1,0 +1,218 @@
+export const MODULE_ID = "pf2e-kr-hud";
+
+/** Ten slots per row; four pages; up to three rows visible at once (BG3-style). */
+export const SLOTS_PER_ROW = 10;
+export const PAGE_COUNT = 4;
+export const MAX_ROWS = 3;
+export const TOTAL_ROWS = PAGE_COUNT * MAX_ROWS; // 12 stored rows = 120 slots
+
+export function setting(key, fallback = null) {
+  try {
+    return game.settings.get(MODULE_ID, key);
+  } catch (_) {
+    return fallback;
+  }
+}
+
+export function esc(value) {
+  return foundry.utils.escapeHTML(String(value ?? ""));
+}
+
+/**
+ * Text from lang/en.json · lang/ko.json (namespace "PKH"), following Foundry's
+ * language setting: t("Saves.fortitude"), t("Hud.Notify.AutoFilled", { n: 3 }).
+ */
+export function t(key, data) {
+  const id = `PKH.${key}`;
+  return data ? game.i18n.format(id, data) : game.i18n.localize(id);
+}
+
+export function localizeMaybe(value) {
+  if (!value) return "";
+  const text = String(value);
+  return game.i18n.has?.(text) ? game.i18n.localize(text) : text;
+}
+
+/** "Amiri (Level 7)" → "Amiri": the level is noise on the HUD and portraits. */
+export function displayName(name) {
+  return String(name ?? "").replace(/\s*[(（]\s*(?:level|lv\.?|레벨)\s*\d+\s*[)）]\s*$/i, "").trim() || String(name ?? "");
+}
+
+export function signed(n) {
+  const v = Number(n) || 0;
+  return v >= 0 ? `+${v}` : String(v);
+}
+
+/**
+ * The Foundry canvas area actually visible to the user: the #board minus the
+ * right-hand sidebar when it overlaps. Same approach as the CoC7 toolkit stage.
+ */
+export function boardViewportRect() {
+  const board = document.getElementById("board");
+  const base = board?.getBoundingClientRect?.();
+  const left = Math.max(0, base?.left ?? 0);
+  const top = Math.max(0, base?.top ?? 0);
+  let right = Math.min(window.innerWidth, base?.right ?? window.innerWidth);
+  const bottom = Math.min(window.innerHeight, base?.bottom ?? window.innerHeight);
+
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar && sidebar.offsetParent !== null) {
+    const side = sidebar.getBoundingClientRect();
+    if (side.left > left && side.left < right && side.bottom > top && side.top < bottom) {
+      right = Math.min(right, side.left - 6);
+    }
+  }
+  return { left, top, right, bottom, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+}
+
+/** Width taken by Foundry's left-hand control columns (v13/v14 and older ids). */
+export function leftChromeWidth(rect) {
+  const selectors = ["#scene-controls", "#controls", "#scene-controls-layers", "#scene-controls-tools", "#ui-left-column-1", "#players"];
+  let rightmost = 0;
+  for (const selector of selectors) {
+    const el = document.querySelector(selector);
+    if (!el || el.offsetParent === null) continue;
+    const box = el.getBoundingClientRect();
+    if (!box.width || box.right <= rect.left) continue;
+    rightmost = Math.max(rightmost, box.right - rect.left);
+  }
+  return rightmost;
+}
+
+/**
+ * Foundry's inline references as readable words, for places that show plain
+ * text (speech bubbles, popups): "@UUID[Compendium…Item.abc]{화염구}" → "화염구",
+ * "@UUID[Actor.xyz]" → that document's name, "@Check[reflex|dc:20]" → "반사 DC 20"-ish,
+ * "[[/r 2d6]]{피해}" → "피해", "[[/r 2d6]]" → "2d6".
+ */
+export function plainRefs(text) {
+  const src = String(text ?? "");
+  const nameOf = uuid => {
+    try { return globalThis.fromUuidSync?.(uuid)?.name ?? null; } catch (_) { return null; }
+  };
+  const readable = (type, body) => {
+    if (type === "UUID" || type === "Compendium") return nameOf(body) ?? body.split(".").pop();
+    if (type === "Check") {
+      const [stat, ...rest] = body.split("|");
+      const dc = rest.find(r => r.startsWith("dc:"))?.slice(3);
+      const label = globalThis.game?.i18n?.localize?.(globalThis.CONFIG?.PF2E?.saves?.[stat] ?? globalThis.CONFIG?.PF2E?.skills?.[stat]?.label ?? stat) ?? stat;
+      return dc ? `${label} DC ${dc}` : label;
+    }
+    if (type === "Damage" || type === "Template") return body.replace(/\[[^\]]*\]/g, "").split("|")[0];
+    return body.split("|")[0].split(".").pop();
+  };
+  // A small scanner, so brackets inside the reference (@Damage[2d6[fire]]) are handled.
+  let out = "";
+  let i = 0;
+  while (i < src.length) {
+    const ref = /^@(\w+)\[/.exec(src.slice(i, i + 40));
+    const roll = src.startsWith("[[", i);
+    if (!ref && !roll) { out += src[i++]; continue; }
+    let j = i + (ref ? ref[0].length : 2);
+    let depth = ref ? 1 : 2;
+    while (j < src.length && depth > 0) {
+      if (src[j] === "[") depth++;
+      else if (src[j] === "]") depth--;
+      j++;
+    }
+    if (depth > 0) { out += src[i++]; continue; }
+    const body = ref ? src.slice(i + ref[0].length, j - 1) : src.slice(i + 2, j - 2);
+    let label = null;
+    if (src[j] === "{") {
+      const close = src.indexOf("}", j);
+      if (close > j) { label = src.slice(j + 1, close); j = close + 1; }
+    }
+    out += label ?? (ref ? readable(ref[1], body) : body.replace(/^\/\w+\s*/, "").split("#")[0].trim());
+    i = j;
+  }
+  return out;
+}
+
+/** Short plain-text summary of a PF2e item description (for hover cards). */
+export function summaryOf(item, limit = 260) {
+  let raw = String(item?.system?.description?.value ?? "");
+  raw = raw
+    .replace(/@\w+\[[^\]]*\]\{([^}]*)\}/g, "$1")                         // @UUID[..]{Label}
+    .replace(/@\w+\[([^\]|]*)[^\]]*\]/g, (_, a) => a.split(".").pop())    // @UUID[..Name]
+    .replace(/\[\[[^\]]*\]\](?:\{([^}]*)\})?/g, (_, label) => label ?? ""); // [[/r ..]]{..}
+  const div = document.createElement("div");
+  div.innerHTML = raw;
+  const text = (div.textContent ?? "").replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
+}
+
+/** Parse Foundry-style drag data from a drop event. */
+export function readDragData(event) {
+  try {
+    const raw = event.dataTransfer?.getData("text/plain");
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Minimal ApplicationV2 window with hand-written HTML. Used for the small
+ * pickers and config dialogs so we don't depend on Handlebars templates.
+ */
+export class SimpleWindow extends foundry.applications.api.ApplicationV2 {
+  constructor({ id, title, width = 420, html, onRender } = {}) {
+    super({
+      id: id ?? `${MODULE_ID}-${foundry.utils.randomID()}`,
+      window: { title, resizable: true },
+      position: { width, height: "auto" },
+      classes: ["pkh-window"]
+    });
+    this._html = html;
+    this._onRenderCb = onRender;
+  }
+
+  async _renderHTML() {
+    return typeof this._html === "function" ? this._html() : this._html;
+  }
+
+  _replaceHTML(result, content) {
+    content.innerHTML = result;
+  }
+
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+    this._onRenderCb?.(this.element.querySelector(".window-content") ?? this.element, this);
+  }
+}
+
+/* ---------------- translated copies of system packs ---------------- *
+ * Translation modules such as PF2e-KR ship "mirror" packs (same pack name,
+ * same entries, translated). A uuid into pf2e.actionspf2e is then better
+ * read from the mirror: same id first, else the entry whose name ends in
+ * "(English name)".
+ */
+const mirrors = new Map();
+export function mirrorPackOf(collection) {
+  if (mirrors.has(collection)) return mirrors.get(collection);
+  const [pkg, name] = String(collection).split(".");
+  const found = pkg === game.system.id
+    ? game.packs.find(p => p.metadata.name === name && p.collection !== collection && p.metadata.packageType !== "system") ?? null
+    : null;
+  mirrors.set(collection, found);
+  return found;
+}
+
+export async function localizedDoc(uuid) {
+  const m = /^Compendium\.([^.]+)\.([^.]+)\.(?:Item|Actor|JournalEntry|Macro)\.(.+)$/.exec(String(uuid ?? ""));
+  const original = await fromUuid(uuid).catch(() => null);
+  if (!m) return original;
+  const mirror = mirrorPackOf(`${m[1]}.${m[2]}`);
+  if (!mirror) return original;
+  try {
+    const index = await mirror.getIndex();
+    const byId = index.get(m[3]) ? await mirror.getDocument(m[3]) : null;
+    if (byId) return byId;
+    if (original) {
+      const want = `(${original.name})`.toLowerCase();
+      const hit = index.find(e => String(e.name).toLowerCase().endsWith(want) || e.name === original.name);
+      if (hit) return (await mirror.getDocument(hit._id)) ?? original;
+    }
+  } catch (_) { /* fall back */ }
+  return original;
+}
