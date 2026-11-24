@@ -1,0 +1,521 @@
+/* Ported from Rutz's CoC7 toolkit: whisper / notes panels */
+/* Floating panels: shared chrome for the scene quickbar and any free-floating tool. */
+
+.pkh-floating-panel {
+  position: fixed;
+  z-index: 70;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  min-height: 160px;
+
+  border: 1px solid rgba(240, 214, 130, 0.42);
+  border-radius: 10px;
+  background: rgba(16, 16, 22, 0.95);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55);
+  color: #f1f1f8;
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13px;
+
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+.pkh-floating-panel.dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+.pkh-floating-panel .panel-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 7px 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+
+  cursor: grab;
+  user-select: none;
+}
+.pkh-floating-panel .panel-title {
+  flex: 1 1 auto;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.pkh-floating-panel .panel-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 22px;
+  padding: 0;
+  margin: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pkh-floating-panel .panel-btn:hover {
+  border-color: rgba(240, 214, 130, 0.7);
+  color: #ffe9a3;
+}
+.pkh-floating-panel .panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 9px 10px 14px;
+  scrollbar-gutter: stable;
+}
+.pkh-floating-panel .panel-body h4 {
+  margin: 10px 0 5px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.66;
+}
+.pkh-floating-panel .panel-body h4:first-child { margin-top: 0; }
+.pkh-floating-panel .panel-body .hint {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.pkh-floating-panel .scene-chip.active {
+  border-color: #6ddc91;
+  background: rgba(109, 220, 145, 0.16);
+  color: #d9ffe5;
+}
+.pkh-floating-panel .scene-chip.viewed:not(.active) {
+  border-color: rgba(240, 214, 130, 0.6);
+}
+.pkh-floating-panel .panel-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+
+  background:
+    linear-gradient(135deg, transparent 46%, rgba(240, 214, 130, 0.85) 46%, rgba(240, 214, 130, 0.85) 56%, transparent 56%),
+    linear-gradient(135deg, transparent 68%, rgba(240, 214, 130, 0.85) 68%, rgba(240, 214, 130, 0.85) 78%, transparent 78%);
+}
+/* Side panels: 귓속말 / 노트. Free-floating windows that never touch the chat sidebar. */
+
+.pkh-side-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px 16px;
+}
+/* 귓속말 */
+
+.pkh-side-panel .whisper-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  scrollbar-gutter: stable;
+}
+.pkh-side-panel .whisper-row {
+  padding: 7px 9px;
+  border-radius: 9px;
+  border-left: 3px solid var(--pkh-whisper, #a58ce8);
+  background: rgba(255, 255, 255, 0.05);
+}
+.pkh-side-panel .whisper-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-bottom: 3px;
+  font-size: 11px;
+  opacity: 0.72;
+}
+.pkh-side-panel .whisper-meta strong {
+  font-weight: 700;
+  opacity: 1;
+}
+.pkh-side-panel .whisper-meta .arrow {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.pkh-side-panel .whisper-meta time {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.pkh-side-panel .whisper-text {
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.pkh-side-panel .whisper-compose {
+  flex: 0 0 auto;
+}
+.pkh-side-panel .whisper-input {
+  width: 100%;
+  padding: 7px 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13px;
+}
+/* 노트 */
+
+.pkh-side-panel .notes-status {
+  flex: 0 0 auto;
+  font-size: 11px;
+  opacity: 0.55;
+}
+.pkh-side-panel .notes-text {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+/* 귓속말 탭 */
+
+.pkh-side-panel .whisper-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+.pkh-side-panel .wtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  width: auto;
+  min-width: 0;
+  padding: 3px 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-size: 11.5px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.pkh-side-panel .wtab:hover {
+  border-color: rgba(240, 214, 130, 0.6);
+}
+.pkh-side-panel .wtab.active {
+  border-color: var(--pkh-whisper, #a58ce8);
+  background: rgba(165, 140, 232, 0.18);
+  font-weight: 700;
+}
+.pkh-side-panel .wtab .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.pkh-side-panel .whisper-row.mine {
+  border-left-color: #6ddc91;
+}
+.pkh-side-panel .compose-hint {
+  flex: 0 0 auto;
+}
+/* 공유 노트 */
+
+.pkh-side-panel .note-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  scrollbar-gutter: stable;
+}
+.pkh-side-panel .note-row {
+  padding: 7px 9px;
+  border-radius: 9px;
+  border-left: 3px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: context-menu;
+}
+.pkh-side-panel .note-row.mine {
+  border-left-color: #6ddc91;
+}
+.pkh-side-panel .note-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.pkh-side-panel .note-meta time {
+  margin-left: auto;
+  font-size: 10px;
+}
+.pkh-side-panel .note-meta .edited {
+  font-size: 10px;
+  font-style: italic;
+}
+.pkh-side-panel .note-text {
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.pkh-side-panel .note-compose {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pkh-side-panel .note-input {
+  width: 100%;
+  height: 62px;
+  resize: none;
+
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+
+  font-family: var(--pkh-chat-font, var(--font-primary));
+  font-size: 13px;
+  line-height: 1.55;
+}
+.pkh-side-panel .note-status {
+  font-size: 10.5px;
+  opacity: 0.5;
+  min-height: 13px;
+}
+.pkh-side-panel .wtab.offline { opacity: 0.55; font-style: italic; }
+.pkh-floating-panel .panel-btn.active { color: var(--pkh-gold, #c9a227); }
+
+/* Folded panels (whisper, notes): only the title bar; it lights up when something comes in */
+.pkh-floating-panel.minimized { min-height: 0; }
+.pkh-floating-panel.minimized .panel-body,
+.pkh-floating-panel.minimized .panel-grip { display: none; }
+.pkh-floating-panel.minimized .panel-header { border-bottom: 0; }
+.pkh-floating-panel.has-new .panel-header { animation: pkh-panel-new 1.6s ease-in-out infinite; }
+.pkh-floating-panel.has-new .panel-title::after { content: "●"; margin-left: 6px; color: #f0d682; font-size: 0.8em; }
+@keyframes pkh-panel-new { 0%, 100% { background: rgba(255, 255, 255, 0.05); } 50% { background: rgba(240, 214, 130, 0.22); } }
+
+/* The minimize button on every window (window-min.mjs): the icon follows the window */
+.application .window-header .pkh-min { font-size: 0.9em; }
+.application.minimized .window-header .pkh-min::before { content: "\f2d2"; }
+
+/* 전투 경험치 (xp.mjs): the GM's panel, the award window, its chat card, "+5 XP" */
+
+.pkh-xp { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.pkh-xp-empty { margin: 2px 0; opacity: 0.75; }
+.pkh-xp input[type="number"] { width: 58px; flex: none; height: 24px; text-align: center; }
+.pkh-xp button { min-height: 0; margin: 0; line-height: normal; }
+
+.pkh-xp-cap { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pkh-xp-cap label { display: flex; align-items: center; gap: 5px; margin: 0; }
+.pkh-xp-cap button { width: auto; flex: none; height: 24px; padding: 0 8px; font-size: 11px; }
+.pkh-xp-cap .threat { font-size: 11px; opacity: 0.7; }
+
+/* granted / cap: a reference line, not a limit (over is shown, never cut) */
+.pkh-xp-meter { display: flex; align-items: center; gap: 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pkh-xp-meter .bar { flex: 1; height: 6px; overflow: hidden; border-radius: 3px; background: rgba(127, 127, 127, 0.25); }
+.pkh-xp-meter .bar i { display: block; height: 100%; border-radius: 3px; background: #c9a227; }
+.pkh-xp-meter.over .bar i { background: #e07b39; }
+.pkh-xp-meter em { font-style: normal; font-weight: 700; color: #e07b39; }
+
+.pkh-xp-list { display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.pkh-xp-row { display: flex; align-items: center; gap: 5px; padding: 3px 6px; border-radius: 6px; background: rgba(127, 127, 127, 0.1); }
+.pkh-xp-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkh-xp-row .sum { flex: none; min-width: 54px; text-align: right; font-variant-numeric: tabular-nums; cursor: help; }
+.pkh-xp-row button { flex: none; width: 22px; height: 22px; padding: 0; font-size: 13px; }
+
+.pkh-xp-rules summary { font-size: 12px; opacity: 0.8; cursor: pointer; }
+.pkh-xp-rules .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 6px; }
+.pkh-xp-rules label { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 11px; }
+.pkh-xp-rules label span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pkh-xp-rules input[type="number"] { width: 100%; }
+/* the panel: the PCs (현황) or the lines (기록) scroll and take the room; tabs, cap and rules stay */
+#pf2e-kr-hud-xp .pkh-xp > * { flex: none; }
+#pf2e-kr-hud-xp .pkh-xp > :is(.pkh-xp-list, .pkh-xp-loglist) { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+
+/* award window */
+.pkh-xp-fills { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.pkh-xp-fill { display: flex; align-items: center; gap: 5px; }
+.pkh-xp-fill button { flex: none; width: 24px; height: 24px; padding: 0; font-size: 11px; }
+.pkh-xp-table { width: 100%; margin: 0; border: 0; border-collapse: collapse; font-size: 12.5px; }
+.pkh-xp-table th, .pkh-xp-table td { padding: 3px 4px; border: 0; text-align: left; vertical-align: middle; }
+.pkh-xp-table th { font-size: 11px; font-weight: 600; opacity: 0.7; }
+.pkh-xp-table .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pkh-xp-table .name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkh-xp-table .up { font-size: 11.5px; font-weight: 700; color: #3fa860; white-space: nowrap; }
+.pkh-xp-table tr.off td:not(:first-child) { opacity: 0.45; }
+/* award window: the rows scroll, the fill helpers and the buttons stay */
+#pf2e-kr-hud-xp-award .pkh-xp > * { flex: none; }
+#pf2e-kr-hud-xp-award .pkh-xp > .pkh-xp-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* award window: other modules' buttons (hook pf2eKrHud.awardButtons), a small row above the action buttons */
+.pkh-xp-extra { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pkh-xp-extra button { flex: 0 1 auto; width: auto; height: 26px; padding: 0 10px; font-size: 12px; line-height: 24px; white-space: nowrap; }
+
+/* chat card after 지급 */
+.pkh-xp-chat table { width: 100%; margin: 0; border: 0; font-size: 0.95em; }
+.pkh-xp-chat td { padding: 2px 4px; border: 0; }
+.pkh-xp-chat td.n { text-align: right; font-weight: 700; white-space: nowrap; }
+.pkh-xp-chat td.up { font-weight: 700; color: #2f8f4e; white-space: nowrap; }
+
+/* "+5 XP" over a party portrait (the token gets Foundry's own scrolling text) */
+/* "+5 XP" over a Rutz's Tactics View standee (its floatText, with this class) */
+.rdio-float.pkh-xp-standee {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  -webkit-text-stroke: 1.5px #2a1600;
+  text-shadow: 0 0 4px #000, 0 2px 6px #000, 0 0 14px rgba(255, 190, 60, 0.75);
+}
+.rdio-float.pkh-xp-standee.minus { text-shadow: 0 0 4px #000, 0 2px 6px #000; }
+
+/* 파티 굴림 (group check): the GM's setup window and the chat card */
+.pkh-gc-setup { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.pkh-gc-setup h4 { margin: 0 0 4px; padding: 0; border: none; font-size: 12px; font-weight: 600; opacity: 0.75; }
+.pkh-gc-setup button { min-height: 0; margin: 0; line-height: normal; }
+.pkh-gc-setup input[type="number"] { width: 58px; flex: none; height: 26px; text-align: center; }
+.pkh-gc-setup .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.pkh-gc-setup .row label { display: flex; align-items: center; gap: 5px; margin: 0; }
+.pkh-gc-setup .hint { margin: 0; font-size: 12px; opacity: 0.7; }
+.pkh-gc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.pkh-gc-chips .chip { flex: none; width: auto; height: 24px; padding: 0 9px; border-radius: 12px; font-size: 12px; opacity: 0.65; }
+.pkh-gc-chips .chip.on { opacity: 1; font-weight: 700; border-color: #c9a227; background: rgba(201, 162, 39, 0.28); }
+.pkh-gc-setup .quick { display: flex; flex-wrap: wrap; gap: 4px; }
+.pkh-gc-setup .quick button { flex: none; width: auto; height: 24px; padding: 0 7px; font-size: 11px; }
+.pkh-gc-setup .quick button b { margin-left: 2px; }
+.pkh-gc-people { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.pkh-gc-people label { display: flex; align-items: center; gap: 4px; margin: 0; }
+.pkh-gc-setup .auto { font-size: 11px; opacity: 0.7; }
+.pkh-gc-setup details summary { font-size: 12px; opacity: 0.8; cursor: pointer; }
+.pkh-gc-texts { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 12px; }
+.pkh-gc-setup .pkh-seat-buttons { margin-top: 2px; }
+/* setup window: the people take the room (scroll); the rest and the start button stay */
+#pf2e-kr-hud-group-check .pkh-gc-setup > * { flex: none; }
+#pf2e-kr-hud-group-check .pkh-gc-setup > div:has(> .pkh-gc-people) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+#pf2e-kr-hud-group-check .pkh-gc-people { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: flex-start; }
+
+/* chat card */
+.pkh-gc header { display: flex; align-items: center; gap: 6px; margin-bottom: 0.2rem; font-size: 1rem; }
+.pkh-gc header i { color: #c9a227; }
+.pkh-gc-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; font-size: 0.85rem; opacity: 0.85; }
+.pkh-gc-meta .dc { font-weight: 700; white-space: nowrap; }
+.pkh-gc-meter { display: flex; align-items: center; gap: 8px; margin: 0.35rem 0; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.pkh-gc-meter .bar { flex: 1; height: 8px; overflow: hidden; border-radius: 4px; background: rgba(127, 127, 127, 0.25); }
+.pkh-gc-meter .bar i { display: block; height: 100%; border-radius: 4px; background: #c9a227; transition: width 300ms ease; }
+.pkh-gc-meter b { white-space: nowrap; }
+.pkh-gc-meter.neg b { color: #c4524a; }
+.pkh-gc.done.full .pkh-gc-meter .bar i, .pkh-gc.done.success .pkh-gc-meter .bar i { background: #3fa860; }
+.pkh-gc-rolls { display: flex; flex-direction: column; gap: 2px; margin: 0 0 0.35rem; padding: 0; list-style: none; font-size: 0.85rem; }
+.pkh-gc-rolls li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 2em; align-items: center; gap: 6px; padding: 2px 6px; border-radius: 5px; background: rgba(127, 127, 127, 0.1); }
+.pkh-gc-rolls .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.pkh-gc-rolls .skill { white-space: nowrap; opacity: 0.7; }
+.pkh-gc-rolls .deg { white-space: nowrap; font-weight: 700; }
+.pkh-gc-rolls .pts { text-align: right; font-variant-numeric: tabular-nums; }
+.pkh-gc-rolls .d3 :is(.deg, .pts) { color: #1f8a4c; }
+.pkh-gc-rolls .d2 :is(.deg, .pts) { color: #3fa860; }
+.pkh-gc-rolls .d1 :is(.deg, .pts) { color: #c4524a; }
+.pkh-gc-rolls .d0 :is(.deg, .pts) { color: #9b2335; }
+.pkh-gc-wait { margin: 0 0 0.35rem; font-size: 0.78rem; opacity: 0.7; }
+.pkh-gc-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.pkh-gc-buttons button { flex: 1 1 auto; width: auto; min-width: 40%; margin: 0; padding: 0 8px; line-height: 26px; font-size: 0.85rem; }
+.pkh-gc-gm { display: flex; gap: 4px; margin-top: 4px; }
+.pkh-gc-gm select { flex: 1; min-width: 0; height: 26px; }
+.pkh-gc-gm button { flex: none; width: auto; margin: 0; padding: 0 8px; line-height: 24px; font-size: 0.8rem; }
+.pkh-gc-result { margin-top: 0.3rem; padding: 0.4rem 0.6rem; border-left: 4px solid #888; border-radius: 6px; background: rgba(127, 127, 127, 0.12); }
+.pkh-gc-result b { display: block; font-size: 1rem; }
+.pkh-gc-result p { margin: 0.15rem 0 0; }
+.pkh-gc-result.full { border-left-color: #1f8a4c; } .pkh-gc-result.full b { color: #1f8a4c; }
+.pkh-gc-result.success { border-left-color: #3fa860; } .pkh-gc-result.success b { color: #3fa860; }
+.pkh-gc-result.failure { border-left-color: #c4524a; } .pkh-gc-result.failure b { color: #c4524a; }
+.pkh-gc-result.critFailure { border-left-color: #9b2335; } .pkh-gc-result.critFailure b { color: #9b2335; }
+
+/* 지식 답하기 (Recall Knowledge answer): the GM's window and the chat card */
+.pkh-rk { display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+.pkh-rk button { min-height: 0; margin: 0; line-height: normal; }
+.pkh-rk-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.pkh-rk-head img { flex: none; width: 28px; height: 28px; object-fit: cover; border: none; border-radius: 4px; }
+.pkh-rk-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkh-rk-head .lv, .pkh-rk-head .hint { font-size: 12px; opacity: 0.7; white-space: nowrap; }
+.pkh-rk-head [data-act="pick"] { flex: none; width: 26px; height: 24px; margin-left: auto; padding: 0; }
+.pkh-rk .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.pkh-rk .row select { flex: 1; min-width: 0; height: 26px; }
+.pkh-rk .dubious { color: #c9a227; }
+.pkh-rk-seg { display: flex; flex-wrap: wrap; gap: 3px; }
+.pkh-rk-seg button { flex: 1 1 auto; width: auto; height: 24px; padding: 0 8px; font-size: 12px; white-space: nowrap; opacity: 0.65; }
+.pkh-rk-seg button.on { opacity: 1; font-weight: 700; border-color: #c9a227; background: rgba(201, 162, 39, 0.28); }
+.pkh-rk-lines { display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0; list-style: none; }
+/* the lines scroll (bar on the right) and take the room when the window is made bigger; the rest stays put */
+#pf2e-kr-hud-recall .window-content { display: flex; flex-direction: column; overflow: hidden; }
+#pf2e-kr-hud-recall .pkh-rk { flex: 1 1 auto; min-height: 0; }
+#pf2e-kr-hud-recall .pkh-rk > * { flex: none; }
+#pf2e-kr-hud-recall .pkh-rk > .pkh-rk-lines { flex: 1 1 auto; min-height: 60px; overflow-y: auto; padding-right: 2px; }
+.pkh-rk-lines li { display: flex; align-items: center; gap: 5px; }
+.pkh-rk-lines .mark { flex: none; width: 14px; font-size: 11px; text-align: center; }
+.pkh-rk-lines .is-true .mark { color: #3fa860; }
+.pkh-rk-lines .is-false .mark { color: #c4524a; }
+.pkh-rk-lines input { flex: 1; min-width: 0; height: 26px; }
+.pkh-rk-lines button, .pkh-rk-lines .pad { flex: none; width: 26px; height: 24px; padding: 0; }
+.pkh-rk .empty { margin: 0; font-size: 12px; opacity: 0.7; }
+.pkh-rk .pkh-seat-buttons { margin-top: 2px; }
+
+/* chat */
+.pkh-rk-open { width: 100%; margin-top: 4px; line-height: 24px; font-size: 0.85rem; }
+.pkh-rk-card header { display: flex; align-items: center; gap: 6px; font-size: 1rem; }
+.pkh-rk-card header i { color: #c9a227; }
+.pkh-rk-card ul { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+.pkh-rk-card li { margin: 0.1rem 0; }
+
+/* 전투 경험치: 현황 / 기록 tabs */
+.pkh-xp-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.pkh-xp-tabs button { flex: 1; padding: 2px 6px; font-size: 12px; opacity: 0.7; }
+.pkh-xp-tabs button.active { opacity: 1; border-color: #e0b75a; box-shadow: inset 0 -2px 0 #e0b75a; }
+.pkh-xp-tabs small { opacity: 0.7; font-variant-numeric: tabular-nums; }
+.pkh-xp-logbar { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; }
+.pkh-xp-logbar select { flex: 1; min-width: 0; }
+.pkh-xp-loglist { display: flex; flex-direction: column; gap: 2px; max-height: 50vh; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.pkh-xp-loglist .round { margin-top: 4px; font-size: 11px; font-weight: bold; opacity: 0.65; }
+.pkh-xp-log { display: flex; align-items: baseline; gap: 6px; padding: 2px 6px; border-radius: 5px; background: rgba(127, 127, 127, 0.08); font-size: 12px; }
+.pkh-xp-log .who { flex: none; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+.pkh-xp-log .why { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkh-xp-log .why em { font-style: normal; opacity: 0.7; }
+.pkh-xp-log b { flex: none; font-variant-numeric: tabular-nums; color: #e0b75a; }
+.pkh-xp-log.k-kill b { color: #e05252; }
+.pkh-xp-log.k-support b { color: #7bd389; }
+.pkh-xp-log.k-gm b { color: #9aa0a6; }
+.pkh-xp-share { margin: 2px 0 6px; font-size: 12px; opacity: 0.85; }
+.pkh-xp-sharebox { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; }
