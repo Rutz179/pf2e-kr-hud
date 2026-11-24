@@ -188,6 +188,16 @@
         "Name": "Chat clock and dice",
         "Hint": "Clock atop the chat; dice and flat-check buttons above the input."
       },
+      "clockCalendar": {
+        "Name": "Chat clock: calendar",
+        "Hint": "Auto: PF2e follows its own setting, other systems Foundry's calendar.",
+        "Choices": {
+          "auto": "Auto",
+          "foundry": "Foundry calendar",
+          "golarion": "Golarion",
+          "earth": "Earth (Gregorian)"
+        }
+      },
       "clock12h": {
         "Name": "Chat clock: 12-hour (AM/PM)",
         "Hint": "When off, the clock uses 24-hour time (15:05)."
@@ -949,7 +959,12 @@
       "EarthMonth": "{name}",
       "Time12": "{h}:{mm} {ampm}",
       "Am": "AM",
-      "Pm": "PM"
+      "Pm": "PM",
+      "World": {
+        "Year": "Year {year}",
+        "Day": "{weekday}, {month} {day}",
+        "DayNoWeekday": "{month} {day}"
+      }
     },
     "Dice": {
       "ShiftTwo": "Shift: roll 2",
@@ -1287,8 +1302,11 @@
       "SpritePath": "Tactics View standing picture (empty: unchanged)",
       "SpriteTip": "Also switches the standing picture in Rutz's Tactics View.",
       "Remove": "Remove this expression",
-      "Add": "Add an expression (up to {n})",
+      "Add": "Add an expression",
       "Full": "Up to {n} expressions.",
+      "AddImage": "Add a token image",
+      "RemoveImage": "Remove this token image",
+      "FullImages": "Up to {n} token images.",
       "StageFaces": "Cinematic Stage expressions: {list} — a keyword not set here switches the portrait to the stage picture.",
       "CopyStage": "Copy the stage's here to change them",
       "Expressions": "Expressions",

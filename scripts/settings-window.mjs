@@ -48,7 +48,7 @@ export const TABS = [
   {
     id: "chat", label: "SettingsWindow.Tabs.Chat", icon: "fa-solid fa-comments",
     sections: [
-      { title: "SettingsWindow.Sections.ClockDice", keys: ["chatDock", "clock12h"] },
+      { title: "SettingsWindow.Sections.ClockDice", keys: ["chatDock", "clockCalendar", "clock12h"] },
       { title: "SettingsWindow.Sections.FontSize", keys: ["chatBodyFont", "chatFontSize", "chatSidebarWidth", "chatHideEditorMenu", "chatFaceZoom"] },
       { title: "SettingsWindow.Sections.Messages", keys: ["chatGrouping", "chatGroupWindow", "chatEdit", "whisperPolicy", "notesJournal", ...(TABLE_EDITION ? ["windowMinButton"] : [])] },
       { title: "SettingsWindow.Sections.LongSessions", keys: ["chatTrim", "chatTrimKeep", "chatJumpButton"] },
@@ -132,6 +132,7 @@ function shortName(name, context) {
 function fieldHtml(key, context = []) {
   const cfg = config(key);
   if (!editable(cfg)) return "";
+  // The three health texts are never typed boxes while the editor is drawn: it holds them as hidden fields.
   if (HEALTH_KEYS.includes(key) && healthEditorShown()) return key === "healthLevels" ? healthEditorHtml(cfg) : "";
   const value = game.settings.get(MODULE_ID, key);
   const name = esc(shortName(game.i18n.localize(String(cfg.name ?? key)), context));
@@ -266,11 +267,12 @@ export function bandSegments(bands) {
   });
 }
 
-/** All three settings registered and the GM's to change. */
-const healthEditorShown = () => HEALTH_KEYS.every(k => editable(config(k)));
+/** The editor replaces the levels box whenever this user may change the levels; the 100% / 0% rows come with their own settings. */
+const healthEditorShown = () => editable(config("healthLevels"));
+const healthKeysHere = () => HEALTH_KEYS.filter(k => editable(config(k)));
 
 function healthEditorHtml(cfg) {
-  const hidden = HEALTH_KEYS.map(k => `<input type="hidden" data-key="${k}" value="${esc(game.settings.get(MODULE_ID, k))}">`).join("");
+  const hidden = healthKeysHere().map(k => `<input type="hidden" data-key="${k}" value="${esc(game.settings.get(MODULE_ID, k))}">`).join("");
   const world = `<span class="scope" data-tooltip="${esc(t("SettingsWindow.WorldTip"))}">${esc(t("SettingsWindow.World"))}</span>`;
   const hint = cfg.hint ? `<p class="hint">${esc(game.i18n.localize(String(cfg.hint)))}</p>` : "";
   return `<div class="pkh-set-field pkh-hl">
@@ -291,7 +293,7 @@ function mountHealthEditor(root) {
   if (!box) return;
   const field = key => box.querySelector(`input[data-key="${key}"]`);
   const translated = key => t(HEALTH_LANG[key]);
-  const shown = key => healthShown(field(key).value, config(key)?.default, translated(key));
+  const shown = key => (field(key) ? healthShown(field(key).value, config(key)?.default, translated(key)) : "");
   const defaults = () => ({ full: translated("healthFull"), zero: translated("healthZero"), bands: parseBands(translated("healthLevels")) });
   const state = { full: shown("healthFull"), zero: shown("healthZero"), bands: parseBands(shown("healthLevels")) };
   if (!state.bands.length) state.bands = defaults().bands;
@@ -315,12 +317,12 @@ function mountHealthEditor(root) {
     const segs = bandSegments(state.bands);
     const remove = esc(t("SettingsWindow.HealthEditor.Remove"));
     const one = state.bands.length <= 1 ? "disabled" : "";
-    rows.innerHTML = `<div class="row fixed"><span class="sw full"></span><span class="pct">100%</span><input type="text" data-hl="full" value="${esc(state.full)}"></div>`
+    rows.innerHTML = (field("healthFull") ? `<div class="row fixed"><span class="sw full"></span><span class="pct">100%</span><input type="text" data-hl="full" value="${esc(state.full)}"></div>` : "")
       + state.bands.map((b, i) => `<div class="row" data-i="${i}"><span class="sw" style="--h:${segs[i].hue}"></span>
         <span class="pct"><input type="number" data-hl="pct" min="1" max="99" step="1" value="${b.pct}"><span>%</span></span>
         <input type="text" data-hl="name" value="${esc(b.name)}" placeholder="${esc(t("SettingsWindow.HealthEditor.NewBand"))}">
         <button type="button" data-hl="remove" data-tooltip="${remove}" aria-label="${remove}" ${one}><i class="fa-solid fa-xmark"></i></button></div>`).join("")
-      + `<div class="row fixed"><span class="sw zero"></span><span class="pct">0%</span><input type="text" data-hl="zero" value="${esc(state.zero)}"></div>`;
+      + (field("healthZero") ? `<div class="row fixed"><span class="sw zero"></span><span class="pct">0%</span><input type="text" data-hl="zero" value="${esc(state.zero)}"></div>` : "");
     box.querySelector('[data-hl="add"]').disabled = !addBand(state.bands, "");
   };
   const drawAll = () => { drawBar(); drawRows(); };
@@ -329,6 +331,7 @@ function mountHealthEditor(root) {
     const text = { healthFull: state.full, healthLevels: serializeBands(state.bands), healthZero: state.zero };
     for (const key of HEALTH_KEYS) {
       const el = field(key);
+      if (!el) continue;
       const value = healthStored(key, text[key], config(key)?.default, translated(key));
       if (el.value === value) continue;
       el.value = value;

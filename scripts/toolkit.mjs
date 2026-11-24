@@ -4,8 +4,10 @@ import { FRAME_DEFAULT, ZOOM_MAX, ZOOM_MIN, bindFrameEditor, fitPreview, frameOf
 import { canEditSlots } from "./slots.mjs";
 import { featureOn, healthChanged, healthPercent } from "./systems.mjs";
 import { rutzSetting } from "./rutz-editions.mjs";
+import { settingsHubTool } from "./rutz-settings-hub.mjs";
 
-const MAX_TOKEN_IMAGES = 5;
+// The token HUD palette lists every preset in a 3-column grid beside the token: 12 keeps it on screen.
+export const MAX_TOKEN_IMAGES = 12;
 
 // The "@기본" keyword is data (typed in chat, matched in portraits.mjs too): it stays as is.
 const DEFAULT_FACE = "기본";
@@ -38,6 +40,9 @@ function registerToolkitTab() {
     add("pkhGroupCheck", t("Toolkit.GroupCheck"), "fa-solid fa-people-group", () => game.pf2eKrHud?.groupCheck?.(), game.user.isGM && !TABLE_EDITION && featureOn("groupCheck"));
     add("pkhRecall", t("Recall.Title"), "fa-solid fa-brain", () => game.pf2eKrHud?.recall?.(), game.user.isGM && !TABLE_EDITION && featureOn("recall"));
     for (const tool of extraTools) add(tool.name, tool.title ?? tool.name, tool.icon ?? "fa-solid fa-star", tool.onChange ?? (() => {}), tool.visible ?? true);
+    // one button for the settings windows of every Rutz module that is on (the same tool the other modules add)
+    const hub = settingsHubTool(90);
+    if (hub) tools[hub.name] = hub;
 
     // Another Rutz module may already have put its buttons in here; keep them.
     controls.rutzToolkit = {
@@ -233,7 +238,7 @@ export function openPortraitManager() {
 }
 
 /*
- * Expressions (CoCoFolia-style): up to twelve images per character, switched by typing "@키워드" in chat; "@기본" returns to the normal portrait.
+ * Expressions (CoCoFolia-style): images per character (MAX_FACES is only a safety cap), switched by typing "@키워드" in chat; "@기본" returns to the normal portrait.
  * flags.pf2e-kr-hud.faces = [{ key, img }, ...]
  * The Cinematic Stage's expressions count too (shared.mjs facesOf): a keyword set only there changes the party portrait.
  */
@@ -254,6 +259,12 @@ function pickImage(input, type = "image") {
   }
 }
 
+/** Rows the token-image list starts with: one per stored preset, or a single empty row when there is none. */
+export function tokenRowIndexes(count) {
+  const n = Math.min(MAX_TOKEN_IMAGES, Math.max(0, Number(count) || 0));
+  return n ? Array.from({ length: n }, (_, i) => i) : [0];
+}
+
 export function openFaces(actor) {
   actor ??= game.pf2eKrHud?.hud?.actor ?? game.user.character;
   if (!actor) return ui.notifications.warn(`Rutz's HUD | ${t("Faces.NoActor")}`);
@@ -265,6 +276,7 @@ export function openFaces(actor) {
   const preview = src => isVideo(src)
     ? `<video class="preview" src="${esc(src)}" muted autoplay loop playsinline></video>`
     : `<img class="preview" src="${esc(src)}" alt="">`;
+  // data-i points at the stored preset a row came from (its sprite is kept when Tactics View is off); new rows get fresh numbers.
   const tokenRow = i => {
     const preset = tokenImages[i] ?? {};
     return `<div class="pkh-face-row pkh-token-row" data-i="${i}">
@@ -277,6 +289,7 @@ export function openFaces(actor) {
           .map(([v, l]) => `<option value="${v}" ${String(preset.size ?? "") === v ? "selected" : ""}>${l}</option>`).join("")}
       </select>
       <button type="button" data-act="browse-token" data-tooltip="${esc(t("Faces.Browse"))}"><i class="fa-solid fa-folder-open"></i></button>
+      <button type="button" data-act="remove-token" data-tooltip="${esc(t("Faces.RemoveImage"))}"><i class="fa-solid fa-xmark"></i></button>
       ${tacticsOn() ? `<div class="pkh-sprite-line">
         <i class="fa-solid fa-chess-pawn" data-tooltip="${esc(t("Faces.SpriteTip"))}"></i>
         <input type="text" name="sprite" placeholder="${esc(t("Faces.SpritePath"))}" value="${esc(preset.sprite ?? "")}">
@@ -330,10 +343,11 @@ export function openFaces(actor) {
         ${t("Faces.Hint2", { face: game.i18n.lang === "ko" ? DEFAULT_FACE : "default" })}</p>
       ${stageLine}
       <div class="pkh-expr-list">${[...faces, {}].slice(0, MAX_FACES).map(row).join("")}</div>
-      <button type="button" data-act="add-face" class="pkh-add-face"><i class="fa-solid fa-plus"></i> ${t("Faces.Add", { n: MAX_FACES })}</button>
+      <button type="button" data-act="add-face" class="pkh-add-face"><i class="fa-solid fa-plus"></i> ${t("Faces.Add")}</button>
       <h3 class="pkh-sub">${t("Faces.Presets")}</h3>
       <p class="pkh-pick-hint">${t("Faces.PresetsHint", { icon: '<i class="fa-solid fa-images"></i>' })}</p>
-      ${Array.from({ length: MAX_TOKEN_IMAGES }, (_, i) => tokenRow(i)).join("")}
+      <div class="pkh-token-list">${tokenRowIndexes(tokenImages.length).map(tokenRow).join("")}</div>
+      <button type="button" data-act="add-token" class="pkh-add-face"><i class="fa-solid fa-plus"></i> ${t("Faces.AddImage")}</button>
       </div>
       <div class="pkh-seat-buttons"><button type="button" data-act="save" class="primary"><i class="fa-solid fa-check"></i> ${t("Common.Save")}</button></div>
     </div>`,
@@ -378,6 +392,13 @@ export function openFaces(actor) {
         if (list.children.length >= MAX_FACES) return ui.notifications.info(`Rutz's HUD | ${t("Faces.Full", { n: MAX_FACES })}`);
         list.insertAdjacentHTML("beforeend", row(f));
       };
+      const tokenList = root.querySelector(".pkh-token-list");
+      let nextTokenIndex = Math.max(tokenImages.length, 1);
+      const addTokenRow = () => {
+        if (tokenList.children.length >= MAX_TOKEN_IMAGES) return ui.notifications.info(`Rutz's HUD | ${t("Faces.FullImages", { n: MAX_TOKEN_IMAGES })}`);
+        tokenList.insertAdjacentHTML("beforeend", tokenRow(nextTokenIndex++));
+        tokenList.lastElementChild?.querySelector("input[name=tname]")?.focus();
+      };
       root.addEventListener("click", async ev => {
         const btn = ev.target.closest("button[data-act]");
         if (!btn) return;
@@ -388,6 +409,12 @@ export function openFaces(actor) {
         if (btn.dataset.act === "browse-portrait") return pickImage(portraitInput);
         if (btn.dataset.act === "clear-portrait") { portraitInput.value = ""; return void showPortraitPic(); }
         if (btn.dataset.act === "add-face") return addRow({});
+        if (btn.dataset.act === "add-token") return addTokenRow();
+        if (btn.dataset.act === "remove-token") {
+          btn.closest(".pkh-token-row")?.remove();
+          if (!tokenList.children.length) addTokenRow();
+          return;
+        }
         if (btn.dataset.act === "remove-face") {
           btn.closest(".pkh-expr-row")?.remove();
           if (!list.children.length) addRow({});
@@ -417,7 +444,7 @@ export function openFaces(actor) {
             size: Number(r.querySelector("select[name=size]")?.value) || null,
             sprite: (el => (el ? el.value.trim() : images0[Number(r.dataset.i)]?.sprite ?? ""))(r.querySelector("input[name=sprite]")),
             hp: (v => (v === "" || !Number.isFinite(Number(v)) ? null : Math.max(0, Math.min(99, Math.round(Number(v))))))(r.querySelector("input[name=hp]")?.value ?? "")
-          })).filter(t => t.img);
+          })).filter(t => t.img).slice(0, MAX_TOKEN_IMAGES);
           await actor.setFlag(MODULE_ID, "tokenImages", images);
           const exprs = [...root.querySelectorAll(".pkh-expr-row")].map(r => ({
             key: r.querySelector("input[name=key]").value.trim().replace(/^@/, "").replace(/\s+/g, ""),

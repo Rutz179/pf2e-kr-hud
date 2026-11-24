@@ -188,6 +188,16 @@
         "Name": "채팅창 시계와 주사위",
         "Hint": "채팅창 위에 날짜·시간, 입력칸 위에 주사위·플랫 체크 버튼을 띄웁니다."
       },
+      "clockCalendar": {
+        "Name": "채팅창 시계: 달력",
+        "Hint": "자동이면 PF2e는 시스템 설정, 그 밖은 Foundry 달력을 씁니다.",
+        "Choices": {
+          "auto": "자동",
+          "foundry": "Foundry 달력",
+          "golarion": "골라리온",
+          "earth": "지구(그레고리력)"
+        }
+      },
       "clock12h": {
         "Name": "채팅창 시계: 오전/오후 12시간제",
         "Hint": "끄면 24시간제(15:05)로 표시합니다."
@@ -949,7 +959,12 @@
       "EarthMonth": "{month}월",
       "Time12": "{ampm} {h}:{mm}",
       "Am": "오전",
-      "Pm": "오후"
+      "Pm": "오후",
+      "World": {
+        "Year": "{year}년",
+        "Day": "{month} {day}일 {weekday}",
+        "DayNoWeekday": "{month} {day}일"
+      }
     },
     "Dice": {
       "ShiftTwo": "Shift: 2개",
@@ -1287,8 +1302,11 @@
       "SpritePath": "택틱스 뷰 스탠딩 그림 (비우면 그대로)",
       "SpriteTip": "Rutz's Tactics View의 스탠딩 그림도 함께 바꿉니다.",
       "Remove": "이 표정 지우기",
-      "Add": "표정 추가 (최대 {n}개)",
+      "Add": "표정 추가",
       "Full": "표정은 {n}개까지입니다.",
+      "AddImage": "토큰 이미지 추가",
+      "RemoveImage": "이 토큰 이미지 지우기",
+      "FullImages": "토큰 이미지는 {n}개까지입니다.",
       "StageFaces": "시네마틱 무대 표정: {list} — 여기서 정하지 않은 키워드는 무대 그림으로 초상화가 바뀝니다.",
       "CopyStage": "무대 표정 가져와서 고치기",
       "Expressions": "표정",

@@ -69,7 +69,8 @@ function phaseEmoji(h, m) {
 
 /*
  * Calendar
- * The game date is built the way PF2e's world clock does it (the clock exposes no ready-made `date` string): era, year with the era's offset (2700 for Absalom Reckoning), day and Golarion weekday.
+ * In PF2e the game date is built the way PF2e's world clock does it (the clock exposes no ready-made `date` string): era, year with the era's offset (2700 for Absalom Reckoning), day and Golarion weekday.
+ * Every other system uses Foundry's world calendar (worldCalendarText below); Golarion names never appear there.
  */
 
 // Lang keys (Calendar.Golarion.* / Calendar.Earth.* / Calendar.Era.*), read when drawn.
@@ -99,6 +100,7 @@ function monthName(era, month) {
 }
 
 function dateTheme() {
+  if (game.system?.id !== "pf2e") return "CE";
   const wc = game.pf2e?.worldClock;
   let theme = wc?.dateTheme;
   if (!theme) { try { theme = game.settings.get("pf2e", "worldClock.dateTheme"); } catch { theme = "AR"; } }
@@ -143,10 +145,73 @@ export function formatGameTime(h, min, twelveHour = true) {
   return t("Calendar.Time12", { ampm: t(h < 12 ? "Calendar.Am" : "Calendar.Pm"), h: h % 12 || 12, mm });
 }
 
-function calendarText() {
+/*
+ * Other systems: Foundry's world calendar, read the way the dnd5e system reads it — month and weekday names from the
+ * calendar's own lists, year counted from its year zero. Anything missing gives null (the caller falls back).
+ */
+export function worldCalendarDate() {
+  try {
+    const cal = game.time?.calendar;
+    const c = game.time?.components ?? cal?.timeToComponents?.(game.time.worldTime);
+    const month = cal?.months?.values?.[c?.month];
+    const year = Number(c?.year) + (Number(cal?.years?.yearZero) || 0);
+    const day = Number(c?.dayOfMonth) + 1;
+    if (!month?.name || !Number.isFinite(year) || !Number.isFinite(day)) return null;
+    const weekday = cal.days?.values?.[c.dayOfWeek]?.name;
+    return { year, month: localizeMaybe(month.name), day, weekday: weekday ? localizeMaybe(weekday) : "" };
+  } catch {
+    return null;
+  }
+}
+
+/** Without a usable world calendar: the Gregorian date of the world time counted from 1970 (UTC), with no era. */
+function earthDate() {
+  const d = new Date(Number(game.time?.worldTime || 0) * 1000);
+  if (!Number.isFinite(d.getTime())) return { year: 1970, month: earthMonth(1), day: 1, weekday: t(EARTH_WEEKDAYS[3]) };
+  return { year: d.getUTCFullYear(), month: earthMonth(d.getUTCMonth() + 1), day: d.getUTCDate(), weekday: t(EARTH_WEEKDAYS[(d.getUTCDay() + 6) % 7]) };
+}
+
+function worldCalendarText() {
+  const d = worldCalendarDate() ?? earthDate();
+  const { h, m } = timeOfDay();
+  const year = t("Calendar.World.Year", { year: d.year });
+  const day = t(d.weekday ? "Calendar.World.Day" : "Calendar.World.DayNoWeekday", { month: d.month, day: d.day, weekday: d.weekday });
+  return {
+    date: t("Calendar.Full", { year, day }),
+    year,
+    day,
+    month: d.month,
+    time: formatGameTime(h, m, setting("clock12h", true) !== false),
+    emoji: phaseEmoji(h, m),
+    phase: phaseOf(h, m).name
+  };
+}
+
+/** The "clockCalendar" setting: auto (PF2e: its world clock's era; elsewhere Foundry's calendar), foundry, golarion or earth. */
+export const CLOCK_CALENDARS = ["auto", "foundry", "golarion", "earth"];
+function clockCalendar() {
+  const v = setting("clockCalendar", "auto");
+  return CLOCK_CALENDARS.includes(v) ? v : "auto";
+}
+
+/** Which reckoning the clock uses: null for Foundry's world calendar, else an ERAS key. */
+export function clockTheme(mode, systemId, pf2eTheme) {
+  const pf2e = systemId === "pf2e";
+  if (mode === "foundry" || (mode === "auto" && !pf2e)) return null;
+  if (mode === "golarion") return pf2e && ERAS[pf2eTheme]?.golarion ? pf2eTheme : "AR";
+  if (mode === "earth") return pf2e && ERAS[pf2eTheme] && !ERAS[pf2eTheme].golarion ? pf2eTheme : "CE";
+  return pf2eTheme;
+}
+
+export function calendarText() {
+  const pf2e = game.system?.id === "pf2e";
+  const systemTheme = pf2e ? dateTheme() : null;
+  const theme = clockTheme(clockCalendar(), game.system?.id, systemTheme);
+  if (!theme) return worldCalendarText();
+  // Outside PF2e (or without its clock) gameMoment() counts the world time from 1970, UTC.
   const m = gameMoment();
-  const theme = dateTheme();
-  const wcYear = Number(game.pf2e?.worldClock?.year);
+  // PF2e's own year only fits the era PF2e itself is set to.
+  const wcYear = pf2e && theme === systemTheme ? Number(game.pf2e?.worldClock?.year) : NaN;
   const era = ERAS[theme];
   const parts = formatGameDateParts(m, theme, Number.isFinite(wcYear) ? wcYear : null);
   return {
@@ -909,6 +974,7 @@ export function registerGmToolSettings() {
   const redock = () => { document.getElementById("pkh-clock")?.remove(); mountClock(); mountDice(); };
   const s = (key, data) => game.settings.register(MODULE_ID, key, data);
   s("chatDock", { name: "PKH.Settings.chatDock.Name", hint: "PKH.Settings.chatDock.Hint", scope: "client", config: true, type: Boolean, default: true, onChange: redock });
+  s("clockCalendar", { name: "PKH.Settings.clockCalendar.Name", hint: "PKH.Settings.clockCalendar.Hint", scope: "world", config: true, type: String, default: "auto", choices: Object.fromEntries(CLOCK_CALENDARS.map(k => [k, `PKH.Settings.clockCalendar.Choices.${k}`])), onChange: () => mountClock() });
   s("clock12h", { name: "PKH.Settings.clock12h.Name", hint: "PKH.Settings.clock12h.Hint", scope: "client", config: true, type: Boolean, default: true, onChange: () => mountClock() });
   s("timeDarknessSync", { name: "PKH.Settings.timeDarknessSync.Name", hint: "PKH.Settings.timeDarknessSync.Hint", scope: "world", config: true, type: Boolean, default: true });
   s("timeDarknessMax", { name: "PKH.Settings.timeDarknessMax.Name", scope: "world", config: true, type: Number, default: 0.85, range: { min: 0.3, max: 1, step: 0.05 } });

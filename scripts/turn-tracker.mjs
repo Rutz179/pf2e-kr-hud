@@ -157,6 +157,36 @@ function groupKey(c) {
   return [actor, nameOf(c), portraitOf(c), lifeState(c), c.hidden ? "h" : "", c.token?.disposition ?? 0].join("|");
 }
 
+/*
+ * Pointer on a portrait = pointer on its token: the card hovers the token the way Foundry's own combat tracker does
+ * (Token#_onHoverIn / _onHoverOut), so the user's own core "Target" key (Shift adds) and the hover highlight work as on the canvas.
+ */
+
+/** The token a portrait stands for: the combatant's, or a folded group's first visible member; null when hidden from this user. */
+export function cardToken(combat, id, members = []) {
+  if (!combat || !id) return null;
+  const ids = String(id).startsWith("g:") && members.length ? members : [String(id).replace(/^g:/, "")];
+  for (const cid of ids) {
+    const token = combat.combatants?.get?.(cid)?.token?.object;
+    if (token && token.visible && !token.document?.isSecret && !token.destroyed) return token;
+  }
+  return null;
+}
+
+/** Hover `next` instead of `prev` (either may be null). Returns what is hovered now; never throws. */
+export function swapCardHover(prev, next, event) {
+  if (prev === next) return next;
+  try { if (prev && prev.hover && !prev.destroyed) prev._onHoverOut?.(event); } catch (err) { console.warn(`${MODULE_ID} | card hover`, err); }
+  if (!next || !globalThis.canvas?.ready) return null;
+  try {
+    if (!next.hover) next._onHoverIn?.(event, { hoverOutOthers: true });
+    return next;
+  } catch (err) {
+    console.warn(`${MODULE_ID} | card hover`, err);
+    return null;
+  }
+}
+
 export class TurnTracker {
   constructor() {
     this.el = null;
@@ -185,6 +215,12 @@ export class TurnTracker {
     this.el.append(this.leftEl, this.roundEl, this.prevEl, this.list, this.nextEl, this.rightEl);
     this.el.addEventListener("click", ev => this._onClick(ev));
     this.el.addEventListener("contextmenu", ev => this._onContext(ev));
+    this.hovered = null;
+    this.list.addEventListener("pointerover", ev => {
+      const li = ev.target.closest?.("li.turn");
+      this.hovered = swapCardHover(this.hovered, li ? cardToken(this.combat, li.dataset.id, li._members) : null, ev);
+    });
+    this.list.addEventListener("pointerleave", ev => { this.hovered = swapCardHover(this.hovered, null, ev); });
     // Expanded row: the wheel scrolls sideways.
     this.list.addEventListener("wheel", ev => {
       if (!this.expanded) return;

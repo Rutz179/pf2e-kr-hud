@@ -247,7 +247,8 @@ export async function localizedDoc(uuid) {
  * expressions ("@웃음")
  * One list per character for both pictures: the HUD's own (party portraits) and Rutz's Cinematic Stage's (RP stage). A keyword set in only one works in the other; where both have it, each uses its own picture. Read straight from the flags: getFlag throws for a module that is off.
  */
-export const MAX_FACES = 12;
+// A safety cap only: faces are a small list in actor flags, the window scrolls, and chat looks keywords up in a Set.
+export const MAX_FACES = 50;
 export function hudFaces(actor) {
   return (actor?.flags?.[MODULE_ID]?.faces ?? []).filter(f => f?.key && f?.img);
 }
