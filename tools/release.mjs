@@ -1,5 +1,5 @@
 /**
- * One release, both editions:  (rutz-tools 2026-11-24r)
+ * One release, both editions:  (rutz-tools 2026-11-24u)
  *
  *   node tools/release.mjs 1.6.1             free edition → GitHub release (public repo), paid (plus) → the hub
  *   node tools/release.mjs 1.6.1 --no-hub    GitHub only
@@ -451,7 +451,7 @@ async function setToken() {
 /** Is everything ready? Nothing is changed. */
 async function check() {
   const mark = ok => (ok ? "✓" : "✗");
-  console.log(`모듈            ${manifest.id} ${manifest.version} · ${FREE ? "무료 모듈" : `GitHub: ${nameOf(edition.public ?? "lite")} · 허브: 구매판`}`);
+  console.log(`모듈            ${manifest.id} ${manifest.version} · ${FREE ? "무료 모듈" : `GitHub: ${nameOf(edition.public ?? "lite")} · 볼트: 구매판`}`);
   console.log(`공개 저장소      ${repoName}`);
   try {
     const repo = await gh("GET", "");
@@ -463,14 +463,14 @@ async function check() {
   const src = git("remote", "get-url", "origin").stdout?.trim() ?? "";
   const leaks = !FREE && originIsPublic();
   console.log(`소스(git origin) ${src ? `${mark(!leaks)} ${src}${leaks ? "  ← 공개 저장소입니다! .private/RELEASE.md 의 '소스를 비공개로'" : FREE ? "  (무료 모듈: 소스 공개 그대로)" : ""}` : "- (git 없음)"}`);
-  if (FREE) console.log("허브             - 무료 모듈 (허브 안 씀)");
+  if (FREE) console.log("볼트             - 무료 모듈 (볼트 안 씀)");
   else if (local.hub && local.adminKey) {
     try {
       const res = await fetch(`${local.hub.replace(/\/$/, "")}/admin/check`, { headers: { Authorization: `Bearer ${local.adminKey}` } });
       const c = res.ok ? await res.json() : null;
-      console.log(`허브             ${mark(!!c)} ${local.hub}${c ? ` · 올라간 구매판 ${c.releases?.[manifest.id] ?? "-"}${c.releases && !(manifest.id in c.releases) ? "  ← 아직 허브 모듈 목록에 없습니다 (다음 릴리스가 '가진 사람에게만 보이기'로 넣습니다)" : ""}` : ` (응답 ${res.status})`}`);
-    } catch (err) { console.log(`허브             ${mark(false)} ${local.hub} (${err.message})`); }
-  } else console.log("허브             - 설정 없음 (GitHub에만 올립니다)");
+      console.log(`볼트             ${mark(!!c)} ${local.hub}${c ? ` · 올라간 구매판 ${c.releases?.[manifest.id] ?? "-"}${c.releases && !(manifest.id in c.releases) ? "  ← 아직 볼트 모듈 목록에 없습니다 (다음 릴리스가 '가진 사람에게만 보이기'로 넣습니다)" : ""}` : ` (응답 ${res.status})`}`);
+    } catch (err) { console.log(`볼트             ${mark(false)} ${local.hub} (${err.message})`); }
+  } else console.log("볼트             - 설정 없음 (GitHub에만 올립니다)");
 }
 
 /* ---------------- building ---------------- */
@@ -511,18 +511,18 @@ async function hubRegister() {
   const base = local.hub.replace(/\/$/, "");
   const headers = { Authorization: `Bearer ${local.adminKey}` };
   const res = await fetch(`${base}/admin/state`, { headers });
-  if (!res.ok) throw new Error(`허브 모듈 목록을 읽지 못했습니다 (${res.status}). 허브 관리 페이지에서 ${manifest.id}를 넣거나, GitHub에만 올리려면 --no-hub`);
+  if (!res.ok) throw new Error(`볼트 모듈 목록을 읽지 못했습니다 (${res.status}). 볼트 관리 페이지에서 ${manifest.id}를 넣거나, GitHub에만 올리려면 --no-hub`);
   const list = vaultEntry((await res.json())?.modules, manifest);
   if (!list) return null;
   const put = await fetch(`${base}/admin/modules`, { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(list) });
-  if (!put.ok) throw new Error(`허브 모듈 목록에 넣지 못했습니다: ${put.status} ${await put.text()}`);
+  if (!put.ok) throw new Error(`볼트 모듈 목록에 넣지 못했습니다: ${put.status} ${await put.text()}`);
   return list[list.length - 1];
 }
 
 async function hubPut(p, file, type) {
   const res = await fetch(`${local.hub.replace(/\/$/, "")}${p}`, { method: "PUT", headers: { Authorization: `Bearer ${local.adminKey}`, "Content-Type": type }, body: fs.readFileSync(file) });
   const text = await res.text();
-  if (!res.ok) throw new Error(`허브 ${res.status} ${text}`);
+  if (!res.ok) throw new Error(`볼트 ${res.status} ${text}`);
   return text;
 }
 
@@ -552,7 +552,7 @@ async function main() {
   const tag = `v${version}`;
   const toGitHub = !flag("--hub-only");
   const toHub = !FREE && !flag("--no-hub") && !!(local.hub && local.adminKey);
-  if (!FREE && !toHub && !flag("--no-hub")) console.log("(허브 설정이 없어 구매판은 올리지 않습니다 — 허브 폴더에서 node tools/setup.mjs)");
+  if (!FREE && !toHub && !flag("--no-hub")) console.log("(볼트 설정이 없어 구매판은 올리지 않습니다 — 볼트 서버 폴더(rutz-vault-server)에서 node tools/setup.mjs)");
 
   // 0. nothing is changed before the repository, the token and the tag are known to be fine
   let resume = null;
@@ -570,16 +570,16 @@ async function main() {
       resume = r;
     } catch (err) { if (err.status !== 404) throw err; }
   }
-  if (flag("--hub-only") && !toHub) throw new Error("허브 설정이 없습니다 (허브 폴더에서 node tools/setup.mjs).");
+  if (flag("--hub-only") && !toHub) throw new Error("볼트 설정이 없습니다 (볼트 서버 폴더(rutz-vault-server)에서 node tools/setup.mjs).");
   if (toHub) {
     let c = null;
     try {
       const res = await fetch(`${local.hub.replace(/\/$/, "")}/admin/check`, { headers: { Authorization: `Bearer ${local.adminKey}` } });
       if (res.ok) c = await res.json(); else throw new Error(res.status === 401 ? "관리 키가 맞지 않습니다" : `응답 ${res.status}`);
-    } catch (err) { throw new Error(`허브(${local.hub})에 올릴 수 없습니다: ${err.message}. GitHub에만 올리려면 --no-hub`); }
+    } catch (err) { throw new Error(`볼트(${local.hub})에 올릴 수 없습니다: ${err.message}. GitHub에만 올리려면 --no-hub`); }
     if (c.releases && !(manifest.id in c.releases)) {
       const added = await hubRegister();
-      if (added) console.log(`[0] 허브 모듈 목록에 ${added.id}를 넣었습니다 — 가진 사람에게만 보이기 · 구매자만${added.was ? ` · 예전 id ${added.was}` : ""}. 구매 링크와 공개는 허브 관리 페이지에서.`);
+      if (added) console.log(`[0] 볼트 모듈 목록에 ${added.id}를 넣었습니다 — 가진 사람에게만 보이기 · 구매자만${added.was ? ` · 예전 id ${added.was}` : ""}. 구매 링크와 공개는 볼트 관리 페이지에서.`);
     }
   }
 
@@ -595,7 +595,7 @@ async function main() {
   const built = { [pub]: build(pub) };
   if (toHub && !built.plus) built.plus = build("plus");
   const { id: pubId, title: pubTitle } = JSON.parse(fs.readFileSync(built[pub].json, "utf8"));
-  console.log(FREE ? "[2] 모듈 zip을 만들었습니다 (무료 모듈)" : `[2] ${Object.keys(built).map(nameOf).join(" + ")}을 만들었습니다 (GitHub: ${nameOf(pub)} ${pubId}${toHub ? ` · 허브: 구매판 ${manifest.id}` : ""})`);
+  console.log(FREE ? "[2] 모듈 zip을 만들었습니다 (무료 모듈)" : `[2] ${Object.keys(built).map(nameOf).join(" + ")}을 만들었습니다 (GitHub: ${nameOf(pub)} ${pubId}${toHub ? ` · 볼트: 구매판 ${manifest.id}` : ""})`);
 
   // 3. GitHub release on the public repo
   if (toGitHub) {
@@ -620,7 +620,7 @@ async function main() {
   if (toHub) {
     await hubPut(`/admin/release/${manifest.id}/module.zip`, built.plus.zip, "application/zip");
     await hubPut(`/admin/release/${manifest.id}/module.json`, built.plus.json, "application/json");
-    console.log(`[4] 허브에 구매판 ${manifest.id} ${version}를 올렸습니다.`);
+    console.log(`[4] 볼트에 구매판 ${manifest.id} ${version}를 올렸습니다.`);
   }
 
   fs.mkdirSync(path.join(ROOT, "dist"), { recursive: true });
