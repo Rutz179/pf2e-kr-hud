@@ -1,5 +1,5 @@
 /**
- * One release, both editions:  (rutz-tools 2026-11-23d)
+ * One release, both editions:  (rutz-tools 2026-11-24r)
  *
  *   node tools/release.mjs 1.6.1             free edition → GitHub release (public repo), paid (plus) → the hub
  *   node tools/release.mjs 1.6.1 --no-hub    GitHub only
@@ -25,6 +25,9 @@
  * own (<id>-lite / <id>-trial, or the id edition.json names; see tools/edition.mjs) and goes to the public repo.
  * No edition.json = a free module: its source repository is the public one, the release carries
  * the folder as it is, and nothing goes to the hub.
+ *
+ * A paid edition the hub's module list does not have yet is put on it first (vaultEntry): hidden from people
+ * who don't own it, for buyers only, no buy link. The buy link and showing it are set on the hub's admin page.
  *
  * Settings: ~/.rutz-release.json, shared by every module (never share it):
  *   { "githubToken": "github_pat_…",                  // --set-token; fine-grained, Contents: read and write
@@ -453,6 +456,7 @@ async function check() {
   try {
     const repo = await gh("GET", "");
     console.log(`GitHub 토큰      ${mark(!!repo.permissions?.push)} ${repo.permissions?.push ? "쓰기 가능" : "읽기만 됨 — 토큰의 Contents 권한을 Read and write로"}${repo.private ? " (이 저장소가 비공개입니다! 공개 저장소여야 설치가 됩니다)" : ""}`);
+    if (renamedTo(repo)) console.log(`공개 저장소 이름 ${mark(false)} GitHub에서 ${renamedTo(repo)}(으)로 바뀌어 있습니다 — Settings → Repository name을 ${String(repoName).split("/")[1]}(으)로`);
   } catch (err) {
     console.log(`GitHub 토큰      ${mark(false)} ${err.status === 404 ? "이 저장소를 볼 수 없습니다 — 토큰의 Repository access에 이 저장소를 넣어 주세요" : err.message}`);
   }
@@ -464,7 +468,7 @@ async function check() {
     try {
       const res = await fetch(`${local.hub.replace(/\/$/, "")}/admin/check`, { headers: { Authorization: `Bearer ${local.adminKey}` } });
       const c = res.ok ? await res.json() : null;
-      console.log(`허브             ${mark(!!c)} ${local.hub}${c ? ` · 올라간 구매판 ${c.releases?.[manifest.id] ?? "-"}${c.releases && !(manifest.id in c.releases) ? "  ← 허브 관리 페이지의 모듈 목록에 이 모듈이 없습니다" : ""}` : ` (응답 ${res.status})`}`);
+      console.log(`허브             ${mark(!!c)} ${local.hub}${c ? ` · 올라간 구매판 ${c.releases?.[manifest.id] ?? "-"}${c.releases && !(manifest.id in c.releases) ? "  ← 아직 허브 모듈 목록에 없습니다 (다음 릴리스가 '가진 사람에게만 보이기'로 넣습니다)" : ""}` : ` (응답 ${res.status})`}`);
     } catch (err) { console.log(`허브             ${mark(false)} ${local.hub} (${err.message})`); }
   } else console.log("허브             - 설정 없음 (GitHub에만 올립니다)");
 }
@@ -475,6 +479,44 @@ function build(ed) {
   const r = spawnSync(process.execPath, [path.join("tools", "edition.mjs"), ed, "--out", "dist"], { cwd: ROOT, stdio: "inherit" });
   if (r.status !== 0) throw new Error(`${nameOf(ed)}(${ed})을 만들지 못했습니다.`);
   return { zip: path.join(ROOT, "dist", `${manifest.id}-${ed}.zip`), json: path.join(ROOT, "dist", `${ed}-module.json`) };
+}
+
+/**
+ * GitHub answers for a renamed repository under its new name (and redirects the old one, which file uploads do
+ * not follow): the new owner/name when it is not the one module.json points at, else null.
+ */
+function renamedTo(repo) {
+  const full = String(repo?.full_name ?? "");
+  return full && full.toLowerCase() !== String(repoName).toLowerCase() ? full : null;
+}
+const renamedHelp = full => `GitHub에서 공개 저장소 이름이 바뀌어 있습니다: ${repoName} → ${full}. `
+  + `설치 주소(module.json url)와 소스 저장소(${repoName}-src)가 ${repoName} 기준이니, GitHub의 ${full} → Settings → Repository name을 `
+  + `${String(repoName).split("/")[1]}(으)로 되돌린 뒤 다시 릴리스하세요. 아무것도 바꾸지 않았습니다.`;
+
+/**
+ * The hub's module list with this paid module added, as PUT /admin/modules takes it (the whole list).
+ * The new entry: hidden from people who don't own it, buyers only (no patron price), no buy link; an id
+ * "<x>-plus" next to an "<x>" already on the list takes it as its earlier id, so that one's buyers keep access.
+ * Returns null when the module is already there.
+ */
+function vaultEntry(modules, mf) {
+  const list = (Array.isArray(modules) ? modules : []).map(({ id, title, buyUrl, patron, hidden, was }) => ({ id, title, buyUrl: buyUrl ?? "", patron: patron ?? null, hidden: !!hidden, ...(was ? { was } : {}) }));
+  if (list.some(m => m.id === mf.id)) return null;
+  const base = /^(.+)-plus$/.exec(mf.id)?.[1];
+  const was = base && list.some(m => m.id === base) && !list.some(m => m.was === base) ? base : null;
+  return [...list, { id: mf.id, title: String(mf.title ?? mf.id).slice(0, 80), buyUrl: "", patron: null, hidden: true, ...(was ? { was } : {}) }];
+}
+/** Puts this paid module on the hub's module list (see vaultEntry); the list is read first, so nothing else changes. */
+async function hubRegister() {
+  const base = local.hub.replace(/\/$/, "");
+  const headers = { Authorization: `Bearer ${local.adminKey}` };
+  const res = await fetch(`${base}/admin/state`, { headers });
+  if (!res.ok) throw new Error(`허브 모듈 목록을 읽지 못했습니다 (${res.status}). 허브 관리 페이지에서 ${manifest.id}를 넣거나, GitHub에만 올리려면 --no-hub`);
+  const list = vaultEntry((await res.json())?.modules, manifest);
+  if (!list) return null;
+  const put = await fetch(`${base}/admin/modules`, { method: "PUT", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify(list) });
+  if (!put.ok) throw new Error(`허브 모듈 목록에 넣지 못했습니다: ${put.status} ${await put.text()}`);
+  return list[list.length - 1];
 }
 
 async function hubPut(p, file, type) {
@@ -512,13 +554,21 @@ async function main() {
   const toHub = !FREE && !flag("--no-hub") && !!(local.hub && local.adminKey);
   if (!FREE && !toHub && !flag("--no-hub")) console.log("(허브 설정이 없어 구매판은 올리지 않습니다 — 허브 폴더에서 node tools/setup.mjs)");
 
-  // 0. nothing is changed before the token and the tag are known to be fine
+  // 0. nothing is changed before the repository, the token and the tag are known to be fine
+  let resume = null;
   if (toGitHub) {
     if (!token) throw new Error("GitHub 토큰이 없습니다: node tools/release.mjs --set-token");
-    try { await gh("GET", `/releases/tags/${tag}`); throw new Error(`${tag} 릴리스가 이미 있습니다. 버전을 올리세요.`); } catch (err) { if (err.status !== 404) throw err; }
     // Reading works with any token (public repo); making a release needs write access to this repo.
     const repo = await gh("GET", "");
+    const moved = renamedTo(repo);
+    if (moved) throw new Error(renamedHelp(moved));
     if (repo?.permissions && !repo.permissions.push) throw new Error(tokenHelp());
+    // a release of this tag with no files is what a stopped run leaves: the files go into it this time
+    try {
+      const r = await gh("GET", `/releases/tags/${tag}`);
+      if (r?.assets?.length) throw new Error(`${tag} 릴리스가 이미 있습니다. 버전을 올리세요.`);
+      resume = r;
+    } catch (err) { if (err.status !== 404) throw err; }
   }
   if (flag("--hub-only") && !toHub) throw new Error("허브 설정이 없습니다 (허브 폴더에서 node tools/setup.mjs).");
   if (toHub) {
@@ -527,7 +577,10 @@ async function main() {
       const res = await fetch(`${local.hub.replace(/\/$/, "")}/admin/check`, { headers: { Authorization: `Bearer ${local.adminKey}` } });
       if (res.ok) c = await res.json(); else throw new Error(res.status === 401 ? "관리 키가 맞지 않습니다" : `응답 ${res.status}`);
     } catch (err) { throw new Error(`허브(${local.hub})에 올릴 수 없습니다: ${err.message}. GitHub에만 올리려면 --no-hub`); }
-    if (c.releases && !(manifest.id in c.releases)) throw new Error(`허브 관리 페이지의 모듈 목록에 ${manifest.id} 가 없습니다. 거기서 넣은 다음 다시 올리거나, GitHub에만 올리려면 --no-hub`);
+    if (c.releases && !(manifest.id in c.releases)) {
+      const added = await hubRegister();
+      if (added) console.log(`[0] 허브 모듈 목록에 ${added.id}를 넣었습니다 — 가진 사람에게만 보이기 · 구매자만${added.was ? ` · 예전 id ${added.was}` : ""}. 구매 링크와 공개는 허브 관리 페이지에서.`);
+    }
   }
 
   // 1. version and addresses into module.json
@@ -555,7 +608,8 @@ async function main() {
       await pushMedia();
     }
     const repo = await gh("GET", "");
-    const release = await gh("POST", "/releases", { tag_name: tag, name: tag, target_commitish: repo.default_branch, body: `${pubTitle} ${tag}` });
+    const release = resume ?? await gh("POST", "/releases", { tag_name: tag, name: tag, target_commitish: repo.default_branch, body: `${pubTitle} ${tag}` });
+    if (resume) console.log(`    지난번 멈춘 빈 릴리스 ${tag}에 이어서 올립니다`);
     await upload(release, built[pub].json, "module.json", "application/json");
     await upload(release, built[pub].zip, "module.zip", "application/zip");
     console.log(`[3] GitHub 릴리스 (${pubId}): ${release.html_url}`);
@@ -576,4 +630,4 @@ async function main() {
 
 // RUTZ_NO_MAIN: the tests import this file for its pure helpers; nothing runs and nothing is sent.
 if (!process.env.RUTZ_NO_MAIN) main().catch(err => { console.error(err.message ?? err); process.exit(1); });
-export { readmeFiles, newer, nameOf, pickReleases, KEEP };
+export { readmeFiles, newer, nameOf, pickReleases, KEEP, vaultEntry };
